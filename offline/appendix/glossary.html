@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>术语表 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item active" href="glossary.html">术语表</a>
+<a class="nav-item" href="reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>附录</span><span>/</span><strong>术语表</strong></div>
+        <article class="doc"><h1 id="术语表">术语表</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  A[&quot;Agent&quot;] --&gt; C[&quot;上下文&quot;]
+  A --&gt; T[&quot;工具&quot;]
+  A --&gt; M[&quot;记忆&quot;]
+  A --&gt; O[&quot;编排&quot;]
+  A --&gt; S[&quot;安全&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 术语不是孤立定义：它们都挂在 Agent 的同一张架构图上</p>
+<p>按主题分组。带 ★ 的是最容易混淆、建议优先掌握的概念。</p>
+<h2 id="基础">基础</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent</td>
+<td>Agent</td>
+<td>以目标为输入，能自主决定下一步动作、通过环境反馈持续调整的系统</td>
+</tr>
+<tr>
+<td>工作流</td>
+<td>Workflow</td>
+<td>控制流由代码预先编排，模型只填充某些节点</td>
+</tr>
+<tr>
+<td>自主性</td>
+<td>Autonomy</td>
+<td>模型对“下一步做什么”的决定权；越高越灵活，也越难控制</td>
+</tr>
+<tr>
+<td>策略</td>
+<td>Policy</td>
+<td>从上下文到下一步动作的映射，通常由 LLM 实现</td>
+</tr>
+<tr>
+<td>动作空间</td>
+<td>Action space</td>
+<td>Agent 可以执行的所有动作集合（工具、命令、点击等）</td>
+</tr>
+<tr>
+<td>环境</td>
+<td>Environment</td>
+<td>Agent 动作作用的对象及其反馈（文件系统、浏览器、API）</td>
+</tr>
+<tr>
+<td>轨迹</td>
+<td>Trajectory</td>
+<td>一次任务中所有决策、动作、观察的序列</td>
+</tr>
+<tr>
+<td>终止条件</td>
+<td>Termination condition</td>
+<td>判断任务完成/失败/需要人工的规则</td>
+</tr>
+<tr>
+<td>人在回路</td>
+<td>Human-in-the-loop (HITL)</td>
+<td>在关键节点引入人工审批、纠错或接管</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="推理与行动">推理与行动</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ ReAct</td>
+<td>Reason + Act</td>
+<td>交替进行推理与动作，用观察结果指导下一步</td>
+</tr>
+<tr>
+<td>思维链</td>
+<td>Chain-of-Thought (CoT)</td>
+<td>让模型先展开中间推理再给答案</td>
+</tr>
+<tr>
+<td>工具调用</td>
+<td>Tool Use / Function Calling</td>
+<td>模型返回结构化工具调用，由宿主执行</td>
+</tr>
+<tr>
+<td>结构化输出</td>
+<td>Structured Output</td>
+<td>按 JSON Schema 等格式约束模型输出</td>
+</tr>
+<tr>
+<td>规划</td>
+<td>Planning</td>
+<td>把目标拆成步骤/子任务，并在执行中调整</td>
+</tr>
+<tr>
+<td>反思</td>
+<td>Reflection</td>
+<td>让模型检查自己的输出/轨迹并修正</td>
+</tr>
+<tr>
+<td>验证器</td>
+<td>Verifier</td>
+<td>独立判断结果是否满足标准的组件（测试、schema、规则、模型）</td>
+</tr>
+<tr>
+<td>路由器</td>
+<td>Router</td>
+<td>根据任务类型选择模型/流程/工具</td>
+</tr>
+<tr>
+<td>级联</td>
+<td>Cascade</td>
+<td>先用小模型/便宜路径，失败或低置信时升级</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="上下文与记忆">上下文与记忆</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ 上下文窗口</td>
+<td>Context Window</td>
+<td>模型一次能接收的最大 token 数</td>
+</tr>
+<tr>
+<td>★ 上下文工程</td>
+<td>Context Engineering</td>
+<td>在预算内选择、排序、压缩、隔离上下文</td>
+</tr>
+<tr>
+<td>提示缓存</td>
+<td>Prompt Caching</td>
+<td>复用相同前缀的 KV 计算，降低延迟/成本</td>
+</tr>
+<tr>
+<td>上下文腐烂</td>
+<td>Context Rot</td>
+<td>上下文越长/噪声越多，模型有效推理能力下降</td>
+</tr>
+<tr>
+<td>中间遗忘</td>
+<td>Lost in the Middle</td>
+<td>长上下文中间位置的信息更容易被忽略</td>
+</tr>
+<tr>
+<td>工作记忆</td>
+<td>Working Memory</td>
+<td>当前任务的状态与最近观察</td>
+</tr>
+<tr>
+<td>情景记忆</td>
+<td>Episodic Memory</td>
+<td>过去发生的事件/轨迹</td>
+</tr>
+<tr>
+<td>语义记忆</td>
+<td>Semantic Memory</td>
+<td>稳定事实、偏好、概念</td>
+</tr>
+<tr>
+<td>程序记忆</td>
+<td>Procedural Memory</td>
+<td>可复用的技能、步骤、代码</td>
+</tr>
+<tr>
+<td>★ RAG</td>
+<td>Retrieval-Augmented Generation</td>
+<td>检索外部知识并拼进上下文再生成</td>
+</tr>
+<tr>
+<td>Agentic RAG</td>
+<td>Agentic RAG</td>
+<td>由 Agent 决定何时检索、检索什么、是否继续</td>
+</tr>
+<tr>
+<td>重排</td>
+<td>Reranking</td>
+<td>对召回候选做更精细的相关性排序</td>
+</tr>
+<tr>
+<td>混合检索</td>
+<td>Hybrid Search</td>
+<td>向量召回 + 关键词召回（如 BM25）并行，再融合</td>
+</tr>
+<tr>
+<td>★ RRF</td>
+<td>Reciprocal Rank Fusion</td>
+<td>只用名次融合多路召回，避免分数不可比</td>
+</tr>
+<tr>
+<td>查询改写</td>
+<td>Query Rewriting</td>
+<td>把对话问题改写成可检索的独立查询</td>
+</tr>
+<tr>
+<td>HyDE</td>
+<td>Hypothetical Document Embeddings</td>
+<td>先生成假想答案再检索，缓解问法与文档风格差异</td>
+</tr>
+<tr>
+<td>父子块</td>
+<td>Parent-Child Chunks</td>
+<td>用小块召回、用大块补充上下文</td>
+</tr>
+<tr>
+<td>Recall@k</td>
+<td>Recall at k</td>
+<td>正确证据出现在前 k 条候选中的比例，检索的核心指标</td>
+</tr>
+<tr>
+<td>记忆污染</td>
+<td>Memory Poisoning</td>
+<td>错误/恶意信息被写入长期记忆并跨会话传播</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="编排与多-agent">编排与多 Agent</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>编排</td>
+<td>Orchestration</td>
+<td>控制循环、分支、并行、状态、终止</td>
+</tr>
+<tr>
+<td>状态机</td>
+<td>State Machine</td>
+<td>用显式状态与转移表达控制流</td>
+</tr>
+<tr>
+<td>图编排</td>
+<td>Graph Orchestration</td>
+<td>用节点/边/共享状态表达 Agent 流程</td>
+</tr>
+<tr>
+<td>检查点</td>
+<td>Checkpoint</td>
+<td>持久化任务状态，支持恢复/重放</td>
+</tr>
+<tr>
+<td>子 Agent</td>
+<td>Sub-agent</td>
+<td>由父 Agent 委派、拥有独立上下文/预算的 Agent</td>
+</tr>
+<tr>
+<td>主管模式</td>
+<td>Supervisor</td>
+<td>一个 Agent 分配任务并汇总子 Agent 结果</td>
+</tr>
+<tr>
+<td>交接</td>
+<td>Handoff</td>
+<td>把任务/会话控制权转给另一个 Agent 或人</td>
+</tr>
+<tr>
+<td>辩论</td>
+<td>Debate</td>
+<td>多角色提出/批评，由裁判综合</td>
+</tr>
+<tr>
+<td>★ 多 Agent 系统</td>
+<td>Multi-Agent System (MAS)</td>
+<td>多个 Agent 通过消息/共享状态协作</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="运行时与协议">运行时与协议</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>沙箱</td>
+<td>Sandbox</td>
+<td>限制代码/工具可见资源与副作用的隔离环境</td>
+</tr>
+<tr>
+<td>容器</td>
+<td>Container</td>
+<td>基于 namespace/cgroup 的隔离，共享宿主内核</td>
+</tr>
+<tr>
+<td>微虚拟机</td>
+<td>MicroVM</td>
+<td>更轻量的 VM 级隔离（如 Firecracker）</td>
+</tr>
+<tr>
+<td>gVisor</td>
+<td>gVisor</td>
+<td>用户态内核，拦截系统调用，增强容器隔离</td>
+</tr>
+<tr>
+<td>seccomp</td>
+<td>seccomp</td>
+<td>限制进程可用的系统调用</td>
+</tr>
+<tr>
+<td>出口控制</td>
+<td>Egress Control</td>
+<td>限制/审计沙箱可访问的网络目标</td>
+</tr>
+<tr>
+<td>★ MCP</td>
+<td>Model Context Protocol</td>
+<td>标准化模型应用与工具/资源服务器之间的协议</td>
+</tr>
+<tr>
+<td>A2A</td>
+<td>Agent-to-Agent</td>
+<td>Agent 间发现、委派、协作的协议方向</td>
+</tr>
+<tr>
+<td>计算机操作</td>
+<td>Computer Use</td>
+<td>通过截图、鼠标、键盘操作图形界面</td>
+</tr>
+<tr>
+<td>幂等</td>
+<td>Idempotency</td>
+<td>同一操作重复执行不产生额外副作用</td>
+</tr>
+<tr>
+<td>试运行</td>
+<td>Dry Run</td>
+<td>只展示将要执行的动作，不真正产生副作用</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="评测与可观测性">评测与可观测性</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>端到端评测</td>
+<td>End-to-end Eval</td>
+<td>只看最终任务结果</td>
+</tr>
+<tr>
+<td>轨迹评测</td>
+<td>Trajectory Eval</td>
+<td>检查中间步骤的工具选择、参数、观察处理</td>
+</tr>
+<tr>
+<td>通过率</td>
+<td>pass@1</td>
+<td>单次运行成功的比例</td>
+</tr>
+<tr>
+<td>可靠性</td>
+<td>pass^k</td>
+<td>k 次运行都成功的比例</td>
+</tr>
+<tr>
+<td>LLM 评审</td>
+<td>LLM-as-Judge</td>
+<td>用模型按 rubric 打分/比较</td>
+</tr>
+<tr>
+<td>追踪</td>
+<td>Trace</td>
+<td>一次任务中所有 span 的因果链</td>
+</tr>
+<tr>
+<td>跨度</td>
+<td>Span</td>
+<td>一次模型调用/工具调用/节点的记录</td>
+</tr>
+<tr>
+<td>金丝雀</td>
+<td>Canary</td>
+<td>小流量发布新版本，观察指标后扩大</td>
+</tr>
+<tr>
+<td>影子流量</td>
+<td>Shadow Traffic</td>
+<td>新版本只观察不生效，用于对比</td>
+</tr>
+<tr>
+<td>契约测试</td>
+<td>Contract Test</td>
+<td>断言跨边界的数据结构与错误语义不变</td>
+</tr>
+<tr>
+<td>场景回放</td>
+<td>Record &amp; Replay</td>
+<td>录制真实轨迹并断言工具序列与行为边界</td>
+</tr>
+<tr>
+<td>护栏指标</td>
+<td>Guardrail Metric</td>
+<td>灰度期触发自动回滚的线上指标</td>
+</tr>
+<tr>
+<td>补偿</td>
+<td>Compensation</td>
+<td>用新动作抵消已发生的不可逆动作</td>
+</tr>
+<tr>
+<td>租约</td>
+<td>Lease</td>
+<td>Worker 心跳凭证，超时后任务可被接管</td>
+</tr>
+<tr>
+<td>幂等键</td>
+<td>Idempotency Key</td>
+<td>由系统生成、用于去重的唯一键</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="安全">安全</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ 提示注入</td>
+<td>Prompt Injection</td>
+<td>恶意内容诱导模型偏离原指令</td>
+</tr>
+<tr>
+<td>间接注入</td>
+<td>Indirect Prompt Injection</td>
+<td>注入藏在网页/文档/工具返回中</td>
+</tr>
+<tr>
+<td>★ 致命三要素</td>
+<td>Lethal Trifecta</td>
+<td>私有数据 + 不可信内容 + 对外通信同时具备</td>
+</tr>
+<tr>
+<td>混淆代理</td>
+<td>Confused Deputy</td>
+<td>有权限的 Agent 被诱导替攻击者执行越权操作</td>
+</tr>
+<tr>
+<td>能力令牌</td>
+<td>Capability Token</td>
+<td>绑定主体、动作、资源、有效期的授权凭证</td>
+</tr>
+<tr>
+<td>最小权限</td>
+<td>Least Privilege</td>
+<td>只授予完成任务所需的最小权限</td>
+</tr>
+<tr>
+<td>数据防泄漏</td>
+<td>DLP</td>
+<td>检测/阻止敏感数据外传</td>
+</tr>
+<tr>
+<td>红队</td>
+<td>Red Teaming</td>
+<td>主动模拟攻击，寻找系统弱点</td>
+</tr>
+<tr>
+<td>指令层级</td>
+<td>Instruction Hierarchy</td>
+<td>明确系统/开发者/用户/数据内容的优先级</td>
+</tr>
+<tr>
+<td>护栏</td>
+<td>Guardrail</td>
+<td>在输入/输出/工具边界上强制执行的检查与限制</td>
+</tr>
+<tr>
+<td>内容审核</td>
+<td>Content Moderation</td>
+<td>判断文本/图像/音频是否违规并决定处置</td>
+</tr>
+<tr>
+<td>误杀</td>
+<td>False Positive</td>
+<td>正常内容被判定为违规并拦截</td>
+</tr>
+<tr>
+<td>漏杀</td>
+<td>False Negative</td>
+<td>违规内容未被拦截而流出</td>
+</tr>
+<tr>
+<td>分级处置</td>
+<td>Graded Response</td>
+<td>allow / rewrite / review / block / escalate，而不是二选一</td>
+</tr>
+<tr>
+<td>增量审核</td>
+<td>Streaming Moderation</td>
+<td>对流式输出按句/窗口做审核，未通过则断流</td>
+</tr>
+<tr>
+<td>内容标识</td>
+<td>Content Provenance</td>
+<td>显式提示 + 隐式水印/元数据，标明 AI 生成</td>
+</tr>
+<tr>
+<td>备案</td>
+<td>Service Registration</td>
+<td>面向公众提供生成式 AI 服务的登记与算法备案要求</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="数据与隐私">数据与隐私</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ 个人信息</td>
+<td>Personal Data / PII</td>
+<td>可识别到具体个人的信息，含可关联的假名化数据</td>
+</tr>
+<tr>
+<td>数据分级</td>
+<td>Data Classification</td>
+<td>按敏感度划分公开/内部/敏感/高风险并规定处理方式</td>
+</tr>
+<tr>
+<td>脱敏</td>
+<td>Masking / Redaction</td>
+<td>用占位符替换敏感字段，保留结构</td>
+</tr>
+<tr>
+<td>假名化</td>
+<td>Pseudonymization</td>
+<td>用映射替换标识，仍可通过映射还原，仍属个人信息</td>
+</tr>
+<tr>
+<td>匿名化</td>
+<td>Anonymization</td>
+<td>不可还原、不可关联，才可能脱离个人信息范围</td>
+</tr>
+<tr>
+<td>数据地图</td>
+<td>Data Map</td>
+<td>记录数据在哪、谁负责、怎么删的清单</td>
+</tr>
+<tr>
+<td>保留期限</td>
+<td>Retention Period</td>
+<td>数据允许保存的时长，到期必须删除</td>
+</tr>
+<tr>
+<td>数据出境</td>
+<td>Cross-border Transfer</td>
+<td>数据离开所在司法辖区的传输，通常需要评估或合同约束</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="模型与推理">模型与推理</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>英文</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>token</td>
+<td>Token</td>
+<td>模型处理文本的基本单位</td>
+</tr>
+<tr>
+<td>温度</td>
+<td>Temperature</td>
+<td>采样随机性参数；低温度更确定，但不保证事实正确</td>
+</tr>
+<tr>
+<td>推理模型</td>
+<td>Reasoning Model</td>
+<td>在回答前使用更多测试时计算进行推理的模型</td>
+</tr>
+<tr>
+<td>测试时计算</td>
+<td>Test-time Compute</td>
+<td>推理阶段投入更多算力（更长思考、采样、搜索）</td>
+</tr>
+<tr>
+<td>语义缓存</td>
+<td>Semantic Cache</td>
+<td>按语义相似度复用历史答案，需谨慎使用</td>
+</tr>
+<tr>
+<td>上下文长度</td>
+<td>Context Length</td>
+<td>模型支持的输入 token 上限</td>
+</tr>
+<tr>
+<td>微调</td>
+<td>Fine-tuning</td>
+<td>用领域数据继续训练，改变行为与格式，不擅长注入新知识</td>
+</tr>
+<tr>
+<td>SFT</td>
+<td>Supervised Fine-Tuning</td>
+<td>用 (输入, 输出) 对做监督微调</td>
+</tr>
+<tr>
+<td>LoRA</td>
+<td>Low-Rank Adaptation</td>
+<td>只训练低秩适配器，成本低、可按租户加载</td>
+</tr>
+<tr>
+<td>偏好优化</td>
+<td>Preference Optimization</td>
+<td>用成对比较数据优化“哪种回答更好”，如 DPO</td>
+</tr>
+<tr>
+<td>蒸馏</td>
+<td>Distillation</td>
+<td>用大模型输出训练小模型，换取更低成本与延迟</td>
+</tr>
+<tr>
+<td>灾难性遗忘</td>
+<td>Catastrophic Forgetting</td>
+<td>微调后通用能力下降</td>
+</tr>
+<tr>
+<td>数据飞轮</td>
+<td>Data Flywheel</td>
+<td>线上失败 → 标注 → 训练 → 评测 → 上线的闭环</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="一句话记住">一句话记住</h2>
+<ul>
+<li><strong>Agent = 模型 + 循环 + 工具 + 状态 + 环境。</strong></li>
+<li><strong>上下文是工作台，不是仓库。</strong></li>
+<li><strong>工具的错误信息是给模型看的接口。</strong></li>
+<li><strong>记忆的难点在写、取、忘，不在存。</strong></li>
+<li><strong>多 Agent 是手段，不是目标。</strong></li>
+<li><strong>评测是 Agent 工程的地基。</strong></li>
+<li><strong>安全不能靠提示词，要靠系统边界。</strong></li>
+<li><strong>内容安全管“说什么”，安全权限管“做什么”。</strong></li>
+<li><strong>审核不是二选一，是分级处置。</strong></li>
+<li><strong>数据进得越多，删除就越难；先分级，再采集。</strong></li>
+<li><strong>知识用检索，行为用微调。</strong></li>
+<li><strong>召回决定上限，重排只是改善排序。</strong></li>
+<li><strong>先看 Recall@50，再看 Recall@5。</strong></li>
+<li><strong>发布不是一次动作，而是一条带闸门的通道。</strong></li>
+<li><strong>长任务的关键不是跑得快，而是崩了能接着跑。</strong></li>
+<li><strong>信任来自可预期、可干预、可解释。</strong></li>
+</ul>
+</article>
+        <nav class="pager"><a class="prev" href="../advanced/frontier.html"><span>上一篇</span><strong>前沿与趋势</strong></a><a class="next" href="reading.html"><span>下一篇</span><strong>延伸阅读</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

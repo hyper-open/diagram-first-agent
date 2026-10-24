@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>评测与可观测性 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item active" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>评测与可观测性</strong></div>
+        <article class="doc"><h1 id="评测与可观测性让改进可被证明">评测与可观测性：让改进可被证明</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  D[&quot;评测集&quot;] --&gt; R[&quot;运行&quot;] --&gt; S[&quot;评分&quot;] --&gt; A[&quot;失败分析&quot;] --&gt; D
+  O[&quot;线上 trace&quot;] --&gt; A
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 评测是闭环：离线评测、线上 trace、失败分析、回流评测集</p>
+<p>Agent 的评测比普通模型难，因为：</p>
+<ul>
+<li><strong>输出不确定</strong>：同样输入，路径和结果可能不同。</li>
+<li><strong>成功标准多样</strong>：有些任务没有唯一答案。</li>
+<li><strong>轨迹很长</strong>：错误可能发生在第 3 步，却在第 20 步才显现。</li>
+<li><strong>依赖环境</strong>：工具、网络、文件状态都会影响结果。</li>
+<li><strong>成本也是指标</strong>：成功但花 10 美元，可能不如失败但花 1 美分。</li>
+</ul>
+<p>没有评测，所谓“优化”只是换一种随机。</p>
+<h2 id="一指标金字塔">一、指标金字塔</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>回答的问题</th>
+<th>典型指标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>业务价值</td>
+<td>对用户/业务有没有用？</td>
+<td>转化、留存、人工节省</td>
+</tr>
+<tr>
+<td>任务成功</td>
+<td>任务真的完成了吗？</td>
+<td>端到端通过率、质量分</td>
+</tr>
+<tr>
+<td>过程健康</td>
+<td>是怎么完成的？</td>
+<td>步数、工具成功率、循环率</td>
+</tr>
+<tr>
+<td>资源效率</td>
+<td>代价可接受吗？</td>
+<td>token、成本、P95 延迟</td>
+</tr>
+<tr>
+<td>安全与合规</td>
+<td>有没有造成伤害？</td>
+<td>越权、注入、数据泄露</td>
+</tr>
+</tbody>
+</table></div>
+<p>只看“任务成功”会掩盖成本和风险；只看成本会牺牲质量。至少同时报告：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>质量</td>
+<td>任务通过率、评分</td>
+<td>用可验证标准或 rubric</td>
+</tr>
+<tr>
+<td>可靠性</td>
+<td>多次运行的方差、失败率</td>
+<td>同输入跑 3–5 次</td>
+</tr>
+<tr>
+<td>效率</td>
+<td>每任务 token/成本、P50/P95 延迟</td>
+<td>按任务类型分桶</td>
+</tr>
+<tr>
+<td>过程</td>
+<td>平均步数、工具成功率、循环率</td>
+<td>定位问题</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>越权/注入/泄露事件</td>
+<td>应为 0，需红队测试</td>
+</tr>
+<tr>
+<td>体验</td>
+<td>人工接管率、用户接受率</td>
+<td>线上关键</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="二离线评测先有金标准">二、离线评测：先有“金标准”</h2>
+<h3 id="1-任务集从哪来">1. 任务集从哪来</h3>
+<ul>
+<li><strong>真实请求采样</strong>：最有价值，覆盖真实分布。</li>
+<li><strong>失败案例回归</strong>：每次线上事故都进回归集。</li>
+<li><strong>边界/对抗样本</strong>：注入、歧义、缺信息、超长输入。</li>
+<li><strong>合成任务</strong>：补足长尾，但要防止“合成分布”自嗨。</li>
+</ul>
+<p>一个可用的起步规模：<strong>30–50 条</strong>覆盖主要场景的任务，足以发现大问题；要比较小改进，需要更多样本或配对设计。</p>
+<h3 id="2-成功标准怎么写">2. 成功标准怎么写</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务类型</th>
+<th>可验证标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>代码修复</td>
+<td>测试通过 + 不回归 + 不改禁止文件</td>
+</tr>
+<tr>
+<td>数据抽取</td>
+<td>schema 合法 + 字段级准确率</td>
+</tr>
+<tr>
+<td>研究问答</td>
+<td>引用支持结论 + 关键事实覆盖</td>
+</tr>
+<tr>
+<td>客服处理</td>
+<td>政策合规 + 用户问题解决 + 无越权承诺</td>
+</tr>
+<tr>
+<td>写作</td>
+<td>rubric 评分（结构/事实/语气）</td>
+</tr>
+</tbody>
+</table></div>
+<p>标准要<strong>可执行</strong>，不能是“回答得好”。最好由独立验证器判断，而不是让生成模型自评。</p>
+<h3 id="3-评测的三种粒度">3. 评测的三种粒度</h3>
+<ul>
+<li><strong>端到端</strong>：只看最终结果。接近真实，但难定位。</li>
+<li><strong>轨迹</strong>：检查每一步的工具选择、参数、观察处理。能定位，但评分成本高。</li>
+<li><strong>组件</strong>：单测工具、上下文构建、解析器。快，但不能代表整体。</li>
+</ul>
+<p>三者都要有：组件测试保证地基，轨迹评测定位过程，端到端评测对齐业务。</p>
+<h2 id="三llm-as-judge好用但有偏">三、LLM-as-Judge：好用，但有偏</h2>
+<p>用 LLM 给回答打分很常见，但要认识它的偏差：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>偏差</th>
+<th>表现</th>
+<th>缓解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>位置偏差</td>
+<td>偏好第一个/最后一个</td>
+<td>随机顺序、成对交换</td>
+</tr>
+<tr>
+<td>长度偏差</td>
+<td>更长=更好</td>
+<td>控制长度、分段评分</td>
+</tr>
+<tr>
+<td>自我偏好</td>
+<td>偏好同模型输出</td>
+<td>用不同模型评审</td>
+</tr>
+<tr>
+<td>谄媚</td>
+<td>倾向给高分</td>
+<td>给明确 rubric、要求找反例</td>
+</tr>
+<tr>
+<td>不一致</td>
+<td>同答案不同分</td>
+<td>固定温度、多人/多次投票</td>
+</tr>
+</tbody>
+</table></div>
+<p>实用做法：</p>
+<ul>
+<li>用** rubric + 少量示例**，而不是“1–10 分”。</li>
+<li>要求输出<strong>逐项判断 + 证据</strong>，再汇总。</li>
+<li>对关键任务，人工抽检 10–20% 校准。</li>
+<li>让 judge 只看必要信息，避免被长度/格式干扰。</li>
+<li>记录 judge 的版本和提示，评测结果要可复现。</li>
+</ul>
+<blockquote>
+<p>LLM judge 适合“相对比较”和“粗筛”，不适合作为唯一的高风险验收。</p>
+</blockquote>
+<h2 id="四统计别被-2-的波动骗了">四、统计：别被 2% 的波动骗了</h2>
+<p>假设评测集 50 条，通过率从 70% 提升到 74%（35 → 37 条）。这可能只是噪声。</p>
+<p>基本做法：</p>
+<ul>
+<li>同一配置跑 3–5 次，报告均值与方差。</li>
+<li>用配对比较：同一批任务，A/B 各跑一次，统计“A 通过 B 失败”和“B 通过 A 失败”的数量。</li>
+<li>报告置信区间（Wilson interval）或至少原始通过数。</li>
+<li>对关键指标做显著性检验（如 McNemar）。</li>
+<li>固定随机种子/温度（能固定的部分）。</li>
+</ul>
+<p>一个粗略的经验：<strong>50 条样本只能发现大改进；要稳定检测 5% 的提升，通常需要几百条。</strong></p>
+<h2 id="五可观测性trace-是-agent-的黑匣子">五、可观测性：Trace 是 Agent 的“黑匣子”</h2>
+<p>普通日志记录“发生了什么”，trace 记录“一次任务中每一步的因果链”。</p>
+<h3 id="最小-trace-结构">最小 trace 结构</h3>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;trace_id&quot;: &quot;t-123&quot;,
+  &quot;task&quot;: &quot;修复 parser 测试&quot;,
+  &quot;model&quot;: &quot;…&quot;,
+  &quot;steps&quot;: [
+    {
+      &quot;span_id&quot;: &quot;s1&quot;,
+      &quot;type&quot;: &quot;llm&quot;,
+      &quot;input_tokens&quot;: 3200,
+      &quot;output_tokens&quot;: 120,
+      &quot;latency_ms&quot;: 900,
+      &quot;tool_calls&quot;: [{&quot;name&quot;: &quot;run_tests&quot;, &quot;args&quot;: {&quot;path&quot;: &quot;tests/&quot;}}]
+    },
+    {
+      &quot;span_id&quot;: &quot;s2&quot;,
+      &quot;type&quot;: &quot;tool&quot;,
+      &quot;name&quot;: &quot;run_tests&quot;,
+      &quot;duration_ms&quot;: 2400,
+      &quot;ok&quot;: false,
+      &quot;error_type&quot;: &quot;test_failure&quot;,
+      &quot;output_preview&quot;: &quot;3 failed, 12 passed&quot;
+    }
+  ],
+  &quot;result&quot;: {&quot;status&quot;: &quot;success&quot;, &quot;steps&quot;: 7, &quot;cost_usd&quot;: 0.04}
+}
+</code></pre></div>
+<p>关键字段：</p>
+<ul>
+<li><code>trace_id</code> / <code>span_id</code> / <code>parent_id</code>：还原调用树。</li>
+<li>每步的<strong>模型输入输出</strong>（脱敏后）、token、延迟。</li>
+<li>工具名、参数（脱敏）、结果摘要、错误类型。</li>
+<li>上下文各 section 的 token 分布。</li>
+<li>预算消耗、终止原因。</li>
+<li>用户/租户/任务类型（用于分桶）。</li>
+</ul>
+<h3 id="隐私与成本">隐私与成本</h3>
+<ul>
+<li>不记录密钥、密码、完整个人信息。</li>
+<li>大文本存引用/哈希，按需采样。</li>
+<li>设置保留期和访问控制。</li>
+<li>采样策略：成功任务低采样，失败/高风险全量。</li>
+</ul>
+<h2 id="六线上监控从能跑到可运营">六、线上监控：从“能跑”到“可运营”</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>监控</th>
+<th>指标</th>
+<th>告警</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功率</td>
+<td>端到端通过率、人工接管率</td>
+<td>连续下降</td>
+</tr>
+<tr>
+<td>延迟</td>
+<td>P50/P95/P99</td>
+<td>超 SLO</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>每任务/每用户成本</td>
+<td>突增</td>
+</tr>
+<tr>
+<td>工具</td>
+<td>错误率、超时率、限流</td>
+<td>突增</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>越权、注入、异常出口</td>
+<td>立即</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>版本、schema 失败率</td>
+<td>变更后</td>
+</tr>
+</tbody>
+</table></div>
+<p>发布策略：</p>
+<ul>
+<li>影子流量：新版本只观察不生效。</li>
+<li>金丝雀：小流量对比。</li>
+<li>回滚开关：模型/提示/工具都可独立回滚。</li>
+</ul>
+<h2 id="七一个最小评测框架">七、一个最小评测框架</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class Case:
+    id: str
+    input: str
+    expected: dict
+    tags: list[str]
+
+def run_eval(agent_factory, cases, runs=3):
+    results = []
+    for case in cases:
+        for i in range(runs):
+            agent = agent_factory(seed=i)
+            trace = agent.run(case.input)
+            passed = evaluate(case, trace)
+            results.append({
+                &quot;case&quot;: case.id,
+                &quot;run&quot;: i,
+                &quot;passed&quot;: passed,
+                &quot;steps&quot;: trace.steps,
+                &quot;cost&quot;: trace.cost,
+                &quot;latency_ms&quot;: trace.latency_ms,
+            })
+    return summarize(results)
+
+# 伪代码：mean / group_by / percentile 需要按你的评测框架实现
+def summarize(rows):
+    by_case = group_by(rows, &quot;case&quot;)
+    pass_at_1 = mean(r[&quot;passed&quot;] for r in rows if r[&quot;run&quot;] == 0)
+    pass_all = mean(all(x[&quot;passed&quot;] for x in xs) for xs in by_case.values())
+    return {
+        &quot;pass@1&quot;: pass_at_1,
+        &quot;pass^3&quot;: pass_all,
+        &quot;avg_steps&quot;: mean(r[&quot;steps&quot;] for r in rows),
+        &quot;avg_cost&quot;: mean(r[&quot;cost&quot;] for r in rows),
+        &quot;p95_latency&quot;: percentile([r[&quot;latency_ms&quot;] for r in rows], 95),
+    }
+</code></pre></div>
+<p>注意 <code>pass@1</code> 和 <code>pass^k</code> 的区别：</p>
+<ul>
+<li><code>pass@1</code>：单次运行通过率（用户体验）。</li>
+<li><code>pass^k</code>：k 次都通过的比例（可靠性）。</li>
+</ul>
+<p>一个 Agent 可能 <code>pass@1=80%</code>，但 <code>pass^3=50%</code>——说明它“经常能对，但不稳定”。生产更关心后者。</p>
+<h2 id="八公开-benchmark能参考别迷信">八、公开 Benchmark：能参考，别迷信</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Benchmark</th>
+<th>测什么</th>
+<th>局限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SWE-bench</td>
+<td>真实仓库修 issue</td>
+<td>任务偏 Python、污染风险</td>
+</tr>
+<tr>
+<td>GAIA</td>
+<td>通用助手任务</td>
+<td>评分依赖答案匹配</td>
+</tr>
+<tr>
+<td>WebArena</td>
+<td>网页操作</td>
+<td>环境固定、模拟站点</td>
+</tr>
+<tr>
+<td>OSWorld</td>
+<td>桌面操作</td>
+<td>成本高、环境脆弱</td>
+</tr>
+<tr>
+<td>τ-bench</td>
+<td>工具+政策遵循</td>
+<td>领域特定</td>
+</tr>
+</tbody>
+</table></div>
+<p>使用原则：</p>
+<ul>
+<li>看<strong>任务分布</strong>是否接近你的场景。</li>
+<li>看<strong>评测协议</strong>（是否给工具、多少步、什么模型）。</li>
+<li>警惕训练集污染：公开 benchmark 可能进了模型训练数据。</li>
+<li>不要用 benchmark 分数替代自己的评测集。</li>
+</ul>
+<h2 id="九失败分类让每次失败都变成资产">九、失败分类：让每次失败都变成资产</h2>
+<p>建议统一 failure taxonomy：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>planning      计划错误/遗漏
+context       信息缺失/被干扰/压缩失真
+tool_selection 选错工具
+tool_args     参数错误
+tool_exec     工具失败/超时
+reasoning     推理错误
+verification  未验证/误判完成
+orchestration 流程/协调错误
+environment   环境/依赖问题
+safety        越权/注入/泄露
+</code></pre></div>
+<p>每次失败标注一类或多类，按周统计。这样你才知道该修模型、上下文、工具还是编排。</p>
+<h2 id="十调试一个失败任务的顺序">十、调试一个失败任务的顺序</h2>
+<ol>
+<li><strong>看结果</strong>：错在哪，能否复现？</li>
+<li><strong>看终止</strong>：为什么停？预算、验证、还是模型说完成？</li>
+<li><strong>看轨迹</strong>：哪一步开始偏？关键工具返回了什么？</li>
+<li><strong>看上下文</strong>：那一步模型看到了什么？关键信息在不在？</li>
+<li><strong>看工具</strong>：参数对不对？错误是否可行动？</li>
+<li><strong>看模型</strong>：换更强模型能否通过？是能力还是工程问题？</li>
+<li><strong>写回归</strong>：把案例加入评测集，防止再犯。</li>
+</ol>
+<blockquote>
+<p>不要一上来就改 prompt。<strong>先定位是哪一层的信息/契约断了。</strong></p>
+</blockquote>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>评测分数波动大</td>
+<td>样本量/随机性</td>
+<td>增加样本、多次运行、配对比较</td>
+</tr>
+<tr>
+<td>线上好、离线差</td>
+<td>分布不一致</td>
+<td>采样真实请求、更新评测集</td>
+</tr>
+<tr>
+<td>离线好、线上差</td>
+<td>环境/延迟/并发</td>
+<td>影子流量、线上监控</td>
+</tr>
+<tr>
+<td>不知道为何失败</td>
+<td>缺少 trace</td>
+<td>补每步输入输出与工具结果</td>
+</tr>
+<tr>
+<td>改进无法归因</td>
+<td>一次改多个变量</td>
+<td>单变量实验、A/B</td>
+</tr>
+<tr>
+<td>judge 分数虚高</td>
+<td>偏差/ rubric 模糊</td>
+<td>人工校准、成对比较</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>为你的 Agent 写 20 条评测用例，覆盖正常、边界、对抗三类。</li>
+<li>给一个失败任务补全 trace，指出最早出错的那一步。</li>
+<li>计算你的 <code>pass@1</code> 和 <code>pass^3</code>，比较差距。</li>
+</ol>
+<p>下一步：<a href="release.html">版本与发布</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="testing.html"><span>上一篇</span><strong>测试与验证</strong></a><a class="next" href="release.html"><span>下一篇</span><strong>版本与发布</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>前沿与趋势 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="optimization.html">优化手册</a>
+<a class="nav-item" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item active" href="frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>进阶</span><span>/</span><strong>前沿与趋势</strong></div>
+        <article class="doc"><h1 id="前沿与趋势哪些会留下哪些只是补丁">前沿与趋势：哪些会留下，哪些只是补丁</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  C[&quot;能力内化&quot;] --&gt; P[&quot;协议与身份&quot;] --&gt; E[&quot;评测与可靠性&quot;] --&gt; L[&quot;长程任务&quot;] --&gt; H[&quot;人机协作&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 前沿不是一串产品名，而是五条结构性变化：能力、协议、评测、长程、交互</p>
+<p>技术演进史告诉我们：很多“技巧”只是当前模型缺陷的补丁。模型升级后，补丁会消失，但<strong>系统问题</strong>会留下。</p>
+<p>这一章不追新闻，而是给一组判断框架，帮你在新概念出现时快速定位：它解决的是能力问题，还是工程问题？</p>
+<h2 id="一正在发生的五个方向">一、正在发生的五个方向</h2>
+<h3 id="1-能力内化模型吃掉外部脚手架">1. 能力内化：模型吃掉外部脚手架</h3>
+<p>过去需要外部系统做的事，正在被模型内化：</p>
+<ul>
+<li>工具调用从“文本解析”变成原生能力。</li>
+<li>长上下文减少了一部分检索需求。</li>
+<li>推理模型承担了更多规划/检查。</li>
+<li>多模态模型直接读截图/文档。</li>
+</ul>
+<p>这带来一个判断：</p>
+<blockquote>
+<p><strong>如果一个技术只是在“绕过模型缺陷”，它大概率是过渡方案；如果它在解决“系统约束”，它会长期存在。</strong></p>
+</blockquote>
+<p>例如：</p>
+<ul>
+<li>为了让模型输出 JSON 而写的复杂正则 → 过渡。</li>
+<li>权限、沙箱、幂等、审计 → 长期。</li>
+<li>用多 Agent 模拟“分工”以弥补单模型上下文不足 → 可能过渡。</li>
+<li>用多 Agent 做并行探索/独立评审 → 长期。</li>
+</ul>
+<h3 id="2-长程任务从分钟到小时">2. 长程任务：从分钟到小时</h3>
+<p>Coding Agent、Deep Research 把任务时长推到小时级。长程任务暴露的新问题：</p>
+<ul>
+<li><strong>状态管理</strong>：进程重启、上下文丢失、任务恢复。</li>
+<li><strong>检查点</strong>：哪些步骤可重放，哪些副作用不可逆。</li>
+<li><strong>预算</strong>：成本随时间线性增长，需要动态控制。</li>
+<li><strong>人机协作</strong>：什么时候该问、该停、该交给人。</li>
+<li><strong>评测</strong>：长轨迹的成功归因困难。</li>
+</ul>
+<p>未来的 Agent 工程会更像<strong>分布式任务系统 + 人机协作界面</strong>，而不是“一个更长的 prompt”。</p>
+<h3 id="3-协议与生态mcpa2aagent-身份">3. 协议与生态：MCP、A2A、Agent 身份</h3>
+<ul>
+<li><strong>MCP</strong> 统一工具/资源接入，降低集成成本。</li>
+<li><strong>A2A</strong> 尝试标准化 Agent 间委派与协作。</li>
+<li><strong>Agent 身份/支付/授权</strong> 仍在早期：Agent 代表谁、能花多少钱、能签什么合同？</li>
+</ul>
+<p>协议解决“怎么连”，但不解决“能不能信”。<strong>身份、权限、责任归属</strong>会是长期议题。</p>
+<h3 id="4-评测与可靠性从-demo-到可运营">4. 评测与可靠性：从 demo 到可运营</h3>
+<p>行业正在从“演示效果”转向：</p>
+<ul>
+<li>可复现的评测集与轨迹评测。</li>
+<li>线上监控、影子流量、金丝雀。</li>
+<li>成本/延迟/成功率的联合优化。</li>
+<li>安全红队与合规审计。</li>
+</ul>
+<p>一个信号：<strong>越来越多团队把“Agent 评测”当成独立基础设施</strong>，而不是附属于模型评测。</p>
+<h3 id="5-交互形态从聊天框到同事">5. 交互形态：从聊天框到“同事”</h3>
+<ul>
+<li>后台任务/定时触发，而不是一问一答。</li>
+<li>多模态输入输出（屏幕、语音、文档）。</li>
+<li>人机协作：审批、接管、纠错、教学。</li>
+<li>Agent 作为“软件的用户”：API/界面需要为 Agent 设计（agent-readable）。</li>
+</ul>
+<p>这会改变产品设计：不再只是“输入框 + 回答”，而是<strong>任务面板、进度、证据、审批、回滚</strong>。</p>
+<h2 id="二仍然没有答案的五个问题">二、仍然没有答案的五个问题</h2>
+<h3 id="1-提示注入能彻底解决吗">1. 提示注入能彻底解决吗？</h3>
+<p>目前没有通用解法。模型难以可靠区分“数据”和“指令”，而 Agent 又必须接触不可信内容。</p>
+<p>短期靠<strong>系统隔离 + 权限 + 人工确认</strong>，长期可能需要模型层面的指令层级/能力控制。不要把“加一句不要执行”当解决方案。</p>
+<h3 id="2-如何可靠地验证开放任务">2. 如何可靠地验证开放任务？</h3>
+<p>代码有测试，数学有答案，但研究、写作、策略建议没有唯一正确答案。</p>
+<p>可能的路径：</p>
+<ul>
+<li>把开放任务拆成可验证的子断言。</li>
+<li>用多源证据/引用核对。</li>
+<li>人类反馈 + rubric。</li>
+<li>过程可信（工具使用、来源）替代结果唯一正确。</li>
+</ul>
+<h3 id="3-记忆能学会而不只是存储吗">3. 记忆能“学会”而不只是“存储”吗？</h3>
+<p>现在的记忆大多是检索式：存进去、取出来。真正的学习需要：</p>
+<ul>
+<li>从经验中提炼可复用策略。</li>
+<li>知道何时该更新/放弃旧策略。</li>
+<li>避免错误经验被固化。</li>
+</ul>
+<p>程序性记忆（技能库）是一个有希望的方向，但如何验证、版本化、迁移仍是问题。</p>
+<h3 id="4-多-agent-的收益能稳定超过成本吗">4. 多 Agent 的收益能稳定超过成本吗？</h3>
+<p>多 Agent 在并行、隔离、独立评审上有价值，但通信损耗、错误传播、责任不清是硬问题。</p>
+<p>未来可能不是“很多通用 Agent 聊天”，而是<strong>少量专用 Agent + 确定性编排 + 清晰契约</strong>。</p>
+<h3 id="5-责任与合规如何落地">5. 责任与合规如何落地？</h3>
+<p>当 Agent 造成损失，谁负责？开发者、部署者、模型提供方、用户？</p>
+<p>可审计的轨迹、权限边界、人工审批、保险与合同，可能比模型能力更决定 Agent 能否进入关键行业。</p>
+<h2 id="三一张炒作-vs-现实对照表">三、一张“炒作 vs 现实”对照表</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>说法</th>
+<th>现实</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“Agent 会自己完成一切”</td>
+<td>开放任务仍需人设定边界、验证、兜底</td>
+</tr>
+<tr>
+<td>“多 Agent 一定更强”</td>
+<td>只在并行/隔离/独立评审时可能更强</td>
+</tr>
+<tr>
+<td>“长上下文取代 RAG”</td>
+<td>长上下文装得下，检索/压缩决定装得对</td>
+</tr>
+<tr>
+<td>“记忆就是向量库”</td>
+<td>写入、冲突、遗忘、隔离才是难点</td>
+</tr>
+<tr>
+<td>“Computer Use 什么都能做”</td>
+<td>慢、脆、难验证，优先 API/DOM</td>
+</tr>
+<tr>
+<td>“提示词工程过时了”</td>
+<td>基础指令设计仍重要，只是不再是全部</td>
+</tr>
+<tr>
+<td>“模型越强，工程越不重要”</td>
+<td>能力越强，权限/验证/可观测越重要</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="四值得跟踪的信号">四、值得跟踪的信号</h2>
+<p>不要追每个新模型，跟踪这些结构性变化：</p>
+<ol>
+<li><strong>模型原生支持的工具/协议</strong>：是否减少了外部胶水？</li>
+<li><strong>上下文与记忆机制</strong>：是否从“检索”走向“可学习的状态”？</li>
+<li><strong>评测标准</strong>：是否从“单轮答案”走向“长程轨迹 + 成本 + 安全”？</li>
+<li><strong>身份与授权</strong>：Agent 是否能安全地代表用户行动？</li>
+<li><strong>运行时隔离</strong>：沙箱是否成为默认基础设施？</li>
+<li><strong>交互范式</strong>：是否从聊天转向任务/审批/协作？</li>
+<li><strong>成本曲线</strong>：推理成本下降后，哪些架构会变得可行？</li>
+</ol>
+<h2 id="五给学习者的建议">五、给学习者的建议</h2>
+<h3 id="1-先把不变的部分学扎实">1. 先把“不变的部分”学扎实</h3>
+<ul>
+<li>循环、状态、预算、终止。</li>
+<li>上下文组装与压缩。</li>
+<li>工具设计、错误契约、权限。</li>
+<li>评测、追踪、失败分类。</li>
+<li>沙箱与最小权限。</li>
+</ul>
+<p>这些不会因为模型升级而失效。</p>
+<h3 id="2-对新框架保持可替换心态">2. 对新框架保持“可替换”心态</h3>
+<p>框架值得学，但要知道它替你做了什么。建议至少手写一次：</p>
+<ul>
+<li>一个 Agent 循环。</li>
+<li>一个工具注册/校验层。</li>
+<li>一个带 trace 的评测 harness。</li>
+<li>一个最小沙箱执行器。</li>
+</ul>
+<h3 id="3-用项目驱动">3. 用项目驱动</h3>
+<p>选一个你真正需要的任务，做完整闭环：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>定义成功 → 建评测 → 做原型 → 找失败 → 按层优化 → 上线监控
+</code></pre></div>
+<p>这比读十个框架文档更能建立判断力。</p>
+<h3 id="4-保持安全直觉">4. 保持安全直觉</h3>
+<p>每加一个工具、一个权限、一个外部内容源，都问：</p>
+<ul>
+<li>最坏情况是什么？</li>
+<li>能不能回滚？</li>
+<li>谁有权批准？</li>
+<li>出了事能不能查到？</li>
+</ul>
+<h2 id="六结语agent-是系统问题">六、结语：Agent 是系统问题</h2>
+<p>Agent 的迷人之处在于“自主”，但它的工程本质是<strong>在不确定性中建立可控性</strong>：</p>
+<ul>
+<li>用循环获得适应力。</li>
+<li>用上下文获得相关性。</li>
+<li>用工具获得行动力。</li>
+<li>用记忆获得连续性。</li>
+<li>用编排获得可控性。</li>
+<li>用沙箱获得安全性。</li>
+<li>用评测获得可改进性。</li>
+</ul>
+<p>模型会继续变强，但这些层不会消失。<strong>把每一层的契约设计好，你就能在模型换代时保留大部分系统价值。</strong></p>
+<p>下一步：<a href="../appendix/glossary.html">术语表</a> 与 <a href="../appendix/reading.html">延伸阅读</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="durability.html"><span>上一篇</span><strong>长任务与可靠执行</strong></a><a class="next" href="../appendix/glossary.html"><span>下一篇</span><strong>术语表</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

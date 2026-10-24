@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段 6 · 意图识别 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item active" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>06 意图识别与路由</strong></div>
+        <article class="doc"><h1 id="阶段-6意图识别与路由">阶段 6：意图识别与路由</h1>
+<blockquote>
+<p>一个“查订单到哪了”的请求，不应该进入一个可以退款、发邮件、改地址的通用 Agent。</p>
+</blockquote>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  Q[&quot;用户请求&quot;] --&gt; G[&quot;API Gateway&quot;]
+  G --&gt; R[&quot;Intent Router&quot;]
+  R --&gt;|&quot;FAQ&quot;| F[&quot;FAQ / 知识库&quot;]
+  R --&gt;|&quot;查询&quot;| W[&quot;固定工作流&quot;]
+  R --&gt;|&quot;探索&quot;| A[&quot;Agent Runtime&quot;]
+  R --&gt;|&quot;高风险/低置信&quot;| H[&quot;人工&quot;]
+  R --&gt;|&quot;不确定&quot;| C[&quot;澄清追问&quot;]
+  A --&gt; M[&quot;Model Gateway&quot;]
+  A --&gt; T[&quot;Tool Gateway&quot;]
+  A --&gt; K[&quot;RAG&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 在 Agent 之前加一层路由：它不回答，只决定“下一步交给谁”</p>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>粗分</strong><p>售前 / 售后 / 技术 / 投诉。</p></div>
+  <div class="flow-step"><b>2</b><strong>细分</strong><p>退款 / 换货 / 物流 / 账户。</p></div>
+  <div class="flow-step"><b>3</b><strong>置信度</strong><p>高置信直接路由，中置信澄清，低置信人工。</p></div>
+  <div class="flow-step"><b>4</b><strong>兜底</strong><p>任何 handler 都可以说“这不像我的问题”。</p></div>
+</div>
+<p>本章另有 2 张图：图 1 置信度分叉，图 2 一次请求的路由时序。</p>
+<h2 id="置信度决定路径">置信度决定路径</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart TD
+  I[&quot;意图 + 置信度&quot;] --&gt; H{&quot;置信度 &gt;= 0.8 ?&quot;}
+  H --&gt;|&quot;是&quot;| R[&quot;路由到 handler&quot;]
+  H --&gt;|&quot;否&quot;| M{&quot;置信度 &gt;= 0.5 ?&quot;}
+  M --&gt;|&quot;是&quot;| C[&quot;澄清 / 通用路径&quot;]
+  M --&gt;|&quot;否&quot;| U[&quot;人工 / 兜底&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 没有“不确定”出口的路由器，会把边界样本硬塞进错误路径</p>
+<h2 id="一次请求的路由时序">一次请求的路由时序</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant U as 用户
+  participant R as Intent Router
+  participant H as Handler
+
+  U-&gt;&gt;R: 请求 + 用户/租户上下文
+  R-&gt;&gt;R: 规则 → 语义/分类 → 置信度
+  alt 高置信
+    R-&gt;&gt;H: 路由到对应 handler
+    H--&gt;&gt;U: 结果
+  else 中置信
+    R--&gt;&gt;U: 澄清问题 / 走通用路径
+  else 低置信或高风险
+    R-&gt;&gt;H: 转人工，附摘要与建议
+  end
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 路由层只做分流；具体处理仍由各自的 handler 完成</p>
+<h2 id="路由方法">路由方法</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>适合</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>规则/关键词</td>
+<td>明确、高频、强合规</td>
+<td>覆盖有限，容易被改写绕过</td>
+</tr>
+<tr>
+<td>嵌入/语义</td>
+<td>同义表达多</td>
+<td>边界样本易混，需要阈值</td>
+</tr>
+<tr>
+<td>小分类模型</td>
+<td>延迟低、成本低、可批量</td>
+<td>需要标注与持续维护</td>
+</tr>
+<tr>
+<td>LLM 分类</td>
+<td>冷启动快、复杂表达</td>
+<td>贵、慢、可能编造</td>
+</tr>
+<tr>
+<td>分层路由</td>
+<td>意图多、可解释</td>
+<td>错误逐层累积</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>实践常用<strong>混合路由</strong>：规则兜底 + 嵌入/小模型主路由 + LLM 处理低置信/长尾。</p>
+</blockquote>
+<h2 id="命中的目的地">命中的目的地</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>目的地</th>
+<th>适合</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>直接回答</td>
+<td>闲聊、简单事实</td>
+<td>最快最便宜</td>
+</tr>
+<tr>
+<td>FAQ / 知识库</td>
+<td>标准问题</td>
+<td>可控、可引用</td>
+</tr>
+<tr>
+<td>固定工作流</td>
+<td>查单、改地址</td>
+<td>稳定、可测试</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>文档型问题</td>
+<td>有证据、可引用</td>
+</tr>
+<tr>
+<td>Agent</td>
+<td>需要探索、多步、工具组合</td>
+<td>灵活、成本高</td>
+</tr>
+<tr>
+<td>人工</td>
+<td>高风险、低置信、投诉</td>
+<td>安全、可兜底</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="它解决了什么又制造了什么">它解决了什么，又制造了什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>解决了</th>
+<th>同时制造了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>简单请求不再走大模型</td>
+<td>误分类：上游错，下游再强也没用</td>
+</tr>
+<tr>
+<td>延迟下降一个数量级</td>
+<td>歧义与多意图：一句话包含两件事</td>
+</tr>
+<tr>
+<td>固定流程比自由循环更稳</td>
+<td>分布漂移：新产品/新政策让旧分类器失效</td>
+</tr>
+<tr>
+<td>高风险请求不走万能 Agent</td>
+<td>路由本身也有延迟</td>
+</tr>
+<tr>
+<td>每条路径可独立监控/评测</td>
+<td>错误级联：路由错 → 检索错 → 回答错</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="优化与度量">优化与度量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>误分类</td>
+<td>分层意图、混合路由、置信度阈值、人工兜底</td>
+</tr>
+<tr>
+<td>多意图</td>
+<td>多标签、意图拆分、先主后次</td>
+</tr>
+<tr>
+<td>分布漂移</td>
+<td>持续采样、标注、回归、监控低置信比例</td>
+</tr>
+<tr>
+<td>路由延迟</td>
+<td>规则优先、缓存、并行、小模型</td>
+</tr>
+<tr>
+<td>错误级联</td>
+<td>handler 内部保留“退出/二次路由”</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>路由准确率</td>
+<td>分到正确 handler 的比例</td>
+</tr>
+<tr>
+<td>低置信率</td>
+<td>需要澄清/兜底的比例</td>
+</tr>
+<tr>
+<td>误路由代价</td>
+<td>按业务成本加权，不只看准确率</td>
+</tr>
+<tr>
+<td>各路径成功率</td>
+<td>不能只看总体</td>
+</tr>
+<tr>
+<td>路由延迟</td>
+<td>P50/P95</td>
+</tr>
+<tr>
+<td>人工接管率</td>
+<td>路由后仍需人工的比例</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="阶段边界">阶段边界</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>够用</th>
+<th>进入下一阶段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>请求类型少、路径清晰</td>
+<td>单 Agent 无法高效处理复杂任务</td>
+</tr>
+<tr>
+<td>一个 Agent 能覆盖大部分场景</td>
+<td>子任务可并行、需要独立评审</td>
+</tr>
+<tr>
+<td>子任务上下文差异不大</td>
+<td>需要不同角色/权限/工具集</td>
+</tr>
+</tbody>
+</table></div>
+<p>下一步：<a href="multi-agent.html">阶段 7：多 Agent 协作</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="rag.html"><span>上一篇</span><strong>05 RAG 与知识层</strong></a><a class="next" href="multi-agent.html"><span>下一篇</span><strong>07 多 Agent 协作</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

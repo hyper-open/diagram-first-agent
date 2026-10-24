@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段 2 · 工具调用 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item active" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>02 工具调用与注册</strong></div>
+        <article class="doc"><h1 id="阶段-2工具调用与注册">阶段 2：工具调用与注册</h1>
+<blockquote>
+<p>把“模型用自然语言说动作”变成“模型返回结构化动作”。</p>
+</blockquote>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  M[&quot;模型&quot;] --&gt;|&quot;tool_calls&quot;| O[&quot;编排器&quot;]
+  O --&gt; R[&quot;Tool Registry&quot;]
+  R --&gt; T[&quot;工具&quot;]
+  T --&gt;|&quot;结果&quot;| O
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 模型只提议；编排器通过 Registry 校验并执行，再把结果转成 tool 消息回传</p>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>模型选工具</strong><p>依据名称、描述、schema 选择要调用的工具。</p></div>
+  <div class="flow-step"><b>2</b><strong>宿主做校验</strong><p>工具是否存在、参数是否合法、有没有权限。</p></div>
+  <div class="flow-step"><b>3</b><strong>Registry 执行</strong><p>超时、错误规范化、结果截断都在这里发生。</p></div>
+  <div class="flow-step"><b>4</b><strong>结果按 ID 回传</strong><p>tool 消息回到模型，进入下一轮决策。</p></div>
+</div>
+<p>本章另有 3 张图：图 1 一次调用的时序，图 2 一个定义的三个消费者，图 3 工具爆炸的三个阶段。</p>
+<h2 id="协议从文本到-json">协议：从文本到 JSON</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ReAct 文本协议</th>
+<th>Function Calling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型输出 <code>Action:</code> / <code>Action Input:</code></td>
+<td>模型返回 <code>tool_calls</code> 数组</td>
+</tr>
+<tr>
+<td>正则解析，格式漂移就崩</td>
+<td>协议由模型/API 保证</td>
+</tr>
+<tr>
+<td>参数靠自然语言拼</td>
+<td>JSON Schema 描述与校验</td>
+</tr>
+<tr>
+<td>一次一个动作</td>
+<td>支持并行 tool calls</td>
+</tr>
+<tr>
+<td>错误是字符串</td>
+<td>可定义结构化错误契约</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;tool_calls&quot;: [
+    {
+      &quot;id&quot;: &quot;call_1&quot;,
+      &quot;name&quot;: &quot;search_web&quot;,
+      &quot;arguments&quot;: &quot;{\&quot;query\&quot;:\&quot;agent gateway\&quot;,\&quot;limit\&quot;:5}&quot;
+    }
+  ]
+}
+</code></pre></div>
+<h2 id="一次工具调用的时序">一次工具调用的时序</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant M as 模型
+  participant O as 编排器
+  participant R as Tool Registry
+  participant T as 工具实现
+
+  M--&gt;&gt;O: tool_calls [{name, arguments}]
+  O-&gt;&gt;O: 工具存在？参数合法？
+  O-&gt;&gt;R: 查找工具 + 权限检查
+  R-&gt;&gt;T: 执行（超时 / 错误规范化）
+  T--&gt;&gt;R: 结果 / 错误
+  R--&gt;&gt;O: {&quot;ok&quot;: true/false, ...}
+  O-&gt;&gt;M: tool 消息（按 tool_call_id）
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 模型不执行任何东西；执行、校验、权限、超时都在宿主侧</p>
+<h2 id="工具定义三个消费者">工具定义：三个消费者</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart TB
+  D[&quot;Tool 定义&lt;br/&gt;name · description · schema&quot;]
+  D --&gt; M[&quot;模型&lt;br/&gt;何时用 / 参数怎么填&quot;]
+  D --&gt; H[&quot;宿主&lt;br/&gt;校验 / 路由 / 超时&quot;]
+  D --&gt; A[&quot;审计 / 计费&lt;br/&gt;谁调了什么 / 多少次&quot;]
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 工具描述不是文档，而是给模型、宿主、审计三方共同消费的接口</p>
+<h2 id="错误也是接口">错误也是接口</h2>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;ok&quot;: false,
+  &quot;error&quot;: {
+    &quot;type&quot;: &quot;invalid_argument&quot;,
+    &quot;message&quot;: &quot;path 必须是工作区内的相对路径&quot;,
+    &quot;retryable&quot;: true,
+    &quot;hint&quot;: &quot;使用相对于仓库根目录的路径，例如 'src/main.py'&quot;,
+    &quot;field&quot;: &quot;path&quot;
+  }
+}
+</code></pre></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>错误类型</th>
+<th>模型应该做什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invalid_argument</code></td>
+<td>修正参数后重试</td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>换路径/换查询，不要原样重试</td>
+</tr>
+<tr>
+<td><code>permission_denied</code></td>
+<td>停止并告知用户，或请求授权</td>
+</tr>
+<tr>
+<td><code>rate_limited</code> / <code>timeout</code></td>
+<td>退避、缩小范围或换方法</td>
+</tr>
+<tr>
+<td><code>conflict</code></td>
+<td>重新读取状态再决定</td>
+</tr>
+<tr>
+<td><code>internal</code></td>
+<td>有限重试，之后降级</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="解决了什么又制造了什么">解决了什么，又制造了什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>解决了</th>
+<th>同时制造了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文本解析脆弱</td>
+<td>工具选择变难：30 个工具时描述会重叠</td>
+</tr>
+<tr>
+<td>参数靠猜</td>
+<td>Schema 成为新的“Prompt”：字段越多越容易填错</td>
+</tr>
+<tr>
+<td>无法并行</td>
+<td>工具数量爆炸：上下文放不下，选择也不准</td>
+</tr>
+<tr>
+<td>工具散落在 prompt</td>
+<td>权限与凭证开始出现：本地函数模型不够用</td>
+</tr>
+<tr>
+<td>错误不可行动</td>
+<td>结果大小失控：整页 HTML / 全量日志撑爆上下文</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="工具爆炸的应对">工具爆炸的应对</h2>
+<p>见<strong>图 3</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[&quot;3 个工具&lt;br/&gt;直接暴露&quot;] --&gt; B[&quot;10+ 个工具&lt;br/&gt;命名空间 / 分组&quot;]
+  B --&gt; C[&quot;100+ 个工具&lt;br/&gt;工具检索 / 按需暴露&quot;]
+  C --&gt; D[&quot;跨团队工具&lt;br/&gt;Tool Gateway&quot;]
+</div>
+<p class="diagram-caption"><strong>图 3</strong> · 工具数量增长时，先做“暴露策略”，再考虑“网关治理”</p>
+<details class="custom-block details"><summary>执行器骨架</summary>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def execute(call, registry, policy, budget):
+    tool = registry.get(call.name)
+    if tool is None:
+        return error(&quot;unknown_tool&quot;, hint=registry.names())
+
+    try:
+        validate(call.arguments, tool.parameters)
+    except ValidationError as exc:
+        return error(&quot;invalid_argument&quot;, str(exc), retryable=True)
+
+    if not policy.allow(call, tool):
+        return error(&quot;permission_denied&quot;, retryable=False)
+
+    if not budget.try_spend(tool):
+        return error(&quot;quota_exceeded&quot;, retryable=False)
+
+    result = run_with_timeout(tool.handler, call.arguments, tool.timeout_s)
+    return normalize(result)
+</code></pre></div>
+</details>
+<h2 id="阶段边界">阶段边界</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>够用</th>
+<th>进入下一阶段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单进程、本地工具、同团队</td>
+<td>工具跨团队/跨网络</td>
+</tr>
+<tr>
+<td>凭证由宿主直接持有</td>
+<td>需要按租户/用户授权与审计</td>
+</tr>
+<tr>
+<td>同步调用、分钟级</td>
+<td>长任务、异步、审批</td>
+</tr>
+<tr>
+<td>粗粒度权限</td>
+<td>需要限流、配额、协议适配</td>
+</tr>
+</tbody>
+</table></div>
+<p>下一步：<a href="model-gateway.html">阶段 3：模型网关与路由</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="react.html"><span>上一篇</span><strong>01 ReAct，最小可用 Agent</strong></a><a class="next" href="model-gateway.html"><span>下一篇</span><strong>03 模型网关与路由</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

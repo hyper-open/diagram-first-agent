@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>优化手册 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item active" href="optimization.html">优化手册</a>
+<a class="nav-item" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>进阶</span><span>/</span><strong>优化手册</strong></div>
+        <article class="doc"><h1 id="优化手册先测量再动手">优化手册：先测量，再动手</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  M[&quot;测量基线&quot;] --&gt; L[&quot;定位瓶颈&quot;] --&gt; C[&quot;单变量改动&quot;] --&gt; R[&quot;回归验证&quot;] --&gt; M
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 优化不是“换个更强的模型”，而是测量—定位—改动—回归的闭环</p>
+<p>Agent 的优化很容易变成“感觉驱动”：换个更大的模型、加一段提示、再上一个 Agent。结果往往是成本翻倍、延迟变差，成功率却没动。</p>
+<p>这一章给一套可执行的顺序：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>定义目标 → 建基线 → 定位瓶颈 → 单变量改动 → 回归验证 → 固化
+</code></pre></div>
+<h2 id="一先定义更好">一、先定义“更好”</h2>
+<p>“更好”至少包含五个维度，且经常互相冲突：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>典型指标</th>
+<th>常见代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>质量</td>
+<td>任务通过率、rubric 分</td>
+<td>更多 token/更强模型</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>每任务成本、每成功任务成本</td>
+<td>小模型/更少步骤可能降质</td>
+</tr>
+<tr>
+<td>延迟</td>
+<td>P50/P95 端到端</td>
+<td>并行/缓存/流式可能增本</td>
+</tr>
+<tr>
+<td>可靠性</td>
+<td><code>pass^k</code>、错误率、方差</td>
+<td>重试/验证增加延迟</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>越权/注入/泄露</td>
+<td>审批/限制降低自动化</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个实用指标：<strong>每次成功任务成本</strong>。</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>cost_per_success = 总成本 / 成功任务数
+</code></pre></div>
+<p>它比“每任务成本”更诚实：一个便宜但经常失败的 Agent，实际更贵。</p>
+<p>同样，延迟要看 <strong>P95</strong>，因为用户感知的是长尾。</p>
+<h2 id="二建立基线">二、建立基线</h2>
+<p>没有基线，一切优化都是玄学。基线至少包含：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;date&quot;: &quot;2026-10-23&quot;,
+  &quot;commit&quot;: &quot;abc123&quot;,
+  &quot;model&quot;: &quot;…&quot;,
+  &quot;prompt_version&quot;: &quot;p7&quot;,
+  &quot;dataset&quot;: &quot;eval-v3 (60 cases)&quot;,
+  &quot;pass@1&quot;: 0.72,
+  &quot;pass^3&quot;: 0.48,
+  &quot;avg_steps&quot;: 8.4,
+  &quot;p50_latency_ms&quot;: 6200,
+  &quot;p95_latency_ms&quot;: 21000,
+  &quot;cost_per_task_usd&quot;: 0.042,
+  &quot;cost_per_success_usd&quot;: 0.058,
+  &quot;tool_error_rate&quot;: 0.11
+}
+</code></pre></div>
+<p>要求：</p>
+<ul>
+<li>固定评测集与评测脚本。</li>
+<li>记录模型/提示/工具/代码版本。</li>
+<li>多次运行，报告方差。</li>
+<li>分桶（任务类型、难度、租户），避免平均值掩盖问题。</li>
+</ul>
+<h2 id="三按层定位瓶颈">三、按层定位瓶颈</h2>
+<p>看到症状，先查对应的层，而不是先改 prompt。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>优先查</th>
+<th>常见根因</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>任务理解错</td>
+<td>L7/L5</td>
+<td>目标/约束不清</td>
+<td>明确成功标准、补上下文</td>
+</tr>
+<tr>
+<td>选错工具</td>
+<td>L4</td>
+<td>描述重叠、工具太多</td>
+<td>改描述、命名空间、工具检索</td>
+</tr>
+<tr>
+<td>参数错</td>
+<td>L4/L2</td>
+<td>schema 复杂、模型弱</td>
+<td>简化 schema、加示例、校验重试</td>
+</tr>
+<tr>
+<td>工具失败后不恢复</td>
+<td>L4/L6</td>
+<td>错误不可行动、无重试策略</td>
+<td>结构化错误、换策略、降级</td>
+</tr>
+<tr>
+<td>越跑越慢/越贵</td>
+<td>L5/L6</td>
+<td>上下文膨胀、循环</td>
+<td>压缩、预算、停滞检测</td>
+</tr>
+<tr>
+<td>长任务中途丢状态</td>
+<td>L6/L3</td>
+<td>无检查点、状态在上下文</td>
+<td>结构化状态、持久化</td>
+</tr>
+<tr>
+<td>结果不可信</td>
+<td>L2/L6</td>
+<td>无验证、模型自评</td>
+<td>外部验证器、证据要求</td>
+</tr>
+<tr>
+<td>线上偶发失败</td>
+<td>L1/L3</td>
+<td>超时、限流、环境漂移</td>
+<td>重试、熔断、快照、监控</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个原则：<strong>先修“信息/契约”问题，再换模型。</strong> 很多“模型不够强”其实是上下文没给对、工具描述不清楚。</p>
+<h2 id="四质量优化">四、质量优化</h2>
+<h3 id="1-把任务收窄">1. 把任务收窄</h3>
+<p>最有效的优化往往不是技术，而是产品：</p>
+<ul>
+<li>明确输入格式与边界。</li>
+<li>把开放式任务改成可验证的子任务。</li>
+<li>对不确定的情况提供“我不知道/需要人工”的出口。</li>
+</ul>
+<p>一个收窄了范围的中等模型，常常胜过一个范围模糊的强模型。</p>
+<h3 id="2-外部验证器">2. 外部验证器</h3>
+<ul>
+<li>代码：跑测试、lint、类型检查。</li>
+<li>数据：schema 校验、业务规则。</li>
+<li>研究：引用可访问、结论被证据支持。</li>
+<li>客服：政策引擎校验。</li>
+</ul>
+<p>验证器要独立于生成器。<strong>让同一个模型“检查自己”通常只能发现表面错误。</strong></p>
+<h3 id="3-分解与并行">3. 分解与并行</h3>
+<ul>
+<li>大任务拆成可独立验证的子任务。</li>
+<li>互不依赖的子任务并行。</li>
+<li>每个子任务有明确输入/输出契约。</li>
+</ul>
+<p>代价：合并逻辑、通信开销、错误传播。只在子任务确实独立时使用。</p>
+<h3 id="4-采样与投票">4. 采样与投票</h3>
+<p>对高不确定性的判断任务，可以多次采样再投票/综合：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>answers = [llm(prompt, temperature=0.7) for _ in range(5)]
+final = majority(answers)  # 或让 judge 综合
+</code></pre></div>
+<p>成本线性上升，适合低并发、高价值的决策点。不要对每个工具调用都投票。</p>
+<h3 id="5-反思的边界">5. 反思的边界</h3>
+<p>反思（让模型检查自己的输出）对<strong>有明确错误信号</strong>的任务有效，比如代码测试失败、schema 不合法。对开放式写作，容易变成“自我表扬”。</p>
+<p>用独立 verifier、测试或人工反馈替代纯自我反思。</p>
+<h2 id="五成本优化">五、成本优化</h2>
+<h3 id="1-算清-token-账">1. 算清 token 账</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>每任务成本 ≈ Σ (输入 token × 单价 + 输出 token × 单价)
+          + 工具/沙箱/检索成本
+          + 重试与失败成本
+</code></pre></div>
+<p>先找最大的项。常见是<strong>输入 token</strong>，而不是输出。</p>
+<h3 id="2-减少上下文">2. 减少上下文</h3>
+<ul>
+<li>工具结果分页/截断，大结果外置。</li>
+<li>历史折叠成结构化状态。</li>
+<li>检索只放高相关片段。</li>
+<li>去掉重复的工具定义和示例。</li>
+</ul>
+<h3 id="3-路由与级联">3. 路由与级联</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def route(task):
+    if task.is_simple:
+        return &quot;small&quot;
+    if task.needs_deep_reasoning:
+        return &quot;reasoning&quot;
+    return &quot;general&quot;
+
+def run(task):
+    model = route(task)
+    result = call(model, task)
+    if not valid(result) and model != &quot;reasoning&quot;:
+        result = call(&quot;reasoning&quot;, task)  # 只对失败样本升级
+    return result
+</code></pre></div>
+<p>关键：<strong>升级要有条件</strong>，否则等于全量用大模型。</p>
+<h3 id="4-缓存">4. 缓存</h3>
+<ul>
+<li>Prompt cache：稳定前缀。</li>
+<li>结果缓存：相同请求（注意时效/权限）。</li>
+<li>工具缓存：相同查询短 TTL。</li>
+<li>语义缓存：慎用，必须加业务键与抽检。</li>
+</ul>
+<h3 id="5-批处理与异步">5. 批处理与异步</h3>
+<ul>
+<li>非实时任务走队列/批处理，利用更低价格。</li>
+<li>并行工具调用减少墙钟时间。</li>
+<li>流式输出改善感知延迟（不减少总成本）。</li>
+</ul>
+<h2 id="六延迟优化">六、延迟优化</h2>
+<p>延迟通常由三部分组成：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>总延迟 = 模型时间 + 工具时间 + 编排/排队时间
+</code></pre></div>
+<h3 id="模型时间">模型时间</h3>
+<ul>
+<li>路由到更小/更快的模型。</li>
+<li>减少输入 token（prefill 更短）。</li>
+<li>限制输出长度/thinking 预算。</li>
+<li>流式返回首 token。</li>
+</ul>
+<h3 id="工具时间">工具时间</h3>
+<ul>
+<li>并行化独立调用。</li>
+<li>设置超时与熔断，避免长尾拖死。</li>
+<li>预热沙箱/连接池。</li>
+<li>缓存高频查询。</li>
+</ul>
+<h3 id="编排时间">编排时间</h3>
+<ul>
+<li>减少不必要的轮次（能一次决策就不要多轮）。</li>
+<li>用确定性代码替代模型调用（分类、格式化、简单规则）。</li>
+<li>异步执行非关键路径（日志、记忆写入）。</li>
+</ul>
+<h2 id="七可靠性优化">七、可靠性优化</h2>
+<h3 id="1-错误分类">1. 错误分类</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>错误</th>
+<th>策略</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>瞬态（超时/429/5xx）</td>
+<td>指数退避重试</td>
+</tr>
+<tr>
+<td>参数错</td>
+<td>回传错误让模型修正，最多 1–2 次</td>
+</tr>
+<tr>
+<td>权限/政策</td>
+<td>不重试，升级/拒绝</td>
+</tr>
+<tr>
+<td>任务理解错</td>
+<td>重新规划或问用户</td>
+</tr>
+<tr>
+<td>环境错</td>
+<td>修复环境/换沙箱</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="2-熔断与降级">2. 熔断与降级</h3>
+<p>当下游持续失败时，继续重试只会放大故障：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>连续 N 次失败 → 打开熔断 → 快速失败/走备用
+冷却一段时间 → 半开试探 → 恢复
+</code></pre></div>
+<p>降级路径要提前设计：换模型、换工具、返回部分结果、转人工。</p>
+<h3 id="3-检查点与幂等">3. 检查点与幂等</h3>
+<p>长任务要能恢复：</p>
+<ul>
+<li>每步后持久化状态。</li>
+<li>写操作带幂等键。</li>
+<li>失败重放时跳过已完成步骤。</li>
+</ul>
+<h3 id="4-减少方差">4. 减少方差</h3>
+<ul>
+<li>降低 temperature（但不保证确定）。</li>
+<li>固定工具版本/环境。</li>
+<li>对关键决策做多次采样 + 一致性检查。</li>
+<li>记录模型版本，变更时跑回归。</li>
+</ul>
+<h2 id="八安全与体验的优化">八、安全与体验的优化</h2>
+<ul>
+<li>默认只读，写操作分级授权。</li>
+<li>高风险动作 dry-run + 人工确认。</li>
+<li>输出前做敏感信息检测。</li>
+<li>失败时给用户<strong>可行动的下一步</strong>，而不是“出错了”。</li>
+<li>提供“为什么这么做”的证据/引用。</li>
+</ul>
+<p>安全措施会增加摩擦，要用风险分级来平衡：低风险自动化，高风险人工。</p>
+<h2 id="九一次完整的优化实验">九、一次完整的优化实验</h2>
+<p>假设基线：<code>pass@1=72%</code>，<code>cost_per_success=$0.058</code>，<code>P95=21s</code>。目标是降本不降质。</p>
+<h3 id="实验-1上下文压缩">实验 1：上下文压缩</h3>
+<ul>
+<li>改动：工具结果超过 2KB 时截断为摘要 + 引用。</li>
+<li>预期：输入 token 下降，成功率不变或略升。</li>
+<li>结果：<code>cost_per_success</code> 降到 <code>$0.041</code>，<code>pass@1=73%</code>，<code>P95=18s</code>。</li>
+<li>结论：保留。</li>
+</ul>
+<h3 id="实验-2小模型路由">实验 2：小模型路由</h3>
+<ul>
+<li>改动：分类/抽取类子任务走小模型。</li>
+<li>结果：成本再降 15%，但 <code>pass@1</code> 降到 69%（路由错分）。</li>
+<li>分析：路由置信度阈值太低。</li>
+<li>调整：只在高置信时路由，低置信走通用模型。</li>
+<li>结果：<code>pass@1=72%</code>，成本降 10%。</li>
+<li>结论：保留，但监控路由错分率。</li>
+</ul>
+<h3 id="实验-3并行工具调用">实验 3：并行工具调用</h3>
+<ul>
+<li>改动：读文件/搜索并行。</li>
+<li>结果：<code>P95</code> 降到 13s，成本不变。</li>
+<li>风险：写操作不能盲目并行。</li>
+<li>结论：只对只读工具启用。</li>
+</ul>
+<p>每次只改一个变量，记录“什么没变、什么变差了”。<strong>负结果也是结果。</strong></p>
+<h2 id="十常见反模式">十、常见反模式</h2>
+<div class="custom-block danger"><p class="custom-block-title">反模式一：Prompt 越加越长</p>
+<p>用大段提示修补个别失败，最终上下文膨胀、指令冲突、成本上升。优先改结构、工具和验证。</p>
+</div>
+<div class="custom-block danger"><p class="custom-block-title">反模式二：一出问题就上多 Agent</p>
+<p>多 Agent 增加通信和错误传播。先问：单 Agent + 更好的工具/上下文能否解决？</p>
+</div>
+<div class="custom-block danger"><p class="custom-block-title">反模式三：无差别重试</p>
+<p>对语义错误重试只会重复烧钱。先分类错误。</p>
+</div>
+<div class="custom-block danger"><p class="custom-block-title">反模式四：只测成功案例</p>
+<p>评测集要包含边界、对抗、缺信息、工具失败。否则线上会教你做人。</p>
+</div>
+<div class="custom-block danger"><p class="custom-block-title">反模式五：语义缓存当万能药</p>
+<p>相似问题答案可能不同，尤其在政策、时效、权限场景。必须加业务键与抽检。</p>
+</div>
+<div class="custom-block danger"><p class="custom-block-title">反模式六：用平均值掩盖长尾</p>
+<p>P95 延迟、失败率、最差任务类型，才是用户体验的真相。</p>
+</div>
+<h2 id="十一优化检查清单">十一、优化检查清单</h2>
+<ul>
+<li>[ ] 有固定评测集和基线（质量/成本/延迟/可靠性）。</li>
+<li>[ ] 指标分桶，不只看平均值。</li>
+<li>[ ] 知道最大的成本项和延迟项。</li>
+<li>[ ] 先修信息/契约，再换模型。</li>
+<li>[ ] 每次只改一个变量，有回归对比。</li>
+<li>[ ] 有失败分类和回归用例。</li>
+<li>[ ] 有降级、熔断、人工升级路径。</li>
+<li>[ ] 高风险动作有权限与审批。</li>
+<li>[ ] 改动可回滚（模型/提示/工具独立版本）。</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你的 Agent 建一份基线报告，包含 <code>cost_per_success</code> 和 <code>pass^3</code>。</li>
+<li>选一个失败案例，按“症状 → 层 → 根因 → 改动 → 验证”写一份优化记录。</li>
+<li>设计一个路由策略：什么条件下升级到大模型？如何衡量路由错分率？</li>
+</ol>
+<p>下一步：<a href="frontier.html">前沿与趋势</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="../practice/ux.html"><span>上一篇</span><strong>交互与信任设计</strong></a><a class="next" href="durability.html"><span>下一篇</span><strong>长任务与可靠执行</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>技术演进史 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="loop.html">核心循环</a>
+<a class="nav-item" href="architecture.html">七层职责模型</a>
+<a class="nav-item active" href="evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>基础参考</span><span>/</span><strong>技术演进史</strong></div>
+        <article class="doc"><h1 id="技术演进史能力问题与补偿">技术演进史：能力、问题与补偿</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  P[&quot;Prompt&quot;] --&gt; C[&quot;CoT&quot;] --&gt; R[&quot;ReAct&quot;] --&gt; F[&quot;Function Calling&quot;] --&gt; G[&quot;网关&quot;] --&gt; M[&quot;MCP / 电脑操作&quot;] --&gt; L[&quot;长程 Agent&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 技术演进不是替代，而是“能力跃迁 → 新失败模式 → 工程补偿”的叠加</p>
+<div class="custom-block tip"><p class="custom-block-title">阅读位置</p>
+<p>本篇是<strong>技术史视角</strong>，按时间线梳理能力与问题。如果你更关心“架构怎么一步步长出来”，请读<a href="../evolution/overview.html">架构演进主线</a>。</p>
+</div>
+<p>Agent 的演进不是一条“模型越来越强”的直线，而是一连串<strong>能力跃迁 → 新失败模式 → 工程补偿</strong>的循环。理解这条主线，比记住框架名字有用得多。</p>
+<p>下面这张表是全书的主干，后文会逐段展开。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>大致时间</th>
+<th>驱动力</th>
+<th>代表技术</th>
+<th>解决了什么</th>
+<th>制造了什么新问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>提示工程</td>
+<td>2020–2022</td>
+<td>大模型具备上下文学习</td>
+<td>Few-shot、角色提示、CoT</td>
+<td>不训练也能做任务</td>
+<td>一次性生成、不可验证、不会用外部世界</td>
+</tr>
+<tr>
+<td>推理—行动</td>
+<td>2022–2023</td>
+<td>需要 grounding</td>
+<td>ReAct、MRKL、Toolformer</td>
+<td>把推理与工具交替起来</td>
+<td>文本协议脆弱、循环失控、成本上升</td>
+</tr>
+<tr>
+<td>工具调用标准化</td>
+<td>2023</td>
+<td>应用落地</td>
+<td>Function Calling、JSON Schema、并行调用</td>
+<td>决策与执行解耦、解析稳定</td>
+<td>工具选择/参数错误、权限与注入</td>
+</tr>
+<tr>
+<td>自主 Agent 热潮</td>
+<td>2023</td>
+<td>“让 AI 自己干活”</td>
+<td>AutoGPT、BabyAGI、Voyager</td>
+<td>端到端自主、技能积累</td>
+<td>空转、烧钱、无终止、难评测</td>
+</tr>
+<tr>
+<td>检索与记忆</td>
+<td>2023–2024</td>
+<td>知识时效与个性化</td>
+<td>RAG、Agentic RAG、MemGPT</td>
+<td>外部知识、跨轮记忆</td>
+<td>检索噪声、记忆污染、隐私</td>
+</tr>
+<tr>
+<td>多 Agent</td>
+<td>2023–2024</td>
+<td>分工与并行</td>
+<td>AutoGen、MetaGPT、CAMEL</td>
+<td>角色协作、并行探索</td>
+<td>通信损耗、错误传播、协调复杂</td>
+</tr>
+<tr>
+<td>长上下文与上下文工程</td>
+<td>2024</td>
+<td>窗口变大但注意力有限</td>
+<td>长上下文模型、压缩、缓存</td>
+<td>更多信息可入上下文</td>
+<td>中间遗忘、成本、上下文腐烂</td>
+</tr>
+<tr>
+<td>协议与具身</td>
+<td>2024–2025</td>
+<td>工具生态与真实世界操作</td>
+<td>MCP、Computer Use、A2A</td>
+<td>标准化接入、操作界面</td>
+<td>安全边界、延迟、可靠性</td>
+</tr>
+<tr>
+<td>推理模型与长程任务</td>
+<td>2025–</td>
+<td>测试时计算、可验证奖励</td>
+<td>o 系列、R1、Deep Research、Coding Agent</td>
+<td>多步推理、长任务</td>
+<td>成本、延迟、评测困难、过度自信</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>一个反复出现的规律：<strong>每一代技术都把“智能”往前推一步，同时把“工程复杂度”转移到新的地方。</strong> ReAct 把复杂度从“写死流程”转移到“解析与循环控制”；Function Calling 把复杂度从“解析文本”转移到“工具设计与权限”；长上下文把复杂度从“检索”转移到“上下文选择与压缩”。</p>
+</blockquote>
+<h2 id="1-提示工程把模型当函数">1. 提示工程：把模型当函数</h2>
+<p>2020 年 GPT-3 展示了上下文学习：给几个例子，模型就能完成新任务。于是“提示词工程”成为第一代方法论：</p>
+<ul>
+<li>角色设定（“你是一个资深工程师”）</li>
+<li>Few-shot 示例</li>
+<li>输出格式约束</li>
+<li>思维链（Chain-of-Thought, CoT）：让模型先写推理过程，再给答案</li>
+</ul>
+<p>CoT 的意义不在于“让模型解释自己”，而在于<strong>把更多计算放到生成过程里</strong>。对于多步推理，直接输出答案容易跳步；展开中间步骤能显著提升正确率。</p>
+<p>但这一代系统有一个根本限制：<strong>一次生成，没有外部反馈</strong>。模型不知道计算结果对不对，不能查最新资料，也不能在执行后修正。</p>
+<h3 id="仍然有效的遗产">仍然有效的遗产</h3>
+<ul>
+<li>明确的角色、目标、约束、输出格式。</li>
+<li>用示例定义“好答案长什么样”。</li>
+<li>对复杂任务要求分步思考（但对推理模型要谨慎，见下文）。</li>
+</ul>
+<h3 id="遗留问题">遗留问题</h3>
+<ul>
+<li>推理过程可能是“事后编造”的，不忠实于实际计算。</li>
+<li>没有验证机制，错误无法被系统发现。</li>
+<li>上下文里放不下多少示例，示例选择本身成为问题。</li>
+</ul>
+<h2 id="2-react把想和做交替起来">2. ReAct：把“想”和“做”交替起来</h2>
+<p>2022 年的 ReAct（Reason + Act）是 Agent 史上的关键一步。它让模型输出交替的推理轨迹和动作：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>Thought: 我需要查一下这个人的出生年份。
+Action: search(&quot;Ada Lovelace birth year&quot;)
+Observation: 1815
+Thought: 还需要确认她去世的年份。
+Action: search(&quot;Ada Lovelace death year&quot;)
+Observation: 1852
+Thought: 现在可以计算年龄了。
+Action: calculate(&quot;1852 - 1815&quot;)
+Observation: 37
+Final Answer: 37 岁
+</code></pre></div>
+<p>相比 CoT，ReAct 多了两样东西：</p>
+<ol>
+<li><strong>外部观察</strong>：推理不再只依赖参数记忆，可以被环境“纠偏”。</li>
+<li><strong>动作选择</strong>：模型可以根据中间结果决定下一步，而不是一次性规划完。</li>
+</ol>
+<p>这带来了两个直接好处：减少事实幻觉（有检索依据）、提升复杂任务完成率（可以探索）。</p>
+<h3 id="react-的工程债">ReAct 的工程债</h3>
+<p>原始 ReAct 用文本标记约定动作。工程上很快遇到：</p>
+<ul>
+<li><strong>格式漂移</strong>：模型多写一句解释，解析器就挂了。</li>
+<li><strong>参数错误</strong>：JSON 缺引号、类型不对、字段名编造。</li>
+<li><strong>循环失控</strong>：动作失败后重复同样的动作。</li>
+<li><strong>观察污染</strong>：工具返回的网页内容里包含“忽略之前的指令”，模型可能照做。</li>
+<li><strong>无法并行</strong>：一次只能一个动作，延迟高。</li>
+</ul>
+<p>这些问题催生了下一代：把动作协议标准化。</p>
+<h2 id="3-function-calling把动作变成结构化接口">3. Function Calling：把“动作”变成结构化接口</h2>
+<p>2023 年，主流模型开始原生支持工具调用：开发者用 JSON Schema 描述工具，模型返回结构化的 <code>tool_calls</code>，由宿主程序执行。</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;name&quot;: &quot;search&quot;,
+  &quot;description&quot;: &quot;Search the web and return top results&quot;,
+  &quot;parameters&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;properties&quot;: {
+      &quot;query&quot;: { &quot;type&quot;: &quot;string&quot; },
+      &quot;limit&quot;: { &quot;type&quot;: &quot;integer&quot;, &quot;default&quot;: 5 }
+    },
+    &quot;required&quot;: [&quot;query&quot;]
+  }
+}
+</code></pre></div>
+<p>这解决了 ReAct 最痛的解析问题，并带来：</p>
+<ul>
+<li><strong>决策与执行解耦</strong>：模型只提议，宿主负责校验、授权、执行。</li>
+<li><strong>并行调用</strong>：一次返回多个互不依赖的工具调用。</li>
+<li><strong>可约束的输出</strong>：schema 让参数类型和必填项可检查。</li>
+</ul>
+<h3 id="新问题工具成为新的prompt">新问题：工具成为新的“Prompt”</h3>
+<p>工具的名字、描述、参数设计，直接决定模型会不会选、选得对不对。工具层的设计质量，开始比 Prompt 技巧更重要。</p>
+<p>同时，工具调用引入了新的攻击面：</p>
+<ul>
+<li>模型被诱导调用危险工具（删库、转账）。</li>
+<li>工具返回的内容包含注入指令。</li>
+<li>工具权限过大，Agent 成为“ confused deputy ”。</li>
+<li>工具描述冲突，模型随机选一个。</li>
+</ul>
+<blockquote>
+<p>Function Calling 没有让 Agent 更“聪明”，它让 Agent 更<strong>可工程化</strong>。智能仍然来自模型、上下文和工具设计的组合。</p>
+</blockquote>
+<h2 id="4-自主-agent-热潮能力演示与工程现实">4. 自主 Agent 热潮：能力演示与工程现实</h2>
+<p>2023 年春，AutoGPT、BabyAGI 一类项目展示了“给一个目标，Agent 自己拆解、执行、反思”的愿景。它们通常包含：</p>
+<ul>
+<li>目标队列</li>
+<li>任务规划</li>
+<li>工具使用（搜索、写文件、执行代码）</li>
+<li>记忆（向量库）</li>
+<li>自我反思</li>
+</ul>
+<p>演示很震撼，但生产落地暴露了大量问题：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无限循环、重复劳动</td>
+<td>没有可靠的完成判定与无进展检测</td>
+</tr>
+<tr>
+<td>成本失控</td>
+<td>每步都调用大模型，历史全量拼接</td>
+</tr>
+<tr>
+<td>越走越偏</td>
+<td>错误没有验证，计划不能修正</td>
+</tr>
+<tr>
+<td>结果不可复现</td>
+<td>温度、工具状态、外部环境都在变</td>
+</tr>
+<tr>
+<td>无法评测</td>
+<td>任务开放，成功标准模糊</td>
+</tr>
+</tbody>
+</table></div>
+<p>这一波热潮的最大遗产，不是那些项目本身，而是<strong>失败模式清单</strong>：终止条件、预算、验证、状态、可观测性，后来都成了 Agent 工程的基本配置。</p>
+<p>同一时期，Voyager 在 Minecraft 中展示了另一条路：<strong>技能库 + 自动课程 + 迭代提示</strong>。它把“会做什么”沉淀为可复用的代码技能，而不是每轮重新推理。这预示了后来的“程序性记忆”和“技能”方向。</p>
+<h2 id="5-rag-与记忆把外部世界接进来">5. RAG 与记忆：把外部世界接进来</h2>
+<p>RAG（Retrieval-Augmented Generation）最早在 2020 年提出，2023 年随着向量数据库流行成为应用标配。基本流程：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>文档 → 切分 → 向量化 → 索引
+查询 → 向量化 → 召回 top-k → 重排 → 拼进上下文 → 生成
+</code></pre></div>
+<p>RAG 解决了模型知识过时、无法访问私有数据的问题，但也带来新问题：</p>
+<ul>
+<li>切分破坏语义，召回片段缺少上下文。</li>
+<li>相似度不等于相关性，top-k 里全是噪声。</li>
+<li>多跳问题需要多次检索，单次 RAG 不够。</li>
+<li>检索结果可能包含过时/冲突/恶意内容。</li>
+</ul>
+<p>于是出现 <strong>Agentic RAG</strong>：把检索变成 Agent 的一个工具，由模型决定何时查、查什么、是否继续查。它更灵活，但也更慢、更贵，且可能“查上瘾”。</p>
+<p>记忆方向则从“向量库=记忆”逐渐细化：</p>
+<ul>
+<li><strong>工作记忆</strong>：当前任务的临时状态。</li>
+<li><strong>情景记忆</strong>：过去发生过什么（轨迹、结果）。</li>
+<li><strong>语义记忆</strong>：稳定事实与偏好。</li>
+<li><strong>程序记忆</strong>：可复用的技能/代码。</li>
+</ul>
+<p>MemGPT（2023）借鉴操作系统虚拟内存，把上下文窗口当“内存”、外部存储当“磁盘”，通过换入换出管理长对话。这个类比很有启发性，但工程上真正难的是<strong>写什么、何时写、如何冲突消解</strong>，而不是存储介质。</p>
+<h2 id="6-多-agent分工的诱惑">6. 多 Agent：分工的诱惑</h2>
+<p>多 Agent 的动机很自然：一个人做不完，就组个团队。常见角色包括：规划者、执行者、评审者、检索者、代码审查者。</p>
+<p>代表框架：CAMEL（角色扮演）、AutoGen（对话式多 Agent）、MetaGPT（SOP 分工）、ChatDev（软件公司模拟）。</p>
+<p>它确实适合：</p>
+<ul>
+<li>可并行的子任务（多文件修改、多源研究）。</li>
+<li>需要独立视角的任务（生成者 + 评审者）。</li>
+<li>需要隔离上下文的场景（每个子 Agent 只看自己那块）。</li>
+</ul>
+<p>但多 Agent 不是免费午餐：</p>
+<ul>
+<li><strong>通信损耗</strong>：每个 Agent 都要花 token 理解别人。</li>
+<li><strong>错误传播</strong>：上游的错误假设被下游当真。</li>
+<li><strong>责任不清</strong>：出问题不知道是哪个 Agent 的锅。</li>
+<li><strong>协调死锁</strong>：互相等待、重复劳动。</li>
+<li><strong>评测困难</strong>：轨迹组合爆炸。</li>
+</ul>
+<blockquote>
+<p>经验顺序：<strong>单 Agent + 好工具 → 单 Agent + 显式工作流 → 多 Agent</strong>。不要反过来。</p>
+</blockquote>
+<h2 id="7-长上下文与上下文工程">7. 长上下文与上下文工程</h2>
+<p>2024 年，上下文窗口从 8K/32K 快速推到 200K、1M 甚至更大。直觉是“把一切都塞进去”，但很快发现：</p>
+<ul>
+<li><strong>中间遗忘</strong>（lost in the middle）：关键信息在长上下文中间时召回率下降。</li>
+<li><strong>上下文腐烂</strong>（context rot）：无关信息越多，模型越容易被干扰。</li>
+<li><strong>成本与延迟</strong>：长上下文意味着更高的 token 费用和更慢的首 token。</li>
+<li><strong>注意力稀释</strong>：模型不是数据库，不能假设它精确检索了每个 token。</li>
+</ul>
+<p>于是关键词从“提示词工程”转向“<strong>上下文工程</strong>”（context engineering）：把上下文当成有限资源，决定放什么、按什么顺序、何时压缩、如何隔离。</p>
+<p>这也解释了为什么“长上下文”没有取代 RAG，而是与之融合：<strong>长上下文负责“装得下”，检索与压缩负责“装得对”</strong>。</p>
+<h2 id="8-mcpcomputer-use-与协议化">8. MCP、Computer Use 与协议化</h2>
+<h3 id="mcpmodel-context-protocol">MCP（Model Context Protocol）</h3>
+<p>2024 年底，Anthropic 提出 MCP，用统一的客户端—服务器协议把工具、资源、提示模板暴露给模型应用。它常被类比为“AI 应用的 USB-C”。</p>
+<p>MCP 解决的是<strong>生态碎片化</strong>：每个应用都要为每个工具写适配器。有了协议，工具提供方写一次 Server，多个客户端都能用。</p>
+<p>但它不解决：工具设计质量、权限模型、结果可靠性、注入防护。协议只规定“怎么连”，不规定“连上之后是否安全”。</p>
+<h3 id="computer-use">Computer Use</h3>
+<p>2024 年，模型开始能看屏幕截图、移动鼠标、点击、输入。这把 Agent 的动作空间从“API”扩展到“任何有界面的软件”。</p>
+<p>优势：不需要对方提供 API，能操作遗留系统。
+代价：<strong>极慢、极脆、极难验证</strong>。坐标偏移、弹窗、加载延迟、分辨率差异都会导致失败。更严重的是，它把注入攻击的后果从“读错数据”扩展到“点错按钮/转错账”。</p>
+<h3 id="a2aagent-to-agent">A2A（Agent-to-Agent）</h3>
+<p>2025 年出现的 Agent 间协作协议，试图标准化“Agent 如何发现彼此、委派任务、交换结果”。它解决的是一组 Agent 跨系统协作的接口问题，但组织边界、信任、计费、责任归属仍然没有标准答案。</p>
+<h2 id="9-推理模型与长程任务">9. 推理模型与长程任务</h2>
+<p>2024 年底到 2025 年，推理模型（o 系列、R1 等）把“测试时计算”变成一等公民：模型在回答前可以生成很长的内部推理，用更多算力换正确率。</p>
+<p>对 Agent 的影响：</p>
+<ul>
+<li><strong>规划能力提升</strong>：更愿意分解任务、检查假设。</li>
+<li><strong>单步更贵更慢</strong>：需要重新设计预算和超时。</li>
+<li><strong>不一定需要显式 CoT</strong>：对推理模型过度提示“逐步思考”可能适得其反。</li>
+<li><strong>可验证性更重要</strong>：推理再长，也不能代替外部验证。</li>
+</ul>
+<p>同期，Deep Research、Coding Agent 等长程任务成为主战场。它们的特点是：</p>
+<ul>
+<li>任务时长从分钟级到小时级。</li>
+<li>需要多轮工具调用、文件操作、状态恢复。</li>
+<li>成功标准相对可验证（引用、测试、构建）。</li>
+<li>对上下文管理、检查点、沙箱、评测提出更高要求。</li>
+</ul>
+<p>这也让“Agent 工程”从 Prompt 技巧，变成真正的<strong>分布式系统 + 人机交互 + 安全</strong>问题。</p>
+<h2 id="技术演进的四个判断">技术演进的四个判断</h2>
+<p>面对一个“新 Agent 技术”，可以用四个问题判断它是否值得投入：</p>
+<ol>
+<li><strong>它解决的是模型能力问题，还是工程问题？</strong>
+模型能力会随版本迭代消失，工程问题不会。</li>
+<li><strong>它把复杂度转移到了哪里？</strong>
+没有免费的抽象。看它是否让调试、评测、安全变得更难。</li>
+<li><strong>它是否依赖当前模型的某个缺陷？</strong>
+比如“用特殊格式逼模型输出 JSON”。模型升级后，这类技巧可能失效。</li>
+<li><strong>它有没有可验证的收益？</strong>
+在固定评测集上，质量/成本/延迟是否真的变好？</li>
+</ol>
+<h2 id="练习">练习</h2>
+<ol>
+<li>选一个你熟悉的 Agent 框架，指出它主要解决了演进史中的哪个问题，又引入了什么新问题。</li>
+<li>比较 ReAct 与 Function Calling 的错误处理方式，列出至少三个差异。</li>
+<li>思考：如果上下文窗口无限大且免费，RAG 和记忆系统还需要吗？为什么？</li>
+</ol>
+<p>下一步：进入<a href="../layers/model.html">模型层</a>，开始逐层剖析。</p>
+</article>
+        <nav class="pager"><a class="prev" href="architecture.html"><span>上一篇</span><strong>七层职责模型</strong></a><a class="next" href="../layers/model.html"><span>下一篇</span><strong>模型层</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

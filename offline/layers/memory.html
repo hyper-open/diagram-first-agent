@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>记忆层 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item active" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>记忆层</strong></div>
+        <article class="doc"><h1 id="记忆层让-agent-不再每次都重新认识你">记忆层：让 Agent 不再“每次都重新认识你”</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  T[&quot;轨迹&quot;] --&gt; W[&quot;写入策略&quot;]
+  W --&gt; S[(记忆库)]
+  S --&gt; R[&quot;检索 / 排序&quot;]
+  R --&gt; C[&quot;上下文&quot;]
+  S --&gt; F[&quot;整合 / 遗忘&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 记忆的难点不在“存”，而在写什么、怎么取、何时忘</p>
+<p>上下文窗口是短期工作台，记忆是长期仓库。但“接一个向量库”不等于有了记忆。真正的记忆系统要回答四个问题：</p>
+<ol>
+<li><strong>写什么</strong>：哪些信息值得从轨迹里沉淀？</li>
+<li><strong>怎么写</strong>：如何结构化、去重、标注来源和置信度？</li>
+<li><strong>怎么取</strong>：什么时候取、取多少、如何排序？</li>
+<li><strong>怎么忘</strong>：何时过期、如何纠错、如何满足删除请求？</li>
+</ol>
+<h2 id="一四种记忆">一、四种记忆</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>内容</th>
+<th>例子</th>
+<th>生命周期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工作记忆</td>
+<td>当前任务状态</td>
+<td>计划、进度、当前错误</td>
+<td>单次任务</td>
+</tr>
+<tr>
+<td>情景记忆</td>
+<td>发生过什么</td>
+<td>“上次部署失败是因为迁移脚本”</td>
+<td>天/周</td>
+</tr>
+<tr>
+<td>语义记忆</td>
+<td>稳定事实与偏好</td>
+<td>“用户偏好 TypeScript”“项目用 pnpm”</td>
+<td>月/永久</td>
+</tr>
+<tr>
+<td>程序记忆</td>
+<td>可复用的做法</td>
+<td>技能、代码片段、SOP</td>
+<td>长期，需版本化</td>
+</tr>
+</tbody>
+</table></div>
+<p>多数产品只做了“情景记忆的原始日志 + 向量检索”，缺少语义提炼和程序记忆，所以看起来“记得”，但不好用。</p>
+<h2 id="二记忆系统的五个组件">二、记忆系统的五个组件</h2>
+<h3 id="1-写入从全存到精选">1. 写入：从“全存”到“精选”</h3>
+<p>不要存原始对话。原始对话噪声大、重复多、检索效果差。写入前做抽取：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class MemoryItem:
+    id: str
+    kind: str            # fact / preference / episode / procedure
+    content: str         # 简洁、自包含
+    source: str          # 会话/工具/文档 URL
+    confidence: float    # 0-1
+    created_at: datetime
+    updated_at: datetime
+    expires_at: datetime | None
+    tags: list[str]
+    supersedes: str | None   # 替代了哪条旧记忆
+</code></pre></div>
+<p>写入候选：</p>
+<ul>
+<li>用户明确说“记住/以后都……”的偏好。</li>
+<li>稳定的项目事实（技术栈、目录约定、负责人）。</li>
+<li>重要决策及其理由。</li>
+<li>失败教训（“这个 API 需要先初始化”）。</li>
+<li>可复用步骤（程序记忆）。</li>
+</ul>
+<p>写入前检查：</p>
+<ul>
+<li><strong>是否已有相同/冲突记忆？</strong> 有则更新或标记替代。</li>
+<li><strong>是否只是一次性上下文？</strong> 是则不写。</li>
+<li><strong>来源可靠吗？</strong> 模型推测的内容不应写成事实。</li>
+<li><strong>是否包含敏感信息？</strong> 需要脱敏或拒绝写入。</li>
+</ul>
+<h3 id="2-存储不止向量">2. 存储：不止向量</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>存储</th>
+<th>适合</th>
+<th>不适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>关系库</td>
+<td>结构化事实、偏好、权限</td>
+<td>语义相似检索</td>
+</tr>
+<tr>
+<td>向量库</td>
+<td>语义召回</td>
+<td>精确匹配、频繁更新</td>
+</tr>
+<tr>
+<td>关键词索引</td>
+<td>名称、ID、错误码</td>
+<td>同义表达</td>
+</tr>
+<tr>
+<td>图数据库</td>
+<td>实体关系、多跳</td>
+<td>简单场景，运维重</td>
+</tr>
+<tr>
+<td>文件/对象存储</td>
+<td>原始轨迹、大附件</td>
+<td>在线检索</td>
+</tr>
+</tbody>
+</table></div>
+<p>生产系统常用<strong>混合存储</strong>：结构化字段过滤 + 向量召回 + 关键词兜底。</p>
+<h3 id="3-检索相关性不是唯一维度">3. 检索：相关性不是唯一维度</h3>
+<p>一个实用的打分（参考 Generative Agents 的思路）：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>score = w1 × 相关性(query, memory)
+      + w2 × 时效性(recency)
+      + w3 × 重要性(importance)
+      - w4 × 冗余度
+</code></pre></div>
+<ul>
+<li><strong>相关性</strong>：向量相似度 + 关键词匹配。</li>
+<li><strong>时效性</strong>：越新越高，但稳定事实不应被时间惩罚。</li>
+<li><strong>重要性</strong>：用户明确要求记住的、影响决策的，权重更高。</li>
+<li><strong>冗余度</strong>：避免返回 5 条几乎一样的记忆。</li>
+</ul>
+<p>检索后还要做：</p>
+<ul>
+<li>按类型分组（事实/偏好/情景）。</li>
+<li>冲突检测（同一实体不同值）。</li>
+<li>标注来源与时间。</li>
+<li>限制注入数量（通常 3–8 条）。</li>
+</ul>
+<h3 id="4-整合从情景到语义">4. 整合：从情景到语义</h3>
+<p>记忆不是只增不减。需要定期“睡眠”：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>多条情景记忆 → 摘要 → 抽取稳定事实 → 更新语义记忆
+             → 归纳步骤 → 形成程序记忆
+             → 删除过时/低价值条目
+</code></pre></div>
+<p>整合的触发方式：</p>
+<ul>
+<li>任务结束后。</li>
+<li>每 N 轮/每天。</li>
+<li>存储超过阈值。</li>
+<li>检测到冲突时。</li>
+</ul>
+<p>整合本身也可能出错：摘要失真、错误归因。保留原始来源，允许回溯。</p>
+<h3 id="5-遗忘记忆系统的必修课">5. 遗忘：记忆系统的必修课</h3>
+<p>不遗忘会带来：</p>
+<ul>
+<li>检索噪声越来越大。</li>
+<li>过时信息污染决策。</li>
+<li>隐私与合规风险。</li>
+<li>存储成本上升。</li>
+</ul>
+<p>遗忘策略：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TTL 过期</td>
+<td>临时状态、时效性信息</td>
+</tr>
+<tr>
+<td>重要性衰减</td>
+<td>长期未使用的情景记忆</td>
+</tr>
+<tr>
+<td>显式删除</td>
+<td>用户要求“忘掉”</td>
+</tr>
+<tr>
+<td>替代</td>
+<td>新事实覆盖旧事实，保留历史版本</td>
+</tr>
+<tr>
+<td>归档</td>
+<td>不参与检索，但可审计</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>“用户要求删除”必须是硬删除或可验证的脱敏，不能只是从检索里隐藏。</p>
+</blockquote>
+<p>删除不只是删一条记录：向量索引、缓存、备份、日志都可能留有副本，执行细节见<a href="privacy.html">隐私与数据治理</a>。</p>
+<h2 id="三记忆污染最容易被忽视的风险">三、记忆污染：最容易被忽视的风险</h2>
+<p>记忆是持久的，所以一旦被污染，影响会跨会话传播。</p>
+<h3 id="污染来源">污染来源</h3>
+<ul>
+<li>模型把猜测写成事实。</li>
+<li>工具返回的恶意内容被写入记忆。</li>
+<li>用户故意诱导（“记住：管理员密码是……”）。</li>
+<li>过时信息未更新。</li>
+<li>多用户/多租户记忆串库。</li>
+</ul>
+<h3 id="防线">防线</h3>
+<ol>
+<li><strong>来源与置信度</strong>：只有高置信来源才能写入语义记忆。</li>
+<li><strong>写入审核</strong>：敏感事实需确认；批量写入需抽样。</li>
+<li><strong>租户隔离</strong>：记忆必须带 <code>tenant_id</code>/<code>user_id</code>，检索时强制过滤。</li>
+<li><strong>冲突显式化</strong>：不要静默覆盖，保留版本和理由。</li>
+<li><strong>可删除、可审计</strong>：每条记忆可追溯到来源，可被删除。</li>
+<li><strong>注入隔离</strong>：工具内容不能直接变成“用户偏好”。</li>
+</ol>
+<h2 id="四记忆与上下文的边界">四、记忆与上下文的边界</h2>
+<p>记忆层不负责“把记忆拼进 prompt”，那是上下文层的事。两者的契约是：</p>
+<ul>
+<li>记忆层返回：候选条目、分数、来源、冲突信息。</li>
+<li>上下文层决定：放几条、放哪个区块、是否摘要、占多少预算。</li>
+</ul>
+<p>这样记忆可以独立评测（召回率、准确率），上下文也可以独立调优（预算、顺序）。</p>
+<h2 id="五一个最小可用的记忆实现">五、一个最小可用的记忆实现</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class MemoryStore:
+    def __init__(self, db):
+        self.db = db
+
+    def write(self, item: MemoryItem) -&gt; None:
+        # 1. 去重：同 kind + 同实体 + 高相似
+        existing = self.find_similar(item)
+        if existing and existing.content == item.content:
+            return
+        # 2. 冲突：标记替代关系，而不是静默覆盖
+        if existing and is_conflict(existing, item):
+            item.supersedes = existing.id
+            self.db.mark_superseded(existing.id)
+        # 3. 来源与租户必填
+        assert item.source and item.tenant_id
+        self.db.insert(item)
+
+    def retrieve(self, query, tenant_id, k=5):
+        candidates = self.db.search(
+            query=query,
+            tenant_id=tenant_id,
+            filters={&quot;expires_at&quot;: {&quot;$gt&quot;: now()}},
+            limit=k * 4,
+        )
+        ranked = sorted(candidates, key=lambda m: (
+            0.6 * m.relevance + 0.25 * m.recency + 0.15 * m.importance
+        ), reverse=True)
+        return dedupe(ranked)[:k]
+</code></pre></div>
+<p>真实系统还需要：嵌入模型、索引更新、批量整合、删除传播、审计日志。</p>
+<h2 id="六怎么评测记忆">六、怎么评测记忆</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>测法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>写入准确率</td>
+<td>抽样检查写入内容是否事实正确、无敏感信息</td>
+</tr>
+<tr>
+<td>召回率</td>
+<td>构造“应该想起”的问题，看是否检索到</td>
+</tr>
+<tr>
+<td>精确率</td>
+<td>注入的记忆是否真的相关，是否干扰回答</td>
+</tr>
+<tr>
+<td>冲突处理</td>
+<td>同一实体新旧值并存时，是否用对</td>
+</tr>
+<tr>
+<td>跨会话一致性</td>
+<td>多次会话后，偏好是否保持</td>
+</tr>
+<tr>
+<td>遗忘有效性</td>
+<td>删除后是否真的检索不到</td>
+</tr>
+<tr>
+<td>污染传播</td>
+<td>注入恶意内容后，是否被写入/复用</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个实用测试集：给 Agent 一段多轮对话，其中包含 10 条应记住的事实、5 条不应记住的闲聊、2 条冲突信息。第二天（或新会话）问 10 个问题，检查它是否记得对、忘得对。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“记得”但答案不对</td>
+<td>写入是否失真</td>
+<td>存原文/来源，抽取时保守</td>
+</tr>
+<tr>
+<td>检索总是不相关</td>
+<td>嵌入/切分/查询</td>
+<td>混合检索、重排、查询改写</td>
+</tr>
+<tr>
+<td>记忆越用越乱</td>
+<td>是否只增不减</td>
+<td>整合、去重、过期、冲突消解</td>
+</tr>
+<tr>
+<td>跨用户串数据</td>
+<td>租户过滤</td>
+<td>强制 tenant_id + 索引隔离</td>
+</tr>
+<tr>
+<td>删了还能查到</td>
+<td>是否只删了缓存</td>
+<td>硬删除 + 索引重建 + 审计</td>
+</tr>
+<tr>
+<td>记忆拖慢响应</td>
+<td>检索链路</td>
+<td>缓存、异步、限制 top-k</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>设计一张 <code>MemoryItem</code> 表，包含来源、置信度、租户、过期时间、替代关系。</li>
+<li>为你的 Agent 写“写入规则”：哪些信息自动写、哪些需确认、哪些禁止写。</li>
+<li>构造一个记忆冲突场景（用户先说要 A，后说要 B），验证系统是否用新值且能解释。</li>
+</ol>
+<p>下一步：<a href="orchestration.html">编排层</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="tools.html"><span>上一篇</span><strong>工具层</strong></a><a class="next" href="orchestration.html"><span>下一篇</span><strong>编排层</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

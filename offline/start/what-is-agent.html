@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>什么是 Agent · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="roadmap.html">学习路线</a>
+<a class="nav-item active" href="what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>开始</span><span>/</span><strong>什么是 Agent</strong></div>
+        <article class="doc"><h1 id="什么是-agent">什么是 Agent</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  G[&quot;目标&quot;] --&gt; P[&quot;策略&quot;]
+  P --&gt; T[&quot;工具 / 环境&quot;]
+  T --&gt; C[&quot;上下文&quot;]
+  C --&gt; P
+  P --&gt; O[&quot;输出&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Agent 的最小闭环：目标进入策略，动作作用于环境，观察回到上下文</p>
+<p>先给一个工程上够用的定义：</p>
+<blockquote>
+<p><strong>Agent 是一个以目标为输入，能自主决定下一步动作，并通过与环境交互获得反馈、持续调整策略的软件系统。</strong></p>
+</blockquote>
+<p>拆开看，它至少包含四件事：</p>
+<ol>
+<li><strong>目标（Goal）</strong>：用户给的不是一条指令，而是一个需要多步完成的结果。</li>
+<li><strong>策略（Policy）</strong>：由模型（通常是大语言模型）决定“下一步做什么”。</li>
+<li><strong>动作（Action）</strong>：调用工具、读写文件、执行代码、检索、询问用户……</li>
+<li><strong>反馈（Feedback）</strong>：动作的结果回到系统里，成为下一轮决策的依据。</li>
+</ol>
+<p>少了任何一项，它更接近“一次模型调用”或“固定流程”，而不是 Agent。</p>
+<p>本章另有 2 张图：图 1 流程与 Agent 的分界，图 2 五个组成部分。</p>
+<h2 id="一个最小的例子">一个最小的例子</h2>
+<p>用户说：<strong>“帮我把这个仓库里失败的测试修好。”</strong></p>
+<p>一个 Agent 的循环可能是：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>观察：仓库路径、当前分支、用户约束（不要改公共 API）
+思考：先跑测试，定位失败点
+行动：执行 `pytest -q`
+观察：3 个测试失败，都在 parser 模块
+思考：读失败测试和实现
+行动：打开 tests/test_parser.py 与 src/parser.py
+观察：……
+行动：修改代码
+观察：重新跑测试
+……直到通过，或判断需要询问用户
+</code></pre></div>
+<p>注意这里没有“一次性生成最终答案”。<strong>答案是通过一系列动作逐步构造出来的</strong>，而且每一步都可能改变后续计划。</p>
+<h2 id="agent-与-workflow-的分界线">Agent 与 Workflow 的分界线</h2>
+<p>这是最容易混淆的一组概念。可以用一个问题判断：</p>
+<blockquote>
+<p><strong>下一步做什么，是代码提前写死的，还是模型根据当前观察临时决定的？</strong></p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Workflow（工作流）</th>
+<th>Agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>控制流</td>
+<td>开发者预先编排</td>
+<td>模型动态决定</td>
+</tr>
+<tr>
+<td>可预测性</td>
+<td>高</td>
+<td>较低</td>
+</tr>
+<tr>
+<td>调试难度</td>
+<td>低</td>
+<td>高（轨迹长、分支多）</td>
+</tr>
+<tr>
+<td>适合任务</td>
+<td>步骤稳定、规则清晰</td>
+<td>步骤不确定、需要探索</td>
+</tr>
+<tr>
+<td>典型形态</td>
+<td>链式调用、路由、并行分支</td>
+<td>ReAct 循环、Coding Agent、Deep Research</td>
+</tr>
+</tbody>
+</table></div>
+<p>现实中大量系统是<strong>混合体</strong>：外层是固定工作流，某些节点内部是 Agent；或者 Agent 被限制在几个允许的动作里。</p>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[固定流程] --&gt; B[固定流程]
+  B --&gt; C{模型决策}
+  C --&gt;|动作 1| D[工具]
+  C --&gt;|动作 2| E[工具]
+  D --&gt; B
+  E --&gt; B
+</div>
+<p class="diagram-caption"><strong>图 1 · 固定流程与 Agent 的分界：谁决定下一步</strong></p>
+<blockquote>
+<p>不要把“用了 LLM”叫 Agent，也不要把“Agent”当成高级工作流。<strong>自主性是一种成本</strong>：它带来灵活性，也带来不可预测、难评测和难授权。只有在任务确实需要动态决策时才付这个成本。</p>
+</blockquote>
+<h2 id="agent-的五个组成部分">Agent 的五个组成部分</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart TB
+  G[目标 / 任务] --&gt; P[策略：LLM]
+  P --&gt;|决定动作| T[工具与执行环境]
+  T --&gt;|观察结果| C[上下文 / 状态]
+  C --&gt; P
+  P --&gt;|终止| O[输出 / 副作用]
+  M[(记忆)] &lt;--&gt; C
+</div>
+<p class="diagram-caption"><strong>图 2 · 五个组成部分：目标、策略、工具、状态、记忆</strong></p>
+<h3 id="1-策略policy">1. 策略（Policy）</h3>
+<p>通常由 LLM 承担：读当前上下文，输出下一步动作或最终答案。策略的质量取决于模型能力、提示、可用工具和上下文质量。</p>
+<h3 id="2-上下文context">2. 上下文（Context）</h3>
+<p>模型每一步能看到的全部信息：系统提示、对话、工具定义、检索结果、执行观察、记忆片段。<strong>上下文不是聊天记录</strong>，而是为当前决策精心组装的“工作台”。</p>
+<h3 id="3-工具tools">3. 工具（Tools）</h3>
+<p>Agent 改变世界或获取信息的接口。工具不只是函数，它包含：名称、描述、参数 schema、执行语义、错误格式、权限和副作用。</p>
+<h3 id="4-状态与记忆state-memory">4. 状态与记忆（State &amp; Memory）</h3>
+<ul>
+<li><strong>状态</strong>：这一轮任务进行到哪、已尝试什么、预算剩多少。通常是结构化数据。</li>
+<li><strong>记忆</strong>：跨轮次保留的信息，如用户偏好、项目事实、历史经验。</li>
+</ul>
+<h3 id="5-运行时runtime">5. 运行时（Runtime）</h3>
+<p>工具真正执行的地方：进程、容器、浏览器、虚拟机。它决定隔离性、可复现性和安全边界。</p>
+<h2 id="什么时候不该用-agent">什么时候不该用 Agent</h2>
+<p>Agent 很酷，但以下场景通常用固定工作流更划算：</p>
+<ul>
+<li><strong>步骤完全确定</strong>：如“抽取发票字段 → 校验 → 入库”。写成 pipeline 更稳、更便宜。</li>
+<li><strong>错误代价极高且不可逆</strong>：如直接操作生产数据库。可以用 Agent 建议，但执行要有人审。</li>
+<li><strong>延迟敏感</strong>：Agent 多轮往返，P95 延迟通常远高于单次调用。</li>
+<li><strong>无法验证结果</strong>：如果系统无法判断动作是否成功，Agent 会在错误里越走越远。</li>
+<li><strong>任务太开放</strong>：如“帮我赚一百万”。缺少可判定的终止条件，Agent 只会空转。</li>
+</ul>
+<p>一个实用判断表：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>偏向 Workflow</th>
+<th>偏向 Agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤是否可枚举？</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>是否需要根据中间结果改变计划？</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>是否有可靠的自动验证？</td>
+<td>不一定</td>
+<td>最好有</td>
+</tr>
+<tr>
+<td>单次错误是否可逆？</td>
+<td>是</td>
+<td>否（需护栏）</td>
+</tr>
+<tr>
+<td>成本/延迟是否宽松？</td>
+<td>否</td>
+<td>是</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见误解">常见误解</h2>
+<div class="custom-block warning"><p class="custom-block-title">误解一：Agent 就是“更长的 Prompt”</p>
+<p>长 Prompt 只改变一次输入。Agent 的关键是<strong>多轮反馈</strong>：动作结果会改变后续输入和策略。</p>
+</div>
+<div class="custom-block warning"><p class="custom-block-title">误解二：工具越多，能力越强</p>
+<p>工具数量上升会带来选择困难、描述冲突、上下文膨胀和权限风险。能力是“工具 × 选择正确率”，不是工具数量。</p>
+</div>
+<div class="custom-block warning"><p class="custom-block-title">误解三：Agent 会自动“记住”</p>
+<p>默认不会。上下文窗口结束，信息就没了。记忆需要显式的写入、检索、更新和遗忘机制。</p>
+</div>
+<div class="custom-block warning"><p class="custom-block-title">误解四：多 Agent 一定比单 Agent 强</p>
+<p>多 Agent 增加的是并行度和角色分工，代价是通信损耗、错误传播和调试复杂度。很多任务单 Agent + 好工具更优。</p>
+</div>
+<h2 id="一个更有用的分类">一个更有用的分类</h2>
+<p>按“自主性从哪里来”分，而不是按产品名分：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>自主性来源</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具增强型</td>
+<td>模型选择调用哪个工具</td>
+<td>带搜索/计算器的助手</td>
+</tr>
+<tr>
+<td>流程编排型</td>
+<td>代码控制流程，模型填充节点</td>
+<td>客服工单处理</td>
+</tr>
+<tr>
+<td>反馈驱动型</td>
+<td>模型根据执行结果调整计划</td>
+<td>Coding Agent、Deep Research</td>
+</tr>
+<tr>
+<td>持续型</td>
+<td>长期运行、定时触发、维护状态</td>
+<td>监控/运维 Agent</td>
+</tr>
+<tr>
+<td>多体协作型</td>
+<td>多个角色分工与协商</td>
+<td>研究/评审/仿真</td>
+</tr>
+</tbody>
+</table></div>
+<p>后文讨论架构时，这套分类比“聊天机器人/智能体”更有解释力。</p>
+<h2 id="练习">练习</h2>
+<ol>
+<li>选一个你常用的“AI 功能”，判断它是 Workflow 还是 Agent，依据是控制流由谁决定。</li>
+<li>为“修复失败测试”写出至少 5 个可能的动作，以及每个动作失败时 Agent 应该观察到什么。</li>
+<li>找一个“看起来像 Agent，其实不该用 Agent”的场景，说明用工作流如何实现。</li>
+</ol>
+<p>下一步：<a href="../evolution/overview.html">架构总览</a>；如果你想先看最小实现，也可以直接读<a href="../foundations/loop.html">核心循环</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="roadmap.html"><span>上一篇</span><strong>学习路线</strong></a><a class="next" href="../evolution/overview.html"><span>下一篇</span><strong>00 架构总览</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

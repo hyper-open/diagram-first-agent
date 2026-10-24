@@ -1,0 +1,30 @@
+# 依赖与包管理
+node_modules/
+.pnpm-store/
+
+# 构建产物（offline/ 是可交付的静态版，刻意入库）
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.coverage
+
+# 本地配置与密钥
+.env
+.env.*
+!.env.example
+
+# 系统与编辑器
+.DS_Store
+.AppleDouble
+.idea/
+.vscode/
+
+# 日志与临时文件
+*.log

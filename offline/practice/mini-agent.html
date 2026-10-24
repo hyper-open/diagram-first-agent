@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从零实现 Mini Agent · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item active" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>从零实现 Mini Agent</strong></div>
+        <article class="doc"><h1 id="从零实现-mini-agent">从零实现 Mini Agent</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  CLI[&quot;cli.py&quot;] --&gt; A[&quot;agent.py&quot;]
+  A --&gt; L[&quot;llm.py&quot;]
+  A --&gt; T[&quot;tools.py&quot;]
+  A --&gt; G[&quot;guard.py&quot;]
+  A --&gt; M[&quot;memory.py&quot;]
+  A --&gt; U[&quot;guard.py&quot;]
+  A --&gt; E[&quot;eval.py&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Mini Agent 的模块边界：Agent 依赖模型、工具、记忆与评测，工具不反向依赖 Agent</p>
+<p>这一章不依赖 LangChain、LlamaIndex 或任何 Agent 框架，只用 Python 标准库实现一个<strong>能跑、能测、能改</strong>的 Agent。目标不是造一个产品，而是把前文的每一层契约落到代码里。</p>
+<p>代码位于：</p>
+<ul>
+<li><code>examples/mini_agent/</code>：实现</li>
+<li><code>tests/test_mini_agent.py</code>：26 个单元测试</li>
+<li><code>examples/mini_agent/cli.py</code>：8 个演示场景</li>
+</ul>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code># 不需要 API Key，跑脚本化演示
+python3 -m examples.mini_agent.cli --demo
+
+# 打印完整 trace
+python3 -m examples.mini_agent.cli --demo --trace
+
+# 跑评测报告（pass@1 / pass^k）
+python3 -m examples.mini_agent.eval
+
+# 跑测试
+python3 -m unittest discover -s tests -v
+</code></pre></div>
+<p>演示会依次展示：</p>
+<ol>
+<li>调用计算器并给出最终答案。</li>
+<li>列目录、读文件，再总结。</li>
+<li>写文件、读回验证。</li>
+<li>外部验证器拒绝“草稿”。</li>
+<li>长期记忆注入上下文。</li>
+<li>重复调用触发停滞检测。</li>
+<li>输入审核拦截、输出 PII 打码。</li>
+<li>流式输出的增量审核与断流。</li>
+</ol>
+<h2 id="代码结构">代码结构</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>examples/mini_agent/
+├── types.py     ToolCall / Decision / ToolResult / Budget / Trace
+├── llm.py       MockLLM（脚本化） + OpenAICompatLLM（urllib）
+├── tools.py     Tool / Schema 校验 / Workspace / 内置工具 / Registry
+├── memory.py    MemoryItem / SimpleMemory（关键词检索）
+├── guard.py     内容审核：规则 / 阶段策略 / 流式护栏
+├── agent.py     MiniAgent 循环 / 上下文 / 验证 / 停滞检测
+├── eval.py      迷你评测 harness（pass@1 / pass^k）
+└── cli.py       演示与 live 模式
+</code></pre></div>
+<p>模块之间是单向依赖：<code>agent</code> 依赖 <code>llm</code>、<code>tools</code>、<code>memory</code>、<code>types</code>；工具不反向依赖 Agent。这样你可以单独测试工具，也可以换掉 LLM 而不动循环。</p>
+<h2 id="lab-1最小循环">Lab 1：最小循环</h2>
+<p>核心在 <code>MiniAgent.run()</code>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>while True:
+    self.budget.start_step()
+    messages = self._build_messages(state)
+    decision = self.llm.decide(messages, self.tools.specs())
+
+    if decision.has_tools:
+        self._record_assistant_tool_calls(state, decision)
+        for call in decision.tool_calls:
+            self.budget.spend_tool_call()
+            result = self.tools.execute(call)
+            self._record_tool_result(state, call, result)
+        continue
+
+    ok, reason = self.verifier(decision.content, state)
+    if ok:
+        return success(...)
+    # 验证失败：把原因回给模型，继续循环
+</code></pre></div>
+<p>三个关键设计：</p>
+<ol>
+<li><strong>模型只提议</strong>：<code>Decision</code> 不直接执行任何东西。</li>
+<li><strong>循环拥有状态与预算</strong>：<code>AgentState</code>、<code>Budget</code> 在 Agent 里，不在模型里。</li>
+<li><strong>完成需要验证</strong>：<code>verifier</code> 是外部函数，不是模型自评。</li>
+</ol>
+<p>用 <code>MockLLM</code> 可以在没有 API 的情况下测试循环：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>agent = MiniAgent(
+    llm=MockLLM([
+        tool(&quot;calculator&quot;, expression=&quot;6 * 7&quot;),
+        final(&quot;答案是 42。&quot;),
+    ]),
+    tools=build_default_tools(&quot;.&quot;),
+    budget=Budget(max_steps=4),
+)
+result = agent.run(&quot;6 * 7 等于多少？&quot;)
+assert result.status == &quot;success&quot;
+</code></pre></div>
+<p><strong>练习</strong>：把 <code>max_steps</code> 改成 1，观察 <code>result.status</code> 和 <code>result.output</code>。</p>
+<h2 id="lab-2工具schema-与错误契约">Lab 2：工具、Schema 与错误契约</h2>
+<p><code>tools.py</code> 做了四件事：</p>
+<h3 id="1-schema-声明">1. Schema 声明</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>Tool(
+    name=&quot;calculator&quot;,
+    description=&quot;Evaluate a numeric arithmetic expression...&quot;,
+    parameters={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;expression&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;expression&quot;],
+        &quot;additionalProperties&quot;: False,
+    },
+    handler=calculator,
+)
+</code></pre></div>
+<h3 id="2-执行前校验">2. 执行前校验</h3>
+<p><code>validate_args()</code> 覆盖 <code>type/required/enum/additionalProperties/items/min/max</code> 等常用子集。校验失败返回：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;ok&quot;: false,
+  &quot;error&quot;: {
+    &quot;type&quot;: &quot;invalid_argument&quot;,
+    &quot;message&quot;: &quot;calculator.expression must be string, got int&quot;,
+    &quot;retryable&quot;: true,
+    &quot;hint&quot;: &quot;请按 schema 修正参数后重试&quot;,
+    &quot;field&quot;: &quot;expression&quot;
+  }
+}
+</code></pre></div>
+<h3 id="3-工作区边界">3. 工作区边界</h3>
+<p>文件工具只能访问工作区内的相对路径：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def resolve(self, raw: str) -&gt; Path:
+    candidate = (self.root / raw).resolve()
+    if candidate != self.root and self.root not in candidate.parents:
+        raise ValidationError(&quot;path escapes the workspace&quot;)
+    return candidate
+</code></pre></div>
+<p><code>../secret</code> 会被拒绝，返回 <code>invalid_argument</code>。测试里有对应用例。</p>
+<h3 id="4-错误规范化">4. 错误规范化</h3>
+<p>所有异常都转成结构化错误，而不是把 stack trace 丢给模型。模型看到的是“类型、是否可重试、建议”，日志里保留完整异常。</p>
+<p><strong>练习</strong>：给 <code>Tool</code> 加一个 <code>side_effect</code> 为 <code>destructive</code> 的 <code>delete_file</code>，要求它必须经过 <code>allow_write</code> 且记录审计。</p>
+<h2 id="lab-3记忆">Lab 3：记忆</h2>
+<p><code>SimpleMemory</code> 很小，但包含了记忆系统的关键字段：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>MemoryItem(
+    content=&quot;用户偏好中文回答&quot;,
+    kind=&quot;preference&quot;,
+    source=&quot;user&quot;,
+    confidence=0.9,
+    importance=0.8,
+    tenant_id=&quot;default&quot;,
+)
+</code></pre></div>
+<p>检索用词项重叠 + 重要性 + 时效性：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>score = (0.65 × 词项重叠 + 0.20 × 重要性 + 0.15 × 时效性) × 置信度
+</code></pre></div>
+<p>它不是生产级记忆（没有嵌入、没有整合、没有冲突消解），但足以演示<strong>写入需要来源、检索需要排序、记忆需要租户隔离</strong>。</p>
+<p><code>MiniAgent._recall()</code> 在每轮开始时按目标检索，<code>_build_messages()</code> 把结果放进 <code>&lt;memory&gt;</code> 区块。演示 5 用一个断言检查记忆是否真的进了上下文。</p>
+<p><strong>练习</strong>：给 <code>SimpleMemory</code> 加“同一实体新值覆盖旧值”的逻辑，并保留 <code>supersedes</code> 字段。</p>
+<h2 id="lab-4预算停滞与部分结果">Lab 4：预算、停滞与部分结果</h2>
+<h3 id="预算">预算</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class Budget:
+    max_steps: int = 8
+    max_tool_calls: int = 12
+    max_seconds: float = 60
+    max_tokens: int = 60_000
+</code></pre></div>
+<p>每次模型调用后 <code>spend_tokens()</code>，每次工具调用前 <code>spend_tool_call()</code>，每轮开始 <code>start_step()</code>。超限抛 <code>BudgetExceeded</code>，但<strong>不让它变成 500</strong>：<code>run()</code> 捕获后返回 <code>status=&quot;partial&quot;</code>，附带已完成事项和建议。</p>
+<h3 id="停滞检测">停滞检测</h3>
+<p><code>_check_stall()</code> 用 <code>ToolCall.signature()</code>（工具名 + 排序后的参数）计数：</p>
+<ul>
+<li>第 2 次相同调用：给模型一条反馈，“你已重复，请换方法”。</li>
+<li>第 3 次：停止，<code>status=&quot;stalled&quot;</code>。</li>
+</ul>
+<p>这比单纯 <code>max_steps</code> 更早发现问题，也更可解释。</p>
+<p><strong>练习</strong>：把“相同签名”改成“相同签名 + 相同结果”，观察行为差异。</p>
+<h2 id="lab-5评测-harness">Lab 5：评测 harness</h2>
+<p><code>examples/mini_agent/eval.py</code> 把“写评测”变成了可运行的代码：</p>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent.eval
+</code></pre></div>
+<p>输出：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>cases=4 runs=3
+case                  pass@1  pass^k  steps  tokens
+calculator              True    True      2     346
+read_file               True    True      2     379
+write_read_back         True    True      3     734
+verifier                True    True      2     243
+
+overall: pass@1=1.00 pass^3=1.00 avg_steps=2.25 avg_tokens=426
+</code></pre></div>
+<p>它做了三件事：</p>
+<ol>
+<li>每个 case 用独立临时工作区，避免状态串扰。</li>
+<li>同一 case 跑 <code>runs</code> 次，同时报告 <code>pass@1</code> 与 <code>pass^k</code>。</li>
+<li>失败时打印 case、run、status 和输出摘要，便于定位。</li>
+</ol>
+<p><strong>练习</strong>：加一个会失败的 case（例如期望输出包含“162”但脚本返回“163”），观察报告如何呈现。</p>
+<h2 id="lab-6追踪">Lab 6：追踪</h2>
+<p><code>Trace</code> 记录每一步：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;step&quot;: 1,
+  &quot;content&quot;: &quot;&quot;,
+  &quot;final&quot;: false,
+  &quot;tool_calls&quot;: [{&quot;name&quot;: &quot;calculator&quot;, &quot;arguments&quot;: {&quot;expression&quot;: &quot;6*7&quot;}}],
+  &quot;results&quot;: [{&quot;name&quot;: &quot;calculator&quot;, &quot;result&quot;: {&quot;ok&quot;: true, &quot;data&quot;: {&quot;result&quot;: 42}}}],
+  &quot;usage&quot;: {&quot;input_tokens&quot;: 300, &quot;output_tokens&quot;: 20},
+  &quot;latency_ms&quot;: 0,
+  &quot;note&quot;: &quot;&quot;
+}
+</code></pre></div>
+<p>跑 <code>--trace</code> 可以看到完整结构。生产系统还应该加：</p>
+<ul>
+<li><code>trace_id</code> / <code>span_id</code> / <code>parent_id</code></li>
+<li>上下文各 section 的 token 分布</li>
+<li>工具参数脱敏后的完整值</li>
+<li>终止原因、成本、模型版本</li>
+</ul>
+<p><strong>练习</strong>：把 <code>Trace</code> 导出为 JSONL，每行一个任务，便于批量分析。</p>
+<h2 id="lab-7接入真实模型">Lab 7：接入真实模型</h2>
+<p><code>OpenAICompatLLM</code> 用 <code>urllib</code> 调用 <code>/chat/completions</code>：</p>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>export OPENAI_API_KEY=&quot;...&quot;
+export OPENAI_MODEL=&quot;gpt-4.1-mini&quot;       # 或任何兼容模型
+export OPENAI_BASE_URL=&quot;https://api.openai.com/v1&quot;  # 可选
+python3 -m examples.mini_agent.cli --live &quot;用计算器算 123 * 456&quot; --trace
+</code></pre></div>
+<p>它把原生 <code>tool_calls</code> 转成 <code>Decision</code>，并在下一轮把工具结果按 <code>tool_call_id</code> 回传。你可以换成任何 OpenAI 兼容端点。</p>
+<div class="custom-block warning"><p class="custom-block-title">这不是生产实现</p>
+<p>它没有重试、限流、密钥管理、沙箱和持久化。它的价值是<strong>结构正确、可测试、可替换</strong>。生产化时，优先补：沙箱、幂等、重试、持久化、审计。</p>
+</div>
+<h2 id="lab-8把审核接进循环">Lab 8：把审核接进循环</h2>
+<p>审核不是外挂一个函数，而是四个卡点。<code>guard.py</code> 里只有两个概念：</p>
+<ul>
+<li><code>Guard.check(text, stage)</code>：同一段文本，在不同 <code>stage</code> 得到不同处置。</li>
+<li><code>StreamGuard</code>：按句缓冲，命中高危就断流。</li>
+</ul>
+<div class="code-block"><div class="code-lang">python</div><pre><code>agent = MiniAgent(
+    llm=MockLLM([final(&quot;联系人 13812345678&quot;)]),
+    tools=build_default_tools(workspace),
+    guard=Guard(),
+)
+result = agent.run(&quot;登记联系人&quot;)
+# result.output -&gt; &quot;联系人 [手机号]&quot;
+</code></pre></div>
+<p>循环里的四个位置：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>stage</th>
+<th>处置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>目标</td>
+<td>input</td>
+<td>高危直接拒绝，一个 token 都不花</td>
+</tr>
+<tr>
+<td>工具返回</td>
+<td>tool_result</td>
+<td>结构化结果只支持 block（打码会破坏 schema）</td>
+</tr>
+<tr>
+<td>最终答案</td>
+<td>output</td>
+<td>PII 打码、密钥拦截</td>
+</tr>
+<tr>
+<td>记忆写入</td>
+<td>memory</td>
+<td>命中即丢弃，避免长期污染</td>
+</tr>
+</tbody>
+</table></div>
+<p>三个设计取舍值得记住：</p>
+<ul>
+<li>规则式审核只适合教学与兜底，生产要接分类模型，但<strong>契约不变</strong>。</li>
+<li>工具返回是结构化数据，字段级打码需要逐字段策略，示例里只做了 block。</li>
+<li>流式审核有 hold-back 窗口，窗口就是风险，大小必须由产品决定。</li>
+</ul>
+<p><strong>练习</strong>：给 <code>Guard</code> 加一条“只在 tool_result 阶段生效”的注入规则，并写测试证明它在 input 阶段不误伤。</p>
+<h2 id="七个可以继续做的扩展">七个可以继续做的扩展</h2>
+<ol>
+<li><strong>并行工具调用</strong>：一次返回多个 <code>ToolCall</code>，用 <code>asyncio.gather</code> 执行，按 id 回填。</li>
+<li><strong>上下文压缩</strong>：当 transcript 超过预算时，用模型生成结构化摘要，而不是直接丢弃。</li>
+<li><strong>检查点/恢复</strong>：把 <code>AgentState</code> 存 JSON，进程重启后从断点继续。</li>
+<li><strong>子 Agent</strong>：把 <code>MiniAgent</code> 包装成一个工具，给子任务独立上下文和预算。</li>
+<li><strong>评测 harness</strong>：用 <code>tests</code> 的断言方式跑 20 条任务，统计 <code>pass@1</code>、步数、成本。</li>
+<li><strong>真实沙箱</strong>：把 <code>write_file</code>/<code>calculator</code> 换成容器内的命令执行，加网络白名单和超时。</li>
+<li><strong>审核策略版本化</strong>：把规则表与阈值移到配置里，支持灰度与历史回放。</li>
+</ol>
+<h2 id="设计取舍为什么这么小">设计取舍：为什么这么小</h2>
+<ul>
+<li><strong>不用框架</strong>：避免把“框架会替你做什么”当成“Agent 本来就这样”。</li>
+<li><strong>不用真实 API 做测试</strong>：脚本化 LLM 让测试确定、快速、免费。</li>
+<li><strong>不做花哨 UI</strong>：把注意力放在循环、契约、错误和追踪上。</li>
+<li><strong>故意保留缺陷</strong>：比如简单的 transcript 裁剪、线程超时不能强杀。这些缺陷在文中有标注，留作练习。</li>
+</ul>
+<h2 id="自检清单">自检清单</h2>
+<p>读完并跑完这一章，你应该能回答：</p>
+<ul>
+<li>[ ] 模型、循环、工具、验证器各自的职责边界是什么？</li>
+<li>[ ] 工具错误为什么要结构化？哪些字段是给模型看的？</li>
+<li>[ ] 预算耗尽为什么是 <code>partial</code> 而不是 <code>error</code>？</li>
+<li>[ ] 停滞检测和 <code>max_steps</code> 各自解决什么问题？</li>
+<li>[ ] 如果要把这个 Agent 放到生产，最先补哪三件事？</li>
+<li>[ ] 内容审核的四个卡点分别在循环的哪一步？为什么工具返回只能 block？</li>
+</ul>
+<p>下一步：<a href="cases.html">真实案例拆解</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="../layers/compliance.html"><span>上一篇</span><strong>合规与法律</strong></a><a class="next" href="cases.html"><span>下一篇</span><strong>真实案例拆解</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

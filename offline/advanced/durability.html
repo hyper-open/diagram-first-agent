@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>长任务与可靠执行 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="optimization.html">优化手册</a>
+<a class="nav-item active" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>进阶</span><span>/</span><strong>长任务与可靠执行</strong></div>
+        <article class="doc"><h1 id="长任务与可靠执行进程会死任务不能">长任务与可靠执行：进程会死，任务不能</h1>
+<p>短任务可以“跑到结束”。长任务不行：进程会被重启、机器会被回收、用户会关页面、审批要等一天。<strong>可靠执行的本质，是把一个长时间的内存过程，改写成一系列可重放的小步骤。</strong></p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  Q[&quot;任务入队&quot;] --&gt; W[&quot;Worker 取任务&quot;]
+  W --&gt; S[&quot;执行一步&quot;]
+  S --&gt; C[&quot;写检查点&lt;br/&gt;状态 + 结果 + 幂等键&quot;]
+  C --&gt; D{&quot;完成 / 暂停 / 失败&quot;}
+  D --&gt;|继续| S
+  D --&gt;|暂停| P[&quot;等待事件&lt;br/&gt;审批 / 回调&quot;]
+  P --&gt; W
+  D --&gt;|失败| R[&quot;重试 / 补偿&quot;]
+  D --&gt;|完成| F[&quot;落账 + 通知&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 每一步都持久化，崩溃后从最近检查点恢复；等待事件不等于占着线程</p>
+<h2 id="一长任务带来的四个新问题">一、长任务带来的四个新问题</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>短任务</th>
+<th>长任务</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>进程生命周期</td>
+<td>内存足够</td>
+<td>进程会重启，必须外部化状态</td>
+</tr>
+<tr>
+<td>副作用</td>
+<td>一次</td>
+<td>可能重复执行，必须幂等</td>
+</tr>
+<tr>
+<td>等待</td>
+<td>同步阻塞</td>
+<td>等审批/回调可能几小时，必须异步</td>
+</tr>
+<tr>
+<td>失败</td>
+<td>直接报错</td>
+<td>要能续跑、回滚、人工接管</td>
+</tr>
+</tbody>
+</table></div>
+<p>判断标准：<strong>任务运行时间是否可能超过一次部署窗口？</strong> 是，就必须按长任务设计。</p>
+<h2 id="二事件日志-重放">二、事件日志 + 重放</h2>
+<p>Durable execution 的核心思想只有一句：<strong>把“做了什么”写成不可变事件，重启后按事件重建状态。</strong></p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. TaskStarted     {goal, constraints, budget}
+2. ModelCalled     {step:1, tokens, decision}
+3. ToolExecuted    {step:1, tool:&quot;refund.create&quot;, idempotency_key:&quot;t1:refund:1&quot;}
+4. ApprovalWaited  {step:1, approver:&quot;user:123&quot;, decision:&quot;approved&quot;}
+5. ToolExecuted    {step:2, ...}
+6. TaskCompleted   {output, cost}
+</code></pre></div>
+<p>重放的三个好处：</p>
+<ul>
+<li><strong>可恢复</strong>：崩溃后不需要从头再跑（也不需要重复扣费）。</li>
+<li><strong>可审计</strong>：任何一步都能回答“谁在什么时候做了什么”。</li>
+<li><strong>可测试</strong>：把事件序列当 fixture，重放即可复现。</li>
+</ul>
+<h2 id="三什么必须持久化">三、什么必须持久化</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>内容</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>目标与约束</td>
+<td>恢复时要知道在做什么</td>
+</tr>
+<tr>
+<td>已执行的工具调用与结果</td>
+<td>避免重复副作用、避免重复计费</td>
+</tr>
+<tr>
+<td>幂等键</td>
+<td>去重的唯一依据</td>
+</tr>
+<tr>
+<td>审批状态</td>
+<td>等待中的任务不能丢</td>
+</tr>
+<tr>
+<td>版本号（模型/提示/策略）</td>
+<td>恢复后行为要一致</td>
+</tr>
+<tr>
+<td>预算用量</td>
+<td>防止恢复后成本失控</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最容易漏的是版本号</strong>：恢复时如果模型或提示已经升级，同一个任务会跑出不同结果，排查时完全对不上。</p>
+<h2 id="四幂等重复执行不能重复生效">四、幂等：重复执行不能重复生效</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[&quot;请求&quot;] --&gt; K{&quot;幂等键存在？&quot;}
+  K --&gt;|是| B[&quot;返回已有结果&quot;]
+  K --&gt;|否| C[&quot;执行&quot;]
+  C --&gt; D[&quot;记录结果 + 键&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 去重表是最后一道防线；没有它，重试就是事故</p>
+<p>三种实现，按可靠性排序：</p>
+<ol>
+<li><strong>工具侧天然幂等</strong>：PUT 覆盖、按业务主键 upsert。</li>
+<li><strong>幂等键 + 去重表</strong>：键由 task_id、步骤号、工具名组成，执行前查、执行后写。</li>
+<li><strong>只靠“尽量不重试”</strong>：不算方案。</li>
+</ol>
+<p>对于不可逆动作（转账、发邮件、删除），<strong>幂等键必须由系统生成</strong>，不能让模型生成——模型每次可能给出不同的键。</p>
+<h2 id="五重试要分类">五、重试要分类</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>错误类型</th>
+<th>例子</th>
+<th>策略</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>瞬时</td>
+<td>429、连接重置、网关超时</td>
+<td>指数退避 + 抖动，有限次数</td>
+</tr>
+<tr>
+<td>依赖故障</td>
+<td>下游 5xx、数据库主从切换</td>
+<td>退避 + 熔断，可能跨分钟</td>
+</tr>
+<tr>
+<td>逻辑错误</td>
+<td>参数非法、权限不足</td>
+<td><strong>不重试</strong>，修正或上报</td>
+</tr>
+<tr>
+<td>内容拦截</td>
+<td>审核拒绝</td>
+<td><strong>不重试</strong>，改路径或转人工</td>
+</tr>
+<tr>
+<td>未知</td>
+<td>未捕获异常</td>
+<td>重试一次，然后带着 trace 上报</td>
+</tr>
+</tbody>
+</table></div>
+<p>重试预算：<strong>单个任务的总重试次数与总时长都要有上限</strong>，否则一个坏依赖会把队列拖死。</p>
+<h2 id="六超时分层">六、超时分层</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>例子</th>
+<th>失败后的动作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>连接超时</td>
+<td>1~3s</td>
+<td>重试下一个连接</td>
+</tr>
+<tr>
+<td>单次调用</td>
+<td>30s</td>
+<td>记事件、按策略重试</td>
+</tr>
+<tr>
+<td>单步（含模型+工具）</td>
+<td>2~5min</td>
+<td>中断该步，检查点保留</td>
+</tr>
+<tr>
+<td>整个任务</td>
+<td>按业务（分钟~小时）</td>
+<td>标记 partial，输出已完成部分</td>
+</tr>
+<tr>
+<td>租约</td>
+<td>Worker 心跳</td>
+<td>超时后任务可被其他 Worker 接管</td>
+</tr>
+</tbody>
+</table></div>
+<p>没有租约（lease）的队列，Worker 崩溃后任务会永远卡在“执行中”。</p>
+<h2 id="七队列与调度">七、队列与调度</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>关注点</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>优先级</td>
+<td>交互式任务优先于批处理；避免饥饿</td>
+</tr>
+<tr>
+<td>公平性</td>
+<td>按租户限并发，防止单租户打满</td>
+</tr>
+<tr>
+<td>背压</td>
+<td>队列深度触发拒绝或降级，而不是无限堆积</td>
+</tr>
+<tr>
+<td>并发上限</td>
+<td>按下游配额设，不按机器数设</td>
+</tr>
+<tr>
+<td>死信</td>
+<td>超过重试上限进 DLQ，人工处理</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>交互式与批处理必须分池</strong>，否则一个批量任务能让所有对话变慢。</p>
+<h2 id="八补偿不可逆动作的回滚">八、补偿：不可逆动作的回滚</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>订票成功 → 扣款成功 → 出票失败
+        ↓
+补偿：退款（而不是&quot;撤销扣款&quot;）
+</code></pre></div>
+<p>补偿不是回滚，而是<strong>用一个新动作抵消旧动作</strong>。设计要点：</p>
+<ul>
+<li>每个不可逆动作都要有对应的补偿动作。</li>
+<li>补偿本身也要幂等。</li>
+<li>补偿失败要告警，不能静默。</li>
+<li>顺序是逆序：先补最后一步。</li>
+</ul>
+<h2 id="九把审批变成事件">九、把审批变成事件</h2>
+<p>“等人审批”不该占着线程。</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>任务状态：waiting_approval
+  → 写入待办 + 通知审批人
+  → Worker 释放
+  → 审批回调产生事件 ApprovalDecided
+  → 任务重新入队，从检查点继续
+</code></pre></div>
+<p>这套模型顺带解决了“审批人等了一天才点”的问题：任务不会超时，也不会丢。</p>
+<h2 id="十故障演练">十、故障演练</h2>
+<p>上线前必须做：</p>
+<ul>
+<li><strong>杀进程</strong>：任务执行到一半 kill -9，重启后能否继续且不重复扣费？</li>
+<li><strong>断网</strong>：下游不可达 5 分钟，是否进入退避而不是疯狂重试？</li>
+<li><strong>重复投递</strong>：同一任务投递两次，是否只产生一次副作用？</li>
+<li><strong>时钟跳变</strong>：租约与超时是否还正确？</li>
+<li><strong>人工中断</strong>：用户点“停止”后，任务是否真的停止，且已完成部分可见？</li>
+</ul>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：用工作流引擎就自动可靠了吗？</strong>
+引擎解决调度与状态，解决不了<strong>副作用幂等</strong>。幂等键必须你自己设计。</p>
+<p><strong>Q：检查点存多细？</strong>
+按“最贵的重复成本”决定。模型调用贵就每步存，纯计算可以粗一点。</p>
+<p><strong>Q：任务恢复后模型变了怎么办？</strong>
+锁版本。恢复用原版本，新版本只对新任务生效。</p>
+<p><strong>Q：一定要分布式队列吗？</strong>
+小规模可以用数据库表 + 轮询，关键是<strong>状态外部化 + 幂等</strong>，而不是中间件选型。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 状态是否外部化，进程崩溃后可恢复？</li>
+<li>[ ] 每步都有检查点，且包含版本号？</li>
+<li>[ ] 不可逆动作都有幂等键与去重表？</li>
+<li>[ ] 重试按错误类型分类，且有总预算？</li>
+<li>[ ] 超时分层，Worker 有租约与心跳？</li>
+<li>[ ] 交互式与批处理分池，有背压？</li>
+<li>[ ] 不可逆动作有补偿方案？</li>
+<li>[ ] 审批是事件，不占用 Worker？</li>
+<li>[ ] 做过杀进程/断网/重复投递演练？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>把一次“退款 + 通知 + 归档”的任务拆成可重放的步骤，标出每步的幂等键。</li>
+<li>设计一个租约机制：Worker 崩溃后多久任务可被接管？怎么避免两个 Worker 同时执行？</li>
+<li>为一个不可逆动作写补偿方案，并说明补偿失败时怎么告警。</li>
+</ol>
+<p>下一步：<a href="frontier.html">前沿与趋势</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="optimization.html"><span>上一篇</span><strong>优化手册</strong></a><a class="next" href="frontier.html"><span>下一篇</span><strong>前沿与趋势</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

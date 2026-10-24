@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>隐私与数据治理 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item active" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>隐私与数据治理</strong></div>
+        <article class="doc"><h1 id="隐私与数据治理数据进得越多责任越大">隐私与数据治理：数据进得越多，责任越大</h1>
+<p>Chatbot 只看到用户打出来的字；Agent 会读文件、查数据库、调接口、写记忆。<strong>它的隐私暴露面，等于它能触达的全部系统。</strong></p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  C[&quot;采集&lt;br/&gt;输入 · 文件 · 检索 · 工具&quot;] --&gt; P[&quot;处理&lt;br/&gt;模型 · 记忆 · 索引&quot;]
+  P --&gt; S[&quot;存储&lt;br/&gt;日志 · trace · 向量库&quot;]
+  S --&gt; X[&quot;共享&lt;br/&gt;模型供应商 · 第三方工具&quot;]
+  X --&gt; D[&quot;删除&lt;br/&gt;到期 · 用户请求&quot;]
+  D -.-&gt;|数据地图| C
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 隐私治理覆盖整条生命周期；只在入口做脱敏，等于没做</p>
+<h2 id="一agent-特有的四个泄漏面">一、Agent 特有的四个泄漏面</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>泄漏面</th>
+<th>为什么危险</th>
+<th>典型事故</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文</td>
+<td>检索、工具返回、历史都被拼进 prompt</td>
+<td>他人文档被拼进回答</td>
+</tr>
+<tr>
+<td>日志与 trace</td>
+<td>默认记录完整请求与响应</td>
+<td>日志库里躺着明文手机号</td>
+</tr>
+<tr>
+<td>长期记忆</td>
+<td>跨会话留存，可能跨用户</td>
+<td>A 的记忆出现在 B 的对话里</td>
+</tr>
+<tr>
+<td>工具参数</td>
+<td>敏感数据被当作参数传给第三方</td>
+<td>身份证号进了外部 API</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="二先分级再决定怎么处理">二、先分级，再决定怎么处理</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>例子</th>
+<th>允许进入模型上下文</th>
+<th>允许写入日志</th>
+<th>允许出境</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公开</td>
+<td>官网内容、公开文档</td>
+<td>是</td>
+<td>是</td>
+<td>是</td>
+</tr>
+<tr>
+<td>内部</td>
+<td>内部流程、非敏感代码</td>
+<td>是（按租户隔离）</td>
+<td>脱敏后</td>
+<td>需评估</td>
+</tr>
+<tr>
+<td>敏感</td>
+<td>手机号、地址、订单</td>
+<td>按需最小化</td>
+<td>否（仅哈希/掩码）</td>
+<td>否</td>
+</tr>
+<tr>
+<td>高风险</td>
+<td>身份证、病历、凭证、密钥</td>
+<td>默认否</td>
+<td>否</td>
+<td>否</td>
+</tr>
+</tbody>
+</table></div>
+<p>分级的价值在于：<strong>它把“要不要脱敏”变成查表，而不是每次靠人判断。</strong></p>
+<h2 id="三最小化少要一点问题少一半">三、最小化：少要一点，问题少一半</h2>
+<p>三个可落地的动作：</p>
+<ol>
+<li><strong>只取需要的字段。</strong> 查订单只需要状态和金额，不需要整行记录。</li>
+<li><strong>只取需要的条数。</strong> 检索 top-3 而不是 top-50，泄露面小一个量级。</li>
+<li><strong>只留需要的时间。</strong> 会话上下文默认 7 天，记忆默认 90 天，日志按合规要求。</li>
+</ol>
+<p>Agent 的诱惑是“多给点上下文效果更好”。但每多一个字段，就多一份泄露责任。</p>
+<h2 id="四脱敏的时机与层次">四、脱敏的时机与层次</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  T[&quot;原始数据&quot;] --&gt; M1[&quot;文本级脱敏&lt;br/&gt;正则/模型识别&quot;]
+  M1 --&gt; M2[&quot;字段级脱敏&lt;br/&gt;schema 标注&quot;]
+  M2 --&gt; M3[&quot;假名化&lt;br/&gt;user_123 换成 u_ab12&quot;]
+  M3 --&gt; M4[&quot;匿名化&lt;br/&gt;不可还原&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 四个层次强度不同：假名化仍属个人信息，匿名化才可能脱离适用范围</p>
+<p>工程上最容易做错的两件事：</p>
+<ul>
+<li><strong>只在出口脱敏。</strong> 数据已经进了模型上下文、进了 trace，出口再怎么脱敏都晚了。</li>
+<li><strong>把假名化当匿名化。</strong> 只要还能通过映射表还原，它就还是个人信息。</li>
+</ul>
+<h2 id="五日志与-trace最大的默认泄漏源">五、日志与 trace：最大的默认泄漏源</h2>
+<p>可观测性要求记录完整请求，隐私要求不记录敏感内容，两者必须显式平衡。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>做法</th>
+<th>效果</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>默认记录全文</td>
+<td>调试方便</td>
+<td>高风险</td>
+</tr>
+<tr>
+<td>默认脱敏 + 采样留存原文</td>
+<td>平衡</td>
+<td>需要脱敏管道</td>
+</tr>
+<tr>
+<td>只记录结构（角色、长度、hash）</td>
+<td>最安全</td>
+<td>调试变难</td>
+</tr>
+<tr>
+<td>分级：敏感字段单独加密存储</td>
+<td>折中</td>
+<td>需要密钥管理</td>
+</tr>
+</tbody>
+</table></div>
+<p>推荐组合：<strong>结构全留、内容脱敏、原文加密短留、访问留痕</strong>。</p>
+<h2 id="六记忆的隐私">六、记忆的隐私</h2>
+<p>长期记忆是最容易被忽视的合规风险，因为它同时具备“持久”“跨会话”“可推断”三个特征。</p>
+<p>最低要求：</p>
+<ul>
+<li><strong>可见</strong>：用户能查看系统记住了什么。</li>
+<li><strong>可删</strong>：删除请求能定位到所有副本（记忆库、向量索引、缓存、备份）。</li>
+<li><strong>隔离</strong>：租户与用户标识在检索时强制过滤，不能只靠 prompt 约束。</li>
+<li><strong>可过期</strong>：每条记忆带 TTL 与来源，过期自动失效。</li>
+<li><strong>可解释</strong>：能回答“你为什么记得这件事”。</li>
+</ul>
+<h2 id="七rag-的数据边界">七、RAG 的数据边界</h2>
+<p>检索层最容易出现“权限穿透”：</p>
+<ul>
+<li>索引时没带 ACL，检索时无法过滤。</li>
+<li>检索到了，但引用展示把原文贴出来了。</li>
+<li>摘要环节把无权访问的段落混进了有权访问的回答。</li>
+</ul>
+<p>对策见 <a href="../evolution/rag.html">RAG 知识层</a> 的“权限感知”一节。这里补一条：<strong>ACL 要在索引阶段写入元数据，而不是查询阶段临时补。</strong></p>
+<h2 id="八第三方与跨境">八、第三方与跨境</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>要确认的事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型供应商</td>
+<td>数据是否用于训练、留存多久、部署在哪个区域</td>
+</tr>
+<tr>
+<td>工具供应商</td>
+<td>参数里会不会带个人信息、是否二次存储</td>
+</tr>
+<tr>
+<td>向量库/日志平台</td>
+<td>是否跨区域复制、备份保留多久</td>
+</tr>
+<tr>
+<td>子处理者</td>
+<td>合同是否覆盖下游、是否有审计权</td>
+</tr>
+</tbody>
+</table></div>
+<p>“供应商说合规”不是证据，<strong>合同条款 + 技术配置 + 审计记录</strong>才是。</p>
+<h2 id="九删除真正难的是找全">九、删除：真正难的是找全</h2>
+<p>用户要求删除时，数据可能在这些地方：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 业务库（结构化）
+2. 会话历史
+3. 长期记忆
+4. 向量索引（chunk + embedding）
+5. trace / 日志平台
+6. 缓存（语义缓存、结果缓存）
+7. 备份与快照
+8. 第三方（模型供应商、工具商）
+</code></pre></div>
+<p>工程做法：维护一张<strong>数据地图</strong>（数据在哪、谁负责、怎么删），每条数据带主体标识，删除任务按地图逐项执行并记录结果。没有数据地图的删除，一定是漏的。</p>
+<h2 id="十度量">十、度量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PII 命中率</td>
+<td>上下文中出现 PII 的比例，应逐月下降</td>
+</tr>
+<tr>
+<td>日志裸奔率</td>
+<td>未脱敏即落盘的请求占比，目标为 0</td>
+</tr>
+<tr>
+<td>删除 SLA</td>
+<td>从请求到全部副本删除的时长</td>
+</tr>
+<tr>
+<td>跨租户访问次数</td>
+<td>应为 0，任何非 0 都是事故</td>
+</tr>
+<tr>
+<td>供应商数据回流</td>
+<td>是否存在用于训练的路径</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：脱敏会不会影响效果？</strong>
+会。所以按用途脱敏：模型需要“知道有手机号”，不需要“知道号码是多少”。用占位符保留结构，通常不影响推理。</p>
+<p><strong>Q：用户自己输入的隐私，也要脱敏吗？</strong>
+进日志和进记忆时要。进当前上下文时可以按需保留，但要限制留存时间。</p>
+<p><strong>Q：向量库里存的 embedding 算个人信息吗？</strong>
+通常仍可关联到个人，按个人信息处理。删除时要一起删，否则“删了文档但还能被检索到”。</p>
+<p><strong>Q：跨境部署能不能只做逻辑隔离？</strong>
+能不能取决于法规与合同，不取决于你的架构图。技术上要能证明数据实际存放在哪里。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 有数据分级表，且与代码里的字段标注对应？</li>
+<li>[ ] 上下文、日志、记忆、工具参数四个泄漏面都覆盖了吗？</li>
+<li>[ ] 日志默认脱敏，原文加密短留并有访问审计？</li>
+<li>[ ] 记忆支持查看、删除、过期、隔离？</li>
+<li>[ ] 索引阶段写入 ACL，而不是查询时补？</li>
+<li>[ ] 有数据地图，删除任务可执行、可验证？</li>
+<li>[ ] 供应商的数据使用与留存已写进合同？</li>
+<li>[ ] 跨境数据流有明确的技术边界？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>列出你的 Agent 一次请求会经过的所有存储，标注哪些含个人信息。</li>
+<li>设计一个删除流程：从用户点击“删除”到所有副本清理完成，中间有哪些步骤？</li>
+<li>检查一次 trace：如果这份 trace 被公开，会泄露什么？</li>
+</ol>
+<p>下一步：<a href="compliance.html">合规与法律</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="content-safety.html"><span>上一篇</span><strong>内容安全与审核</strong></a><a class="next" href="compliance.html"><span>下一篇</span><strong>合规与法律</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

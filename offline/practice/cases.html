@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>真实案例拆解 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item active" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>真实案例拆解</strong></div>
+        <article class="doc"><h1 id="真实案例拆解">真实案例拆解</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">quadrantChart
+  title Agent 案例定位
+  x-axis 低可验证 --&gt; 高可验证
+  y-axis 低动作风险 --&gt; 高动作风险
+  quadrant-1 高风险 / 强验证
+  quadrant-2 高风险 / 弱验证
+  quadrant-3 低风险 / 弱验证
+  quadrant-4 低风险 / 强验证
+  Coding: [0.82, 0.55]
+  Deep Research: [0.30, 0.28]
+  客服: [0.55, 0.62]
+  Computer Use: [0.42, 0.88]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 四个案例在“可验证性 × 动作风险”上的位置，决定了它们该有多自主</p>
+<p>这一章用同一套七层模型拆四个典型系统。目的不是复刻产品，而是训练一种能力：<strong>看到一个 Agent，能快速说出它的控制流、工具边界、上下文策略和失败模式。</strong></p>
+<h2 id="案例一coding-agent修-issue-改多文件">案例一：Coding Agent（修 issue / 改多文件）</h2>
+<h3 id="目标与成功标准">目标与成功标准</h3>
+<blockquote>
+<p>给定一个仓库和一条 issue，产出可合并的代码修改，测试通过且不回归。</p>
+</blockquote>
+<p>成功标准非常可验证：测试、构建、lint、代码审查。这让 Coding Agent 成为 Agent 技术最成熟的落地场景之一。</p>
+<h3 id="七层映射">七层映射</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L7 应用</td>
+<td>CLI/IDE/PR 机器人；权限与人工 review</td>
+</tr>
+<tr>
+<td>L6 编排</td>
+<td>探索 → 定位 → 修改 → 测试 → 修复 循环；子 Agent 做搜索/审查</td>
+</tr>
+<tr>
+<td>L5 上下文</td>
+<td>仓库地图、相关文件、失败测试、git diff、历史尝试</td>
+</tr>
+<tr>
+<td>L4 工具</td>
+<td>读/写/搜索文件、跑测试、git、包管理、浏览器查文档</td>
+</tr>
+<tr>
+<td>L3 运行时</td>
+<td>容器/微虚拟机；代码执行；网络白名单；资源限制</td>
+</tr>
+<tr>
+<td>L2 模型</td>
+<td>强代码模型 + 推理模型用于定位/修复</td>
+</tr>
+<tr>
+<td>L1 基础设施</td>
+<td>任务队列、沙箱池、trace、评测（SWE-bench 类）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="典型循环">典型循环</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 读 issue，提取复现步骤与验收标准
+2. 探索仓库：目录、依赖、相关模块
+3. 跑测试，拿到失败栈
+4. 定位根因（读实现 + 测试 + 历史）
+5. 生成最小补丁
+6. 跑目标测试 + 回归测试
+7. 失败则分析差异，回到 4/5
+8. 通过后整理 diff、写说明、请求 review
+</code></pre></div>
+<h3 id="关键设计">关键设计</h3>
+<ul>
+<li><strong>先复现，再修改</strong>：没有失败测试，就没有可靠的成功标准。</li>
+<li><strong>最小 diff</strong>：大改会引入不可控回归；要求“只改必要文件”。</li>
+<li><strong>读回验证</strong>：写完文件要读回/跑测试，不能相信“我已修改”。</li>
+<li><strong>沙箱</strong>：代码执行必须隔离，禁止访问生产凭证。</li>
+<li><strong>检查点</strong>：长任务要能中断恢复，保留已完成的修改。</li>
+</ul>
+<h3 id="常见失败">常见失败</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>根因</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>改了不相关的文件</td>
+<td>上下文没有边界</td>
+<td>明确“只改 X 模块”，diff 审查</td>
+</tr>
+<tr>
+<td>测试没跑就说完成</td>
+<td>缺少验证</td>
+<td>完成条件绑定测试输出</td>
+</tr>
+<tr>
+<td>反复改同一处</td>
+<td>没有失败分析</td>
+<td>要求先解释失败原因再改</td>
+</tr>
+<tr>
+<td>引入新依赖</td>
+<td>工具权限过大</td>
+<td>依赖变更需审批</td>
+</tr>
+<tr>
+<td>破坏公共 API</td>
+<td>约束未重申</td>
+<td>约束置顶 + 自动 API diff 检查</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="可迁移的经验">可迁移的经验</h3>
+<p><strong>把“完成”定义成可执行检查，而不是模型的一句话。</strong> 这是所有 Agent 都适用的原则。</p>
+<h2 id="案例二deep-research多源研究">案例二：Deep Research（多源研究）</h2>
+<h3 id="目标与成功标准-1">目标与成功标准</h3>
+<blockquote>
+<p>给定一个研究问题，产出有引用、覆盖多来源、区分事实与观点的报告。</p>
+</blockquote>
+<p>成功标准比 Coding 模糊，通常用 rubric：关键问题覆盖、引用可访问、事实准确、结构清晰、区分不确定性。</p>
+<h3 id="七层映射-1">七层映射</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L7 应用</td>
+<td>报告界面、引用点击、导出</td>
+</tr>
+<tr>
+<td>L6 编排</td>
+<td>澄清 → 拆子问题 → 并行检索 → 阅读 → 综合 → 缺口检查 → 写报告</td>
+</tr>
+<tr>
+<td>L5 上下文</td>
+<td>研究计划、来源卡片、证据表、冲突记录、草稿</td>
+</tr>
+<tr>
+<td>L4 工具</td>
+<td>搜索、抓网页、PDF 解析、代码执行（数据分析）</td>
+</tr>
+<tr>
+<td>L3 运行时</td>
+<td>浏览器/抓取沙箱；出口控制；缓存</td>
+</tr>
+<tr>
+<td>L2 模型</td>
+<td>强推理 + 长上下文；子 Agent 用便宜模型</td>
+</tr>
+<tr>
+<td>L1 基础设施</td>
+<td>抓取缓存、去重、引用库、评测集</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="典型循环-1">典型循环</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 澄清问题与范围（时间、地域、受众）
+2. 拆成 3–6 个子问题
+3. 每个子问题并行检索，收集来源卡片
+4. 阅读并抽取“主张 + 证据 + 来源”
+5. 标记冲突、缺口、低置信结论
+6. 针对缺口补检索
+7. 综合成报告，逐条挂引用
+8. 事实核查：引用是否真的支持结论
+</code></pre></div>
+<h3 id="关键设计-1">关键设计</h3>
+<ul>
+<li><strong>来源卡片</strong>：每条证据结构化保存 <code>claim / quote / url / date / confidence</code>，不要只存网页全文。</li>
+<li><strong>并行 + 隔离</strong>：每个子问题一个子 Agent，上下文互不污染。</li>
+<li><strong>缺口驱动</strong>：不是“检索 N 次就停”，而是“关键问题是否都有证据”。</li>
+<li><strong>引用校验</strong>：最终报告里的每个关键结论都要能追溯到来源。</li>
+<li><strong>冲突显式化</strong>：来源矛盾时呈现分歧，而不是取平均。</li>
+</ul>
+<h3 id="常见失败-1">常见失败</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>根因</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>引用是编的</td>
+<td>模型生成 URL</td>
+<td>引用只能来自工具返回的来源库</td>
+</tr>
+<tr>
+<td>只查了一个角度</td>
+<td>没有缺口检查</td>
+<td>子问题覆盖表 + 反方检索</td>
+</tr>
+<tr>
+<td>报告很长但没信息</td>
+<td>摘要堆砌</td>
+<td>以“主张—证据”组织，而非按来源</td>
+</tr>
+<tr>
+<td>抓取内容注入</td>
+<td>网页含恶意指令</td>
+<td>数据标记、出口控制、不执行网页指令</td>
+</tr>
+<tr>
+<td>成本爆炸</td>
+<td>无限制并行</td>
+<td>子任务预算 + 去重 + 缓存</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="可迁移的经验-1">可迁移的经验</h3>
+<p><strong>研究型 Agent 的核心不是“搜得多”，而是“知道还缺什么”。</strong> 缺口检测与证据管理，比搜索工具本身更重要。</p>
+<h2 id="案例三客服工单-agent">案例三：客服/工单 Agent</h2>
+<h3 id="目标与成功标准-2">目标与成功标准</h3>
+<blockquote>
+<p>解决用户问题，遵守政策，必要时升级人工；不能越权承诺或泄露他人信息。</p>
+</blockquote>
+<p>成功标准：问题解决率、政策合规、用户满意度、人工接管率、平均处理时长。</p>
+<h3 id="七层映射-2">七层映射</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L7 应用</td>
+<td>聊天/工单界面；身份认证；审批</td>
+</tr>
+<tr>
+<td>L6 编排</td>
+<td>意图路由 → 查政策/订单 → 处理 → 确认 → 升级</td>
+</tr>
+<tr>
+<td>L5 上下文</td>
+<td>用户历史、订单、政策片段、会话状态</td>
+</tr>
+<tr>
+<td>L4 工具</td>
+<td>订单查询、退款、改地址、创建工单、知识库</td>
+</tr>
+<tr>
+<td>L3 运行时</td>
+<td>受控 API 网关；最小权限；审计</td>
+</tr>
+<tr>
+<td>L2 模型</td>
+<td>低成本模型做分类/抽取，强模型处理复杂对话</td>
+</tr>
+<tr>
+<td>L1 基础设施</td>
+<td>会话存储、CRM 集成、合规日志、质检</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="关键设计-2">关键设计</h3>
+<ul>
+<li><strong>政策是代码，不是提示词</strong>：退款期限、权限、可承诺范围由策略引擎判定。</li>
+<li><strong>身份绑定</strong>：只能查当前用户的数据；工具调用带用户上下文。</li>
+<li><strong>写操作幂等 + 审批</strong>：退款、改地址等需要幂等键；高风险动作人工确认。</li>
+<li><strong>升级路径</strong>：不确定、超权限、用户不满时，带着摘要转人工。</li>
+<li><strong>可解释</strong>：告诉用户“依据哪条政策”，而不是“系统说的”。</li>
+</ul>
+<h3 id="常见失败-2">常见失败</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>根因</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>承诺了不能退的款</td>
+<td>政策靠模型记忆</td>
+<td>政策检索 + 策略引擎硬约束</td>
+</tr>
+<tr>
+<td>查了别人的订单</td>
+<td>工具没绑用户</td>
+<td>每次调用强制 tenant/user 过滤</td>
+</tr>
+<tr>
+<td>重复退款</td>
+<td>重试不幂等</td>
+<td>幂等键 + 去重</td>
+</tr>
+<tr>
+<td>该升级却硬答</td>
+<td>没有不确定性出口</td>
+<td>低置信/超权限自动升级</td>
+</tr>
+<tr>
+<td>对话越权</td>
+<td>注入/诱导</td>
+<td>指令层级 + 工具白名单</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="可迁移的经验-2">可迁移的经验</h3>
+<p><strong>高合规场景的核心是“限制”，不是“能力”。</strong> Agent 的价值在于处理长尾，而不是绕过规则。</p>
+<h2 id="案例四computer-use操作桌面软件">案例四：Computer Use（操作桌面软件）</h2>
+<h3 id="目标与成功标准-3">目标与成功标准</h3>
+<blockquote>
+<p>通过截图和鼠标键盘完成一个界面任务，例如在旧系统里录一张发票。</p>
+</blockquote>
+<p>成功标准：目标状态达成（数据正确录入）、无副作用、可回滚。</p>
+<h3 id="七层映射-3">七层映射</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L7 应用</td>
+<td>任务描述、录屏、人工接管</td>
+</tr>
+<tr>
+<td>L6 编排</td>
+<td>观察屏幕 → 定位元素 → 操作 → 验证 → 循环</td>
+</tr>
+<tr>
+<td>L5 上下文</td>
+<td>当前截图、历史动作、任务状态、界面约束</td>
+</tr>
+<tr>
+<td>L4 工具</td>
+<td>截图、点击、输入、滚动、快捷键、读屏</td>
+</tr>
+<tr>
+<td>L3 运行时</td>
+<td>独立桌面 VM；固定分辨率；无宿主访问</td>
+</tr>
+<tr>
+<td>L2 模型</td>
+<td>多模态/视觉模型；坐标定位</td>
+</tr>
+<tr>
+<td>L1 基础设施</td>
+<td>录屏、动作日志、回放、异常告警</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="关键设计-3">关键设计</h3>
+<ul>
+<li><strong>优先可访问性树/选择器</strong>：坐标点击是最后手段。</li>
+<li><strong>固定环境</strong>：分辨率、缩放、语言、窗口布局固定，减少漂移。</li>
+<li><strong>动作后验证</strong>：点击后截图/读状态，确认真的生效。</li>
+<li><strong>高风险确认</strong>：提交、支付、删除前人工确认。</li>
+<li><strong>超时与恢复</strong>：弹窗、加载、网络错误要有兜底。</li>
+</ul>
+<h3 id="常见失败-3">常见失败</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>根因</th>
+<th>修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>点错位置</td>
+<td>分辨率/弹窗/延迟</td>
+<td>固定环境、选择器、等待条件</td>
+</tr>
+<tr>
+<td>不知道是否成功</td>
+<td>没有验证</td>
+<td>动作后读状态/截图差分</td>
+</tr>
+<tr>
+<td>陷入弹窗循环</td>
+<td>未处理异常界面</td>
+<td>检测 + 关闭/升级</td>
+</tr>
+<tr>
+<td>注入诱导点击</td>
+<td>页面内容不可信</td>
+<td>高风险确认、域名白名单</td>
+</tr>
+<tr>
+<td>太慢太贵</td>
+<td>每步传截图</td>
+<td>降低频率、区域裁剪、缓存</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="可迁移的经验-3">可迁移的经验</h3>
+<p><strong>动作空间越接近真实世界，验证和回滚就越重要。</strong> 能 API 就不要 UI；能读状态就不要靠截图猜。</p>
+<h2 id="四个案例的对比">四个案例的对比</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Coding</th>
+<th>Deep Research</th>
+<th>客服</th>
+<th>Computer Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功标准</td>
+<td>强可验证</td>
+<td>弱（rubric）</td>
+<td>中（政策+结果）</td>
+<td>中（状态）</td>
+</tr>
+<tr>
+<td>主要风险</td>
+<td>回归/破坏</td>
+<td>引用失真</td>
+<td>越权/错承诺</td>
+<td>误操作</td>
+</tr>
+<tr>
+<td>上下文重点</td>
+<td>代码相关片段</td>
+<td>证据与来源</td>
+<td>用户/订单/政策</td>
+<td>屏幕与动作历史</td>
+</tr>
+<tr>
+<td>工具特点</td>
+<td>文件/命令</td>
+<td>搜索/抓取</td>
+<td>业务 API</td>
+<td>鼠标键盘</td>
+</tr>
+<tr>
+<td>关键护栏</td>
+<td>测试/沙箱</td>
+<td>引用校验</td>
+<td>策略引擎</td>
+<td>桌面隔离/确认</td>
+</tr>
+<tr>
+<td>适合自主性</td>
+<td>高</td>
+<td>高</td>
+<td>中</td>
+<td>低–中</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>选一个你熟悉的产品，填出它的七层表，并标出最薄弱的层。</li>
+<li>为“客服 Agent”写三条必须由代码而不是提示词保证的规则。</li>
+<li>设计一个“Deep Research”的缺口检查表：满足什么条件才允许写最终报告？</li>
+</ol>
+<p>下一步：<a href="ux.html">交互与信任设计</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent.html"><span>上一篇</span><strong>从零实现 Mini Agent</strong></a><a class="next" href="ux.html"><span>下一篇</span><strong>交互与信任设计</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段 8 · 平台化 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item active" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>08 平台化与治理</strong></div>
+        <article class="doc"><h1 id="阶段-8平台化与治理计费安全与评测">阶段 8：平台化与治理：计费、安全与评测</h1>
+<blockquote>
+<p>能跑不等于能运营。平台化要回答：谁在用、花了多少、安全吗、变好了吗。</p>
+</blockquote>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  U[&quot;客户端 / API&quot;] --&gt; AG[&quot;API Gateway&quot;]
+  AG --&gt; OR[&quot;Intent Router&lt;br/&gt;Runtime / Workflow&quot;]
+  OR --&gt; CAP[&quot;Model GW · Tool GW&lt;br/&gt;RAG · Memory&quot;]
+  CAP --&gt; EX[&quot;模型 · 工具 · 知识库 · 沙箱&quot;]
+  OR --&gt; OBS[&quot;Trace · Eval · Metering&quot;]
+  MG[&quot;控制面&lt;br/&gt;目录 · 注册 · 策略 · 配额&quot;] -.-&gt; OR
+  MG -.-&gt; CAP
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 平台参考架构：数据面负责执行，控制面负责规则</p>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>谁在用</strong><p>身份、租户、配额。</p></div>
+  <div class="flow-step"><b>2</b><strong>花了多少</strong><p>计量、计费、成本归因。</p></div>
+  <div class="flow-step"><b>3</b><strong>安全吗</strong><p>权限、注入、外泄、审计。</p></div>
+  <div class="flow-step"><b>4</b><strong>变好了吗</strong><p>评测、观测、灰度、回滚。</p></div>
+</div>
+<p>本章另有 5 张图：图 1 计费流水线，图 2 安全链路，图 3 致命三要素，图 4 评测闭环，图 5 全景收束。</p>
+<h2 id="一计费从-token-到账单">一、计费：从 token 到账单</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  Q[&quot;请求&quot;] --&gt; QC[&quot;事前配额检查&quot;]
+  QC --&gt; E[&quot;Usage Event&quot;]
+  E --&gt; M[&quot;Metering&quot;]
+  M --&gt; R[&quot;Rating&quot;]
+  R --&gt; L[(Ledger)]
+  L --&gt; I[&quot;Invoice / Chargeback&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 配额在调用前拦住，计费在调用后结算；两者都需要</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>成本项</th>
+<th>计量方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入 / 输出 token</td>
+<td>prompt / completion tokens，区分缓存命中</td>
+</tr>
+<tr>
+<td>工具调用</td>
+<td>次数、时长、外部 API 单价</td>
+</tr>
+<tr>
+<td>沙箱</td>
+<td>CPU / 内存 / 秒</td>
+</tr>
+<tr>
+<td>检索</td>
+<td>查询次数、索引存储、重排</td>
+</tr>
+<tr>
+<td>存储</td>
+<td>GB / 月（记忆、日志、对象）</td>
+</tr>
+<tr>
+<td>人工</td>
+<td>审批 / 接管时长</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;event_id&quot;: &quot;evt_123&quot;,
+  &quot;request_id&quot;: &quot;req_456&quot;,
+  &quot;tenant_id&quot;: &quot;acme&quot;,
+  &quot;agent_id&quot;: &quot;support-agent&quot;,
+  &quot;model&quot;: &quot;gpt-4.1-mini&quot;,
+  &quot;input_tokens&quot;: 4210,
+  &quot;cached_tokens&quot;: 3200,
+  &quot;output_tokens&quot;: 180,
+  &quot;tool_calls&quot;: [{&quot;name&quot;: &quot;order.lookup&quot;, &quot;count&quot;: 1}],
+  &quot;sandbox_seconds&quot;: 0,
+  &quot;idempotency_key&quot;: &quot;req_456:llm:1&quot;
+}
+</code></pre></div>
+<h3 id="计费的五个坑">计费的五个坑</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>坑</th>
+<th>防线</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>重试重复计费</td>
+<td>idempotency_key 去重</td>
+</tr>
+<tr>
+<td>token 口径不一致</td>
+<td>以 provider 账单为准，保留原始 usage</td>
+</tr>
+<tr>
+<td>缓存 token 价格不同</td>
+<td>价格表区分命中/写入</td>
+</tr>
+<tr>
+<td>多租户归因</td>
+<td>tenant_id 全链路透传</td>
+</tr>
+<tr>
+<td>退款/调账</td>
+<td>账本不可变，用冲正记录</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="二安全假设模型会被骗">二、安全：假设模型会被骗</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart TB
+  I[&quot;身份 / 租户&quot;] --&gt; P[&quot;策略引擎&quot;]
+  P --&gt; C[&quot;能力令牌&quot;]
+  C --&gt; T[&quot;Tool Gateway&quot;]
+  T --&gt; S[&quot;沙箱&quot;]
+  S --&gt; E[&quot;出口控制 / DLP&quot;]
+  E --&gt; A[&quot;审计 / 告警&quot;]
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 安全是一条链路：身份 → 策略 → 能力 → 执行 → 出口 → 审计</p>
+<div class="mermaid">flowchart LR
+  P[&quot;私有数据&quot;] --&gt; A[&quot;Agent&quot;]
+  U[&quot;不可信内容&quot;] --&gt; A
+  A --&gt; E[&quot;对外通信&quot;]
+  P -.-&gt;|&quot;组合风险&quot;| E
+</div>
+<p class="diagram-caption"><strong>图 3</strong> · 致命三要素：私有数据 + 不可信内容 + 对外通信，至少要切断一条</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>威胁</th>
+<th>防线</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>直接/间接注入</td>
+<td>数据标记、指令层级、出口控制、高风险审批</td>
+</tr>
+<tr>
+<td>混淆代理</td>
+<td>权限绑定真实用户，每次调用都授权</td>
+</tr>
+<tr>
+<td>数据外泄</td>
+<td>网络白名单、DLP、禁元数据地址</td>
+</tr>
+<tr>
+<td>工具投毒</td>
+<td>来源审查、版本锁定、隔离运行</td>
+</tr>
+<tr>
+<td>记忆污染</td>
+<td>来源/置信度、租户隔离、可删除</td>
+</tr>
+<tr>
+<td>沙箱逃逸</td>
+<td>容器/微虚拟机、非 root、只读根文件系统</td>
+</tr>
+<tr>
+<td>违规内容</td>
+<td>分级审核、流式拦截、拒答话术（见<a href="../layers/content-safety.html">内容安全与审核</a>）</td>
+</tr>
+<tr>
+<td>隐私泄露</td>
+<td>数据分级、日志脱敏、记忆可删（见<a href="../layers/privacy.html">隐私与数据治理</a>）</td>
+</tr>
+<tr>
+<td>合规缺失</td>
+<td>备案、内容标识、审计留痕（见<a href="../layers/compliance.html">合规与法律</a>）</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="三评测与可观测">三、评测与可观测</h2>
+<p>见<strong>图 4</strong>：</p>
+<div class="mermaid">flowchart LR
+  O[&quot;离线评测&quot;] --&gt; G[&quot;灰度 / 影子&quot;]
+  G --&gt; M[&quot;线上监控&quot;]
+  M --&gt; F[&quot;失败样本&quot;]
+  F --&gt; O
+</div>
+<p class="diagram-caption"><strong>图 4</strong> · 评测不是一次性的，而是“离线 → 灰度 → 线上 → 回流”的闭环</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>指标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>质量</td>
+<td>成功率、<code>pass@1</code>、<code>pass^k</code></td>
+</tr>
+<tr>
+<td>成本</td>
+<td>每任务 / 每成功任务成本</td>
+</tr>
+<tr>
+<td>延迟</td>
+<td>P50 / P95</td>
+</tr>
+<tr>
+<td>过程</td>
+<td>步数、工具成功率、循环率</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>越权 / 注入 / 泄露事件</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="四控制面">四、控制面</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>管什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型目录</td>
+<td>能力、价格、上下文、区域、合规</td>
+</tr>
+<tr>
+<td>路由规则</td>
+<td>任务 → 模型/Agent 的映射</td>
+</tr>
+<tr>
+<td>工具注册</td>
+<td>schema、版本、负责人、权限</td>
+</tr>
+<tr>
+<td>策略</td>
+<td>谁能做什么、是否需要审批</td>
+</tr>
+<tr>
+<td>配额</td>
+<td>租户/用户/Agent 的预算</td>
+</tr>
+<tr>
+<td>版本与开关</td>
+<td>Prompt/Agent/工具的回滚、灰度、降级</td>
+</tr>
+<tr>
+<td>内容策略</td>
+<td>类目、阈值、处置动作、审核抽样率</td>
+</tr>
+<tr>
+<td>发布门禁</td>
+<td>评测集通过标准、灰度护栏、熔断阈值</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="五成熟度与取舍">五、成熟度与取舍</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>特征</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 原型</td>
+<td>单进程、本地工具、无计费</td>
+<td>先验证任务价值</td>
+</tr>
+<tr>
+<td>L2 团队</td>
+<td>网关、基础观测、简单配额</td>
+<td>多团队共用前补齐</td>
+</tr>
+<tr>
+<td>L3 平台</td>
+<td>控制面、计费、安全、评测、多租户</td>
+<td>对外产品/规模化</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>每一个平台组件都应该对应一个真实、反复出现的问题。不要为了“平台感”提前建 L3。</p>
+</blockquote>
+<h2 id="最小可用平台清单">最小可用平台清单</h2>
+<ul>
+<li>[ ] 统一身份与租户，所有调用可归因</li>
+<li>[ ] Model Gateway：路由、回退、配额、用量记录</li>
+<li>[ ] Tool Gateway：注册、鉴权、限流、审计</li>
+<li>[ ] 沙箱：代码/浏览器隔离，无宿主凭证</li>
+<li>[ ] 策略引擎：高风险审批，默认拒绝</li>
+<li>[ ] Trace：每步模型/工具/成本可查</li>
+<li>[ ] 评测集 + 回归门禁</li>
+<li>[ ] 计费/配额：至少能回答“谁花了多少”</li>
+<li>[ ] 版本化与回滚：模型/提示/工具独立</li>
+<li>[ ] 失败分类与告警：知道哪里坏了</li>
+</ul>
+<h2 id="收束">收束</h2>
+<p>见<strong>图 5</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[&quot;ReAct&quot;] --&gt; B[&quot;工具调用&quot;] --&gt; C[&quot;模型网关&quot;] --&gt; D[&quot;工具网关&quot;]
+  D --&gt; E[&quot;RAG&quot;] --&gt; F[&quot;意图路由&quot;] --&gt; G[&quot;多 Agent&quot;] --&gt; H[&quot;平台化&quot;]
+</div>
+<p class="diagram-caption"><strong>图 5</strong> · 每一级都在把“不可控”变成“可控”，代价是更多组件与运维</p>
+<p>下一步：回到<a href="overview.html">架构总览</a>复盘整张图，或进入<a href="../advanced/optimization.html">优化手册</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="multi-agent.html"><span>上一篇</span><strong>07 多 Agent 协作</strong></a><a class="next" href="../foundations/loop.html"><span>下一篇</span><strong>核心循环</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段 3 · 模型网关 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item active" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>03 模型网关与路由</strong></div>
+        <article class="doc"><h1 id="阶段-3模型网关与路由">阶段 3：模型网关与路由</h1>
+<blockquote>
+<p>当系统从“一个模型”变成“多个模型 / 多个供应商”，模型访问就不再是业务代码里的 if/else。</p>
+</blockquote>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  A[&quot;Agent / 应用&quot;] --&gt; G[&quot;Model Gateway&quot;]
+  G --&gt; R[&quot;路由 · 配额 · 重试/回退&quot;]
+  G --&gt; M[&quot;缓存 · 计量 · 追踪&quot;]
+  R --&gt; P[&quot;Provider A / B / 自托管&quot;]
+  M --&gt; O[&quot;账单 · 监控 · 审计&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Model Gateway 把“鉴权、路由、配额、回退、计量”收拢到一个内部服务</p>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>鉴权与配额</strong><p>这个请求属于谁？还有没有预算？</p></div>
+  <div class="flow-step"><b>2</b><strong>路由</strong><p>按任务、租户、成本、延迟选模型。</p></div>
+  <div class="flow-step"><b>3</b><strong>调用与回退</strong><p>失败时换 provider，而不是让业务代码重试。</p></div>
+  <div class="flow-step"><b>4</b><strong>计量与观测</strong><p>记录 usage、成本、延迟，进入账单与 trace。</p></div>
+</div>
+<p>本章另有 3 张图：图 1 路由决策树，图 2 带回退的调用时序，图 3 网关的优化顺序。</p>
+<h2 id="路由决策树">路由决策树</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart TD
+  Q[&quot;请求&quot;] --&gt; T{&quot;任务类型 / 租户 / 长度&quot;}
+  T --&gt;|&quot;简单&quot;| S[&quot;小模型&quot;]
+  T --&gt;|&quot;复杂&quot;| L[&quot;通用大模型&quot;]
+  T --&gt;|&quot;需深推理&quot;| X[&quot;推理模型&quot;]
+  S --&gt;|&quot;失败 / 低置信&quot;| L
+  L --&gt;|&quot;仍失败&quot;| F[&quot;回退 / 人工&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 路由不是“越强越好”，而是在质量、成本、延迟之间做匹配</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>路由策略</th>
+<th>做法</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>静态</td>
+<td>任务类型 → 固定模型</td>
+<td>边界变化要改配置</td>
+</tr>
+<tr>
+<td>规则</td>
+<td>按租户/长度/语言/SLA</td>
+<td>规则会越来越多</td>
+</tr>
+<tr>
+<td>分类器</td>
+<td>小模型判断难度</td>
+<td>分类错 → 成本或质量损失</td>
+</tr>
+<tr>
+<td>级联</td>
+<td>小模型失败再升级</td>
+<td>失败请求延迟叠加</td>
+</tr>
+<tr>
+<td>成本/延迟感知</td>
+<td>满足质量下选最便宜/最快</td>
+<td>需要持续评测质量</td>
+</tr>
+<tr>
+<td>灰度/影子</td>
+<td>小流量对比新模型</td>
+<td>需要双倍调用与对比体系</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="一次带-fallback-的调用">一次带 fallback 的调用</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant A as Agent
+  participant G as Model Gateway
+  participant P1 as Primary
+  participant P2 as Fallback
+  participant B as Meter
+
+  A-&gt;&gt;G: chat(task, messages, budget)
+  G-&gt;&gt;G: 鉴权 / 配额 / 路由
+  G-&gt;&gt;P1: 请求
+  P1--&gt;&gt;G: 429 / 5xx / timeout
+  G-&gt;&gt;P2: 回退请求
+  P2--&gt;&gt;G: 200 + usage
+  G-&gt;&gt;B: 记录 usage / 成本
+  G--&gt;&gt;A: 统一响应 + 实际模型
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 回退只对瞬态错误生效；参数错、权限错回退也没用</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>错误</th>
+<th>是否回退</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>429</td>
+<td>是</td>
+<td>换 provider 或退避</td>
+</tr>
+<tr>
+<td>5xx / 超时</td>
+<td>是</td>
+<td>换健康实例</td>
+</tr>
+<tr>
+<td>400 / schema 错</td>
+<td>否</td>
+<td>换模型也修不好请求</td>
+</tr>
+<tr>
+<td>内容拒绝</td>
+<td>视策略</td>
+<td>可能需要换更合适的安全策略</td>
+</tr>
+<tr>
+<td>配额耗尽</td>
+<td>否</td>
+<td>直接拒绝或走付费升级</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="网关职责必须与可选">网关职责：必须与可选</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>必须</th>
+<th>可选/进阶</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>统一协议（消息/工具/流式/错误）</td>
+<td>prompt cache</td>
+</tr>
+<tr>
+<td>鉴权与租户</td>
+<td>结果缓存 / 语义缓存</td>
+</tr>
+<tr>
+<td>路由</td>
+<td>内容安全 / PII 脱敏</td>
+</tr>
+<tr>
+<td>配额与限流</td>
+<td>模型目录（能力/价格/区域）</td>
+</tr>
+<tr>
+<td>重试与回退</td>
+<td>灰度 / 影子 / A-B</td>
+</tr>
+<tr>
+<td>计量与追踪</td>
+<td>成本预测 / 预算告警</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="它解决了什么又制造了什么">它解决了什么，又制造了什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>解决了</th>
+<th>同时制造了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每家 SDK / 协议不同</td>
+<td>多一跳延迟</td>
+</tr>
+<tr>
+<td>API Key 散落各服务</td>
+<td>网关单点故障</td>
+</tr>
+<tr>
+<td>无法统一限流与配额</td>
+<td>路由错误：简单任务送贵模型，复杂任务送小模型</td>
+</tr>
+<tr>
+<td>供应商挂了自己写回退</td>
+<td>计费口径不一致：token、缓存、图片计费不同</td>
+</tr>
+<tr>
+<td>不知道谁花了多少钱</td>
+<td>缓存正确性：相似不等于相同</td>
+</tr>
+<tr>
+<td>换模型要改所有调用点</td>
+<td>网关持有全部密钥，成为高价值目标</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="优化清单">优化清单</h2>
+<p>见<strong>图 3</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[&quot;先做对&quot;] --&gt; B[&quot;鉴权 / 配额 / 路由 / 回退&quot;]
+  B --&gt; C[&quot;再做省&quot;]
+  C --&gt; D[&quot;prefix cache / 级联 / 批处理&quot;]
+  D --&gt; E[&quot;最后做稳&quot;]
+  E --&gt; F[&quot;健康检查 / 熔断 / 灰度 / 对账&quot;]
+</div>
+<p class="diagram-caption"><strong>图 3</strong> · 网关优化顺序：正确性 → 成本 → 稳定性</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>延迟</td>
+<td>连接池、同区域、流式透传、异步计量</td>
+</tr>
+<tr>
+<td>单点</td>
+<td>多副本、熔断、受控降级、容量预留</td>
+</tr>
+<tr>
+<td>路由错</td>
+<td>路由评测集、置信度阈值、低置信升级</td>
+</tr>
+<tr>
+<td>计费差异</td>
+<td>统一 usage schema、保留原始 usage、对账</td>
+</tr>
+<tr>
+<td>缓存错</td>
+<td>缓存键含租户/模型/prompt 版本/权限</td>
+</tr>
+</tbody>
+</table></div>
+<details class="custom-block details"><summary>网关骨架</summary>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class ModelGateway:
+    def chat(self, ctx, messages, tools=None):
+        self.quota.check(ctx.tenant, ctx.task_type)
+        route = self.router.pick(ctx, messages)
+        last_error = None
+
+        for candidate in route.candidates:
+            try:
+                resp = self._call(candidate, messages, tools)
+                self.meter.record(ctx, candidate, normalize_usage(resp.usage))
+                return resp
+            except RetryableError as exc:
+                last_error = exc
+                continue
+            except NonRetryableError:
+                raise
+
+        raise GatewayExhausted(route, last_error)
+</code></pre></div>
+</details>
+<h2 id="阶段边界">阶段边界</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>够用</th>
+<th>进入下一阶段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单模型、单团队、无计费</td>
+<td>工具跨团队/跨网络</td>
+</tr>
+<tr>
+<td>模型调用点很少</td>
+<td>需要统一工具鉴权、审计、沙箱路由</td>
+</tr>
+<tr>
+<td>不需要精细配额</td>
+<td>需要按租户/用户限制工具调用</td>
+</tr>
+</tbody>
+</table></div>
+<p>下一步：<a href="tool-gateway.html">阶段 4：工具网关</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="tool-calling.html"><span>上一篇</span><strong>02 工具调用与注册</strong></a><a class="next" href="tool-gateway.html"><span>下一篇</span><strong>04 工具网关</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

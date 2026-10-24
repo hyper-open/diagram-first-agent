@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>编排层 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item active" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>编排层</strong></div>
+        <article class="doc"><h1 id="编排层决定下一步的系统">编排层：决定“下一步”的系统</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  W[&quot;固定工作流&quot;] --&gt; R[&quot;路由&quot;] --&gt; A[&quot;单 Agent&quot;] --&gt; M[&quot;多 Agent&quot;]
+  A --&gt; H[&quot;人工介入&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 编排形态从左到右自主性增加、可控性下降；不要跳级</p>
+<p>编排层是 Agent 的骨架。它不负责“想出答案”，而负责：</p>
+<ul>
+<li>什么时候让模型决策，什么时候用固定代码。</li>
+<li>任务如何拆、按什么顺序执行、何时并行。</li>
+<li>状态放在哪、如何恢复。</li>
+<li>什么时候停止、重试、降级、找人。</li>
+<li>多个 Agent/角色如何协作与合并。</li>
+</ul>
+<p>编排设计的好坏，通常比换一个更强的模型更能决定系统成败。</p>
+<p>本章另有 6 张图：图 1 链式，图 2 路由，图 3 并行，图 4 编排者循环，图 5 生成—评估，图 6 四种拓扑。</p>
+<h2 id="一先选形态工作流还是-agent">一、先选形态：工作流还是 Agent</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>控制流</th>
+<th>适合</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单次调用</td>
+<td>无</td>
+<td>分类、抽取、改写</td>
+<td>无法多步</td>
+</tr>
+<tr>
+<td>Prompt Chaining</td>
+<td>固定串行</td>
+<td>步骤稳定的生成/校验</td>
+<td>中间错误累积</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>分类后分支</td>
+<td>多意图、多领域</td>
+<td>路由错误</td>
+</tr>
+<tr>
+<td>Parallelization</td>
+<td>固定并行</td>
+<td>多角度分析、批量</td>
+<td>合并成本</td>
+</tr>
+<tr>
+<td>Orchestrator-Workers</td>
+<td>动态拆解</td>
+<td>研究、多文件修改</td>
+<td>协调复杂</td>
+</tr>
+<tr>
+<td>Autonomous Agent</td>
+<td>模型驱动循环</td>
+<td>开放、探索性任务</td>
+<td>失控、难评测</td>
+</tr>
+<tr>
+<td>Multi-Agent</td>
+<td>多角色协作</td>
+<td>需要独立视角/并行</td>
+<td>通信损耗、责任不清</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>选择顺序建议：<strong>固定流程 → 固定流程 + 局部 Agent → 单 Agent 循环 → 多 Agent</strong>。每往右一步，都要用评测证明收益大于成本。</p>
+</blockquote>
+<h2 id="二五种基本编排模式">二、五种基本编排模式</h2>
+<h3 id="1-prompt-chaining链式">1. Prompt Chaining（链式）</h3>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[生成初稿] --&gt; B[校验/批判]
+  B --&gt; C[修订]
+  C --&gt; D[格式化]
+</div>
+<p class="diagram-caption"><strong>图 1 · 生成—校验—修订：把质量检查从模型自觉变成流程</strong></p>
+<p>适合：写作、翻译、抽取后校验。每步职责单一，容易测试。
+风险：上游错误被下游放大；总延迟线性增加。</p>
+<h3 id="2-routing路由">2. Routing（路由）</h3>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart LR
+  Q[请求] --&gt; R{分类器}
+  R --&gt;|退款| A[退款流程]
+  R --&gt;|技术问题| B[技术支持]
+  R --&gt;|投诉| C[人工升级]
+</div>
+<p class="diagram-caption"><strong>图 2 · 请求分类：不同意图走不同流程，边界样本要有兜底</strong></p>
+<p>适合：意图明确、领域差异大。路由可以是规则、小模型或大模型。
+风险：边界样本错分；路由置信度低时应允许“不确定 → 人工/通用路径”。</p>
+<h3 id="3-parallelization并行">3. Parallelization（并行）</h3>
+<p>见<strong>图 3</strong>：</p>
+<div class="mermaid">flowchart LR
+  T[任务] --&gt; A[子任务 A]
+  T --&gt; B[子任务 B]
+  T --&gt; C[子任务 C]
+  A --&gt; M[合并/投票]
+  B --&gt; M
+  C --&gt; M
+</div>
+<p class="diagram-caption"><strong>图 3 · 并行分解：子任务真正独立才值得并行</strong></p>
+<p>两种用法：</p>
+<ul>
+<li><strong>分片</strong>：把大任务切成互不依赖的小块（多文件、多文档）。</li>
+<li><strong>多视角</strong>：同一问题让多个角色/采样独立回答，再投票或综合。</li>
+</ul>
+<p>风险：合并逻辑复杂；重复计算；结果冲突。</p>
+<h3 id="4-orchestrator-workers编排者工人">4. Orchestrator-Workers（编排者—工人）</h3>
+<p>见<strong>图 4</strong>：</p>
+<div class="mermaid">flowchart TB
+  O[Orchestrator] --&gt;|拆解| W1[Worker 1: 检索]
+  O --&gt;|拆解| W2[Worker 2: 读代码]
+  O --&gt;|拆解| W3[Worker 3: 跑测试]
+  W1 --&gt; O
+  W2 --&gt; O
+  W3 --&gt; O
+  O --&gt;|综合/再拆解| O
+</div>
+<p class="diagram-caption"><strong>图 4 · 编排者循环：拆解、汇总，必要时再拆解</strong></p>
+<p>适合：任务无法提前枚举步骤，但可以动态拆成子任务。研究型 Agent、Coding Agent 常用。
+关键：<strong>子任务契约</strong>（输入、输出、预算、成功标准）和<strong>合并策略</strong>。</p>
+<h3 id="5-evaluator-optimizer生成评审">5. Evaluator-Optimizer（生成—评审）</h3>
+<p>见<strong>图 5</strong>：</p>
+<div class="mermaid">flowchart LR
+  G[Generator] --&gt; E[Evaluator]
+  E --&gt;|不通过 + 理由| G
+  E --&gt;|通过| O[输出]
+</div>
+<p class="diagram-caption"><strong>图 5 · 生成器—评估器：评估必须独立，否则只会自我表扬</strong></p>
+<p>适合：有明确评价标准的任务（代码测试、格式校验、事实核查）。
+关键：评审者最好<strong>独立</strong>（不同提示/模型/工具），否则容易自我确认。</p>
+<h2 id="三用状态机图来表达控制流">三、用状态机/图来表达控制流</h2>
+<p>把编排写成嵌套 <code>if/else</code>，很快就会不可维护。更好的方式是显式状态机或图：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class Graph:
+    def __init__(self):
+        self.nodes = {}
+        self.edges = {}
+
+    def add_node(self, name, fn):
+        self.nodes[name] = fn
+
+    def add_edge(self, src, dst, condition=None):
+        self.edges.setdefault(src, []).append((dst, condition))
+
+    def run(self, state, max_steps=50):
+        current = &quot;start&quot;
+        for _ in range(max_steps):
+            state = self.nodes[current](state)
+            nxt = self.next(current, state)
+            if nxt is None:
+                return state
+            current = nxt
+        raise GraphExceeded(&quot;max steps&quot;)
+</code></pre></div>
+<p>图编排的好处：</p>
+<ul>
+<li>控制流可视化、可测试。</li>
+<li>每个节点是纯函数或受控副作用，便于单测。</li>
+<li>支持检查点/恢复（持久化 state）。</li>
+<li>支持人工审批节点（暂停/继续）。</li>
+<li>支持条件边、并行分支、子图。</li>
+</ul>
+<p>LangGraph、Temporal 等工具本质上都在做这件事：<strong>把 Agent 的不确定性，约束在可管理的控制流里</strong>。</p>
+<h3 id="状态设计">状态设计</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class State:
+    messages: list[dict]
+    plan: list[str]
+    current_step: int
+    artifacts: dict[str, str]
+    errors: list[str]
+    budget: Budget
+    status: str
+</code></pre></div>
+<p>原则：</p>
+<ul>
+<li>状态必须是<strong>可序列化</strong>的，才能持久化和恢复。</li>
+<li>状态变更通过节点返回新状态，避免隐式全局变量。</li>
+<li>大对象（文件、网页）存引用，不存全文。</li>
+<li>每个节点声明自己读/写哪些字段，便于并发控制。</li>
+</ul>
+<h2 id="四规划计划不是越长越好">四、规划：计划不是越长越好</h2>
+<h3 id="常见规划方式">常见规划方式</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>做法</th>
+<th>适合</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一次性计划</td>
+<td>先列完整步骤再执行</td>
+<td>步骤可预判</td>
+<td>计划过时</td>
+</tr>
+<tr>
+<td>滚动计划</td>
+<td>每步只规划下一步</td>
+<td>环境不确定</td>
+<td>缺乏全局视野</td>
+</tr>
+<tr>
+<td>分层计划</td>
+<td>目标 → 子目标 → 动作</td>
+<td>复杂任务</td>
+<td>实现复杂</td>
+</tr>
+<tr>
+<td>计划—执行—重规划</td>
+<td>执行中根据观察修订</td>
+<td>动态环境</td>
+<td>token 成本</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="计划的最小结构">计划的最小结构</h3>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;goal&quot;: &quot;修复 parser 测试&quot;,
+  &quot;steps&quot;: [
+    {&quot;id&quot;: 1, &quot;action&quot;: &quot;运行测试并收集失败用例&quot;, &quot;status&quot;: &quot;done&quot;},
+    {&quot;id&quot;: 2, &quot;action&quot;: &quot;定位 parser 失败原因&quot;, &quot;status&quot;: &quot;in_progress&quot;},
+    {&quot;id&quot;: 3, &quot;action&quot;: &quot;修改实现并回归&quot;, &quot;status&quot;: &quot;pending&quot;}
+  ],
+  &quot;open_questions&quot;: [&quot;是否允许修改公共 API？&quot;]
+}
+</code></pre></div>
+<p>计划要能被<strong>更新</strong>，而不是一次生成后供着。每完成一步，标记状态、记录证据、判断是否需要改计划。</p>
+<h2 id="五多-agent什么时候值得">五、多 Agent：什么时候值得</h2>
+<h3 id="适合的场景">适合的场景</h3>
+<ul>
+<li><strong>上下文隔离</strong>：子任务需要读大量互不相关的资料，放在一个上下文里会互相干扰。</li>
+<li><strong>并行探索</strong>：多个方案/多个文件/多个数据源可以同时处理。</li>
+<li><strong>独立评审</strong>：生成者与评审者分离，减少自我确认。</li>
+<li><strong>角色专长</strong>：不同角色有不同工具、提示、权限。</li>
+</ul>
+<h3 id="不适合的场景">不适合的场景</h3>
+<ul>
+<li>任务本身是线性的，拆开只会增加通信。</li>
+<li>子任务之间需要频繁共享细粒度状态。</li>
+<li>没有可靠的合并/裁决机制。</li>
+<li>预算紧张、延迟敏感。</li>
+</ul>
+<h3 id="四种拓扑">四种拓扑</h3>
+<p>见<strong>图 6</strong>：</p>
+<div class="mermaid">flowchart TB
+  subgraph Supervisor[Supervisor]
+    S[主管] --&gt; A1[Worker]
+    S --&gt; A2[Worker]
+    A1 --&gt; S
+    A2 --&gt; S
+  end
+  subgraph Peer[Peer]
+    P1[Agent A] &lt;--&gt; P2[Agent B]
+  end
+  subgraph Hier[Hierarchical]
+    H1[Lead] --&gt; H2[Sub-lead]
+    H2 --&gt; H3[Worker]
+  end
+  subgraph Debate[Debate]
+    D1[Proposer] --&gt; D3[Judge]
+    D2[Critic] --&gt; D3
+  end
+</div>
+<p class="diagram-caption"><strong>图 6 · 四种多 Agent 拓扑：主管、对等、分层、辩论</strong></p>
+<ul>
+<li><strong>Supervisor</strong>：一个主管分配/汇总，最常用，责任清晰。</li>
+<li><strong>Peer</strong>：平等对话，灵活但容易跑偏。</li>
+<li><strong>Hierarchical</strong>：多层管理，适合超大任务，通信成本高。</li>
+<li><strong>Debate</strong>：正反方 + 裁判，适合判断类任务，成本高。</li>
+</ul>
+<h3 id="子-agent-契约">子 Agent 契约</h3>
+<p>给子 Agent 的任务包必须包含：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;task&quot;: &quot;找出 parser 模块中导致 3 个测试失败的最小修改&quot;,
+  &quot;constraints&quot;: [&quot;不要改公共 API&quot;, &quot;不要新增依赖&quot;, &quot;只读访问 src/&quot;],
+  &quot;tools&quot;: [&quot;read_file&quot;, &quot;search_code&quot;, &quot;run_tests&quot;],
+  &quot;success_criteria&quot;: &quot;3 个失败测试通过，且原有测试不回归&quot;,
+  &quot;output_schema&quot;: {
+    &quot;summary&quot;: &quot;string&quot;,
+    &quot;files_changed&quot;: &quot;array&quot;,
+    &quot;evidence&quot;: &quot;array&quot;,
+    &quot;confidence&quot;: &quot;number&quot;,
+    &quot;open_questions&quot;: &quot;array&quot;
+  },
+  &quot;budget&quot;: {&quot;max_steps&quot;: 20, &quot;max_tokens&quot;: 60000}
+}
+</code></pre></div>
+<p>返回时要求：结论、证据、置信度、未决问题、消耗。父 Agent 不应该直接吞掉子 Agent 的全部轨迹。</p>
+<h3 id="多-agent-的五个失败模式">多 Agent 的五个失败模式</h3>
+<ol>
+<li><strong>电话游戏</strong>：信息在 Agent 间转述失真。→ 传原始证据/引用，不传二手总结。</li>
+<li><strong>错误级联</strong>：上游错误被下游当事实。→ 每层验证关键假设。</li>
+<li><strong>责任扩散</strong>：都说“我以为它做了”。→ 明确 owner 和完成标准。</li>
+<li><strong>协调死锁</strong>：互相等待。→ 超时、deadline、降级路径。</li>
+<li><strong>成本爆炸</strong>：每个 Agent 都全量上下文。→ 上下文隔离、预算、并行上限。</li>
+</ol>
+<h2 id="六终止与升级">六、终止与升级</h2>
+<p>编排层必须回答：什么时候停？</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>终止类型</th>
+<th>触发</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功</td>
+<td>验证通过</td>
+<td>结果 + 证据</td>
+</tr>
+<tr>
+<td>部分成功</td>
+<td>预算耗尽但有进展</td>
+<td>已完成 + 未完成 + 建议</td>
+</tr>
+<tr>
+<td>阻塞</td>
+<td>缺信息/缺权限</td>
+<td>明确的问题 + 需要谁做什么</td>
+</tr>
+<tr>
+<td>失败</td>
+<td>不可恢复错误</td>
+<td>错误摘要 + 已尝试</td>
+</tr>
+<tr>
+<td>人工接管</td>
+<td>高风险/低置信</td>
+<td>上下文包 + 建议动作</td>
+</tr>
+</tbody>
+</table></div>
+<p>升级（escalation）不是失败，而是<strong>正确的系统行为</strong>。一个从不找人的 Agent，通常不是 autonomous，而是 reckless。</p>
+<h2 id="七编排层的度量">七、编排层的度量</h2>
+<ul>
+<li>每任务步数分布（长尾是否失控）。</li>
+<li>循环率/重复动作率。</li>
+<li>无进展步数占比。</li>
+<li>子任务成功率、合并冲突率。</li>
+<li>人工升级率及升级后的解决率。</li>
+<li>端到端 P50/P95 延迟。</li>
+<li>每任务成本。</li>
+<li>失败原因分类（模型/工具/上下文/编排/环境）。</li>
+</ul>
+<h2 id="八一个最小图编排示例">八、一个最小图编排示例</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def build_graph():
+    g = Graph()
+    g.add_node(&quot;plan&quot;, plan_node)
+    g.add_node(&quot;act&quot;, act_node)
+    g.add_node(&quot;verify&quot;, verify_node)
+    g.add_node(&quot;replan&quot;, replan_node)
+    g.add_node(&quot;finish&quot;, finish_node)
+
+    g.add_edge(&quot;plan&quot;, &quot;act&quot;)
+    g.add_edge(&quot;act&quot;, &quot;verify&quot;)
+    g.add_edge(&quot;verify&quot;, &quot;finish&quot;, condition=lambda s: s.verified)
+    g.add_edge(&quot;verify&quot;, &quot;replan&quot;, condition=lambda s: not s.verified)
+    g.add_edge(&quot;replan&quot;, &quot;act&quot;)
+    return g
+</code></pre></div>
+<p>这段代码的价值不在于“能跑”，而在于<strong>控制流是显式的</strong>：你能画出它、测试每个节点、在 <code>verify</code> 处加人工审批、在 <code>replan</code> 处加次数上限。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤越跑越多</td>
+<td>终止条件/无进展检测</td>
+<td>加预算、验证器、升级路径</td>
+</tr>
+<tr>
+<td>多 Agent 互相甩锅</td>
+<td>任务契约/owner</td>
+<td>明确成功标准与责任人</td>
+</tr>
+<tr>
+<td>子 Agent 结果没法用</td>
+<td>输出 schema</td>
+<td>结构化返回 + 证据 + 置信度</td>
+</tr>
+<tr>
+<td>编排代码难维护</td>
+<td>是否嵌套 if/else</td>
+<td>改成显式图/状态机</td>
+</tr>
+<tr>
+<td>长任务中断后重来</td>
+<td>是否持久化状态</td>
+<td>检查点 + 恢复</td>
+</tr>
+<tr>
+<td>延迟太高</td>
+<td>是否串行/多轮</td>
+<td>并行、路由、缓存、流式</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>把你熟悉的 Agent 画成状态机：节点、边、终止条件。</li>
+<li>设计一个“研究 + 写作 + 评审”的多 Agent 流程，写出每个子 Agent 的契约。</li>
+<li>思考：什么情况下“多 Agent”反而比“单 Agent + 工具”更差？给出三个具体例子。</li>
+</ol>
+<p>下一步：<a href="runtime.html">运行时与沙箱</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="memory.html"><span>上一篇</span><strong>记忆层</strong></a><a class="next" href="runtime.html"><span>下一篇</span><strong>运行时与沙箱</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

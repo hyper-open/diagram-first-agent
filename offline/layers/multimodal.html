@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多模态与实时交互 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item active" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>多模态与实时交互</strong></div>
+        <article class="doc"><h1 id="多模态与实时交互当输入不再是一段文字">多模态与实时交互：当输入不再是一段文字</h1>
+<p>“支持多模态”常被当成模型能力清单上的一行。对 Agent 来说，它意味着新的<strong>预处理链路</strong>、新的<strong>计费单位</strong>、新的<strong>失败模式</strong>，以及一条新的内容审核通道。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  I1[&quot;文本&quot;] --&gt; R[&quot;统一表示&lt;br/&gt;消息 + 附件引用&quot;]
+  I2[&quot;图片&quot;] --&gt; P1[&quot;缩放 / 裁剪&quot;]
+  I3[&quot;文档&quot;] --&gt; P2[&quot;解析 / OCR / 版面&quot;]
+  I4[&quot;语音&quot;] --&gt; P3[&quot;ASR / 分段&quot;]
+  P1 --&gt; R
+  P2 --&gt; R
+  P3 --&gt; R
+  R --&gt; M[&quot;模型&quot;]
+  M --&gt; O1[&quot;文本&quot;]
+  M --&gt; O2[&quot;图像 / 语音 / 文件&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 多模态的关键不在模型，而在模型之前的那条预处理链</p>
+<h2 id="一先算账多模态很贵">一、先算账：多模态很贵</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>输入</th>
+<th>成本驱动</th>
+<th>常见失误</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>图片</td>
+<td>分辨率、切片数（tile）</td>
+<td>上传原图，token 翻十倍</td>
+</tr>
+<tr>
+<td>PDF</td>
+<td>页数、是否逐页转图</td>
+<td>100 页文档整本塞进上下文</td>
+</tr>
+<tr>
+<td>音频</td>
+<td>时长、采样率</td>
+<td>一小时会议录音直接进模型</td>
+</tr>
+<tr>
+<td>视频</td>
+<td>帧率 × 分辨率 × 时长</td>
+<td>按秒抽帧，成本爆炸</td>
+</tr>
+</tbody>
+</table></div>
+<p>工程上的默认动作应该是<strong>先降采样，再进模型</strong>：图片长边压到模型推荐尺寸、文档先做版面分析只取相关页、音频先分段再按需处理。</p>
+<h2 id="二文档最容易被低估的一环">二、文档：最容易被低估的一环</h2>
+<p>PDF 不是文本，它是“画出来的版面”。三种解析方式差别巨大：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>适合</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>提取文本层</td>
+<td>电子版 PDF</td>
+<td>双栏、页眉页脚会串行</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>扫描件、截图</td>
+<td>错字、表格错位</td>
+</tr>
+<tr>
+<td>视觉模型直读</td>
+<td>复杂版面、图表</td>
+<td>成本高、可能编造数字</td>
+</tr>
+</tbody>
+</table></div>
+<p>Agent 场景里最常见的翻车：<strong>表格被读成一句话</strong>，数字对不上，但模型自信地给出结论。</p>
+<p>对策：</p>
+<ul>
+<li>表格单独抽成结构化数据，不要走纯文本。</li>
+<li>保留页码与坐标，回答时能引用到“第几页第几段”。</li>
+<li>数字类结论必须能回溯到原文位置，不能只靠模型复述。</li>
+</ul>
+<h2 id="三图像理解与生成是两件事">三、图像：理解与生成是两件事</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>理解（VLM）</th>
+<th>生成</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主要风险</td>
+<td>幻觉细节、读错文字</td>
+<td>违规内容、版权、深伪</td>
+</tr>
+<tr>
+<td>审核位置</td>
+<td>输入（用户图片）</td>
+<td>输出（生成结果）</td>
+</tr>
+<tr>
+<td>标识要求</td>
+<td>不需要</td>
+<td>需要水印/元数据</td>
+</tr>
+<tr>
+<td>评测</td>
+<td>人工 + 结构化问答</td>
+<td>人工偏好 + 安全集</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个具体陷阱：模型“看图说话”时会补全不存在的内容。让模型描述图表时，要求它<strong>逐项读出可见数值</strong>，而不是总结趋势——可验证性完全不同。</p>
+<h2 id="四语音级联还是端到端">四、语音：级联还是端到端</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart TB
+  A[&quot;音频&quot;] --&gt; B{&quot;架构&quot;}
+  B --&gt;|级联| C[&quot;VAD → ASR → LLM → TTS&quot;]
+  B --&gt;|端到端| D[&quot;语音模型直接对话&quot;]
+  C --&gt; E[&quot;可控、可审计、可替换每一段&quot;]
+  D --&gt; F[&quot;延迟低、语气自然、难调试&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 级联好维护，端到端好体验；多数产品最终是混合架构</p>
+<p>延迟预算（语音体验的生死线）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>目标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VAD 判定说完</td>
+<td>200~500ms</td>
+<td>太短会截断，太长会显得迟钝</td>
+</tr>
+<tr>
+<td>ASR 首字</td>
+<td>300ms 内</td>
+<td>流式识别</td>
+</tr>
+<tr>
+<td>模型首 token</td>
+<td>500ms 内</td>
+<td>小模型或预生成</td>
+</tr>
+<tr>
+<td>TTS 首包</td>
+<td>300ms 内</td>
+<td>流式合成</td>
+</tr>
+<tr>
+<td><strong>端到端首响</strong></td>
+<td><strong>1s 左右</strong></td>
+<td>超过 1.5s 用户会觉得“卡住了”</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="五实时交互打断比回答更难">五、实时交互：打断比回答更难</h2>
+<p>语音 Agent 的核心体验不是“答得准”，而是“能被打断”。</p>
+<ul>
+<li><strong>用户插话时立即停止 TTS</strong>，并丢弃未播放的音频。</li>
+<li><strong>保留已说出的内容</strong>，作为下一轮的上下文，否则会重复。</li>
+<li><strong>区分“嗯/对”这类反馈音</strong>与真正的话轮抢占。</li>
+<li><strong>回声消除</strong>：否则 Agent 会听到自己。</li>
+</ul>
+<p>这些在文本 Agent 里都不存在，但在语音产品里是主要工作量。</p>
+<h2 id="六computer-use把屏幕当输入">六、Computer Use：把屏幕当输入</h2>
+<p>视觉回路的三个工程问题：</p>
+<ol>
+<li><strong>截图频率</strong>：每一步都截图最准，也最贵最慢。常见做法是“动作后截图 + 状态未变则跳过”。</li>
+<li><strong>坐标误差</strong>：模型给的坐标可能偏几个像素。要点在元素中心，且失败后重试一次。</li>
+<li><strong>状态判断</strong>：怎么知道“点成功了”？靠截图差异，还是靠可访问性树？后者更稳但覆盖不全。</li>
+</ol>
+<p>在真实桌面上，<strong>可访问性树（DOM/UI tree）优先于纯视觉</strong>：文字与结构比像素更可靠。见<a href="runtime.html">运行时与沙箱</a>的 Computer Use 一节。</p>
+<h2 id="七多模态上下文怎么管">七、多模态上下文怎么管</h2>
+<ul>
+<li>附件用<strong>引用</strong>而不是内容：消息里放附件 ID，需要时再取。</li>
+<li>图片在上下文里只保留<strong>摘要 + 引用</strong>，原始像素按需重新加载。</li>
+<li>多轮对话里，旧图片通常可以替换成一句描述，省下大量 token。</li>
+<li>缓存友好：把稳定的图片/文档放在前缀，变动的指令放在后面。</li>
+</ul>
+<h2 id="八评测多模态任务">八、评测多模态任务</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>判分方式</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文档问答</td>
+<td>抽取答案 + 定位页码</td>
+<td>容忍 OCR 噪声</td>
+</tr>
+<tr>
+<td>图表读数</td>
+<td>数值比对</td>
+<td>允许合理误差范围</td>
+</tr>
+<tr>
+<td>图像描述</td>
+<td>人工 / LLM 评审</td>
+<td>惩罚编造细节</td>
+</tr>
+<tr>
+<td>语音转写</td>
+<td>WER</td>
+<td>专有名词单独统计</td>
+</tr>
+<tr>
+<td>端到端语音</td>
+<td>任务完成 + 打断响应</td>
+<td>必须真人测试</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：图片要不要先 OCR 再给模型？</strong>
+看任务。读文字用 OCR 更准更便宜；理解版面与图表用视觉模型。两者结合最稳。</p>
+<p><strong>Q：长文档怎么处理？</strong>
+先检索定位相关页，再把这些页送进模型。整本塞进去既贵又容易“中间遗忘”。</p>
+<p><strong>Q：语音能不能直接用文本 Agent 的评测集？</strong>
+不能。语音有识别错误与实时性两个额外维度，必须单独评测。</p>
+<p><strong>Q：多模态审核要单独做吗？</strong>
+要。图片/音频走独立审核通道，OCR/ASR 之后的文本还要再过一遍文本审核。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 输入有降采样策略（尺寸、页数、时长）？</li>
+<li>[ ] 文档解析能保住表格与页码？</li>
+<li>[ ] 图片理解要求“可验证读出”而不是自由总结？</li>
+<li>[ ] 生成内容有水印与元数据标识？</li>
+<li>[ ] 语音有明确的首响预算与打断策略？</li>
+<li>[ ] Computer Use 优先用结构化界面信息？</li>
+<li>[ ] 多模态内容有审核通道与评测集？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>算一次“100 页 PDF 问答”的 token 成本，再算“先检索 5 页”的成本。</li>
+<li>设计一个语音打断的测试用例，验证停止播放后不会重复已说内容。</li>
+<li>给你的 Agent 加一条规则：涉及数字的结论必须能定位到原文页。</li>
+</ol>
+<p>下一步：<a href="context.html">上下文层</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="model-adaptation.html"><span>上一篇</span><strong>模型适配</strong></a><a class="next" href="context.html"><span>下一篇</span><strong>上下文层</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

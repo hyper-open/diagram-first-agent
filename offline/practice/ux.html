@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>交互与信任设计 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item active" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>交互与信任设计</strong></div>
+        <article class="doc"><h1 id="交互与信任设计让用户敢用能用会停">交互与信任设计：让用户敢用、能用、会停</h1>
+<p>Agent 的能力上限由模型决定，<strong>可用性上限由交互决定</strong>。同一个 Agent，把“它正在做什么”藏起来，用户会觉得不可控；把每一步都摊开，用户又会被淹没。这一层几乎不写在架构图里，却决定了产品能不能被信任。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  T[&quot;信任&quot;] --&gt; A[&quot;可预期&lt;br/&gt;知道它会做什么&quot;]
+  T --&gt; B[&quot;可干预&lt;br/&gt;随时能停、能改&quot;]
+  T --&gt; C[&quot;可解释&lt;br/&gt;知道它为什么这么做&quot;]
+  A --&gt; M[&quot;可度量&lt;br/&gt;接受率 / 中断率 / 重做率&quot;]
+  B --&gt; M
+  C --&gt; M
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 信任不是“感觉”，是三个可设计的性质，而且都能度量</p>
+<h2 id="一三种交互形态">一、三种交互形态</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>时长</th>
+<th>用户预期</th>
+<th>界面重点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同步问答</td>
+<td>秒级</td>
+<td>立即给答案</td>
+<td>首字延迟、可中断</td>
+</tr>
+<tr>
+<td>流式执行</td>
+<td>十几秒~几分钟</td>
+<td>边做边说</td>
+<td>步骤可见、可停止、可纠偏</td>
+</tr>
+<tr>
+<td>长任务</td>
+<td>分钟~小时</td>
+<td>交给它，稍后回来</td>
+<td>进度、通知、结果审阅、失败接管</td>
+</tr>
+</tbody>
+</table></div>
+<p>把长任务做成同步等待，是体验灾难；把秒级问答做成“任务队列”，是过度设计。<strong>先按任务时长选形态，再谈细节。</strong></p>
+<h2 id="二可见性不要用假进度条">二、可见性：不要用假进度条</h2>
+<p>用户不关心“完成了 47%”，用户关心“它在干什么、还要多久、卡在哪”。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>差</th>
+<th>好</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一个转圈的 loading</td>
+<td>“正在读取 3 个文件 → 已读取 2 个”</td>
+</tr>
+<tr>
+<td>进度条从 0 走到 90% 停住</td>
+<td>阶段列表：检索 / 分析 / 生成</td>
+</tr>
+<tr>
+<td>只显示“处理中”</td>
+<td>显示当前工具与目标（脱敏后）</td>
+</tr>
+</tbody>
+</table></div>
+<p>三条原则：</p>
+<ol>
+<li><strong>进度要对应真实阶段</strong>，不要用计时器模拟。</li>
+<li><strong>阶段数控制在 3~5 个</strong>，再多就没人看。</li>
+<li><strong>卡住要说明</strong>：是等外部系统、等审批，还是重试中。</li>
+</ol>
+<h2 id="三可控性三个按钮的真实语义">三、可控性：三个按钮的真实语义</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>用户以为</th>
+<th>应该做到</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>停止生成</td>
+<td>停止说话</td>
+<td>立即断流，保留已生成内容</td>
+</tr>
+<tr>
+<td>停止任务</td>
+<td>停止一切</td>
+<td>取消后续步骤，说明已完成哪些副作用</td>
+</tr>
+<tr>
+<td>撤销</td>
+<td>回到之前</td>
+<td>只有可补偿的动作才能撤销，否则要如实说明</td>
+</tr>
+</tbody>
+</table></div>
+<p>最容易骗用户的是“撤销”：已经发出去的邮件撤不回来。正确做法是<strong>在动作前给预览</strong>，而不是在动作后给假撤销。</p>
+<h2 id="四计划先给再执行">四、计划先给，再执行</h2>
+<p>对多步任务，先展示计划再执行，能显著降低“跑偏”成本：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>我准备这样做：
+1. 从 3 个来源检索近 30 天的工单
+2. 按问题类型聚类，找出 Top 3
+3. 生成周报草稿（不发送）
+
+[开始执行]  [修改计划]  [只看结果]
+</code></pre></div>
+<p>代价是多一次交互。适合：写操作、外部可见动作、成本高的任务。不适合：纯查询、秒级问答。</p>
+<h2 id="五怎么表达不确定">五、怎么表达“不确定”</h2>
+<p>用户最常见的误解，是把模型的自信当成事实的确定。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>做法</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>给一个 87% 的置信度</td>
+<td>假精确，用户无法校准</td>
+</tr>
+<tr>
+<td>标注来源与时间</td>
+<td>用户能自己判断</td>
+</tr>
+<tr>
+<td>明确说“这条我没有找到出处”</td>
+<td>建立可信度</td>
+</tr>
+<tr>
+<td>区分“事实 / 推断 / 建议”</td>
+<td>最有效</td>
+</tr>
+</tbody>
+</table></div>
+<p>推荐用<strong>证据等级</strong>代替百分比：有引用、有单一来源、无来源、相互冲突。四种状态足够覆盖大多数场景，而且用户一看就懂。</p>
+<h2 id="六失败与降级">六、失败与降级</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart TB
+  E[&quot;失败&quot;] --&gt; A{&quot;能继续吗？&quot;}
+  A --&gt;|能| P[&quot;给部分结果 + 说明缺什么&quot;]
+  A --&gt;|不能| B{&quot;能换路径吗？&quot;}
+  B --&gt;|能| C[&quot;换工具/换模型 + 说明&quot;]
+  B --&gt;|不能| D[&quot;转人工 / 给自助路径&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 失败处理的优先级：部分结果 &gt; 换路径 &gt; 转人工 &gt; 报错</p>
+<p>错误话术三要素：<strong>发生了什么、影响是什么、现在能做什么。</strong></p>
+<ul>
+<li>差：“系统错误，请稍后再试。”</li>
+<li>好：“订单查询超时了，可能是上游系统繁忙。已拿到你的会员信息，需要我先把可用的部分整理给你吗？”</li>
+</ul>
+<h2 id="七审批界面一屏做决定">七、审批界面：一屏做决定</h2>
+<p>审批不是弹窗。一个好的审批卡片要在一屏内回答：</p>
+<ul>
+<li><strong>要做什么</strong>：动作、参数、目标对象（可展开原文）。</li>
+<li><strong>为什么</strong>：Agent 的理由，以及触发了哪条策略。</li>
+<li><strong>影响</strong>：会改什么、影响谁、能不能撤回。</li>
+<li><strong>证据</strong>：支持这个决定的关键信息。</li>
+<li><strong>选项</strong>：允许 / 拒绝 / 修改后允许 / 转人工。</li>
+</ul>
+<p>默认应该是<strong>拒绝</strong>，且拒绝要比允许更容易点——这是“安全默认”在交互层的体现。</p>
+<h2 id="八信任校准">八、信任校准</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>状态</th>
+<th>表现</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>过度信任</td>
+<td>不看引用就转发、不检查就执行</td>
+<td>一次错误就会被放大</td>
+</tr>
+<tr>
+<td>信任不足</td>
+<td>每步都要确认、频繁手动改</td>
+<td>效率低于自己干</td>
+</tr>
+<tr>
+<td>校准良好</td>
+<td>常规任务放手、高风险任务检查</td>
+<td>真正省时间</td>
+</tr>
+</tbody>
+</table></div>
+<p>产品设计的目标不是“让用户信任”，而是<strong>让信任匹配能力</strong>：在它擅长的场景减少摩擦，在它不可靠的场景增加摩擦。</p>
+<h2 id="九度量">九、度量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义</th>
+<th>变差说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>任务接受率</td>
+<td>直接采用结果的比例</td>
+<td>质量或表达有问题</td>
+</tr>
+<tr>
+<td>中断率</td>
+<td>用户主动停止的比例</td>
+<td>过程不透明或太慢</td>
+</tr>
+<tr>
+<td>重做率</td>
+<td>同一任务重复发起的比例</td>
+<td>首次结果不可用</td>
+</tr>
+<tr>
+<td>澄清率</td>
+<td>需要追问的比例</td>
+<td>意图识别或提问设计有问题</td>
+</tr>
+<tr>
+<td>人工接管率</td>
+<td>转到人的比例</td>
+<td>能力边界或兜底设计问题</td>
+</tr>
+<tr>
+<td>审批修改率</td>
+<td>审批时改参数的比例</td>
+<td>计划或参数展示不充分</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：把思考过程全展示出来好不好？</strong>
+不好。展示的是<strong>决策要点与证据</strong>，不是原始思维链。原始思维链冗长、可能自相矛盾，还会泄露内部提示。</p>
+<p><strong>Q：要不要给每一步都加确认？</strong>
+不要。确认疲劳会让用户无脑点“允许”，比不确认更危险。按风险分级。</p>
+<p><strong>Q：用户点“停止”后，已执行的副作用怎么办？</strong>
+如实列出。能补偿的给补偿入口，不能补偿的明确说明——这比假装没发生更可信。</p>
+<p><strong>Q：Agent 主动提问是不是显得笨？</strong>
+不是。问一个关键问题，比猜错十次更专业。但要限制提问次数，并给出默认选项。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 交互形态与任务时长匹配？</li>
+<li>[ ] 进度对应真实阶段，卡住有说明？</li>
+<li>[ ] 停止/撤销的语义真实，不误导？</li>
+<li>[ ] 高风险任务先给计划再执行？</li>
+<li>[ ] 不确定性用证据等级表达，而不是假百分比？</li>
+<li>[ ] 失败时优先给部分结果与替代路径？</li>
+<li>[ ] 审批卡片一屏可决策，默认拒绝？</li>
+<li>[ ] 有接受率、中断率、重做率的看板？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>挑一个你的 Agent 任务，画出它的三个阶段，并写出每个阶段用户应该看到什么。</li>
+<li>把“系统错误，请稍后再试”改写成符合三要素的话术。</li>
+<li>设计一个审批卡片，要求用户在不展开详情的情况下也能做出正确决定。</li>
+</ol>
+<p>下一步：<a href="../advanced/optimization.html">优化手册</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="cases.html"><span>上一篇</span><strong>真实案例拆解</strong></a><a class="next" href="../advanced/optimization.html"><span>下一篇</span><strong>优化手册</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

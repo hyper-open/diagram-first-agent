@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>运行时与沙箱 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item active" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>运行时与沙箱</strong></div>
+        <article class="doc"><h1 id="运行时与沙箱动作真正发生的地方">运行时与沙箱：动作真正发生的地方</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  P[&quot;进程&quot;] --&gt; C[&quot;容器&quot;] --&gt; G[&quot;gVisor&quot;] --&gt; V[&quot;微虚拟机&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 隔离强度与成本递增；模型生成代码至少需要容器级隔离</p>
+<p>前面几层都在“决定做什么”。运行时层负责“真正做”。它决定了 Agent 的能力边界，也决定了<strong>最坏情况下能造成多大破坏</strong>。</p>
+<p>一个反直觉的事实：<strong>Agent 的安全事故，大多不是模型“变坏”，而是运行时给了它过大的权限。</strong></p>
+<h2 id="一为什么需要沙箱">一、为什么需要沙箱</h2>
+<p>Agent 会执行模型生成的代码、命令、浏览器操作。这些输入：</p>
+<ul>
+<li>可能是错的（模型幻觉）。</li>
+<li>可能被注入（网页/文档/工具结果里的恶意指令）。</li>
+<li>可能被用户恶意利用（越狱、提权）。</li>
+</ul>
+<p>如果没有隔离，一次 <code>rm -rf /</code>、一次 <code>curl $SECRET</code>、一次 <code>pip install</code> 恶意包，就可能造成不可逆损失。</p>
+<p>沙箱的目标不是“让 Agent 不犯错”，而是<strong>让错误可控</strong>：</p>
+<ul>
+<li>限制能看到什么（文件、网络、密钥）。</li>
+<li>限制能改什么（只读挂载、写白名单）。</li>
+<li>限制能用多少（CPU、内存、时间、磁盘）。</li>
+<li>限制能带走什么（网络出口、剪贴板、日志）。</li>
+<li>出事能回溯（快照、审计、回滚）。</li>
+</ul>
+<h2 id="二隔离级别没有绝对安全只有成本曲线">二、隔离级别：没有绝对安全，只有成本曲线</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>机制</th>
+<th>隔离强度</th>
+<th>启动速度</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>同进程</td>
+<td><code>exec</code>/<code>eval</code></td>
+<td>极弱</td>
+<td>即时</td>
+<td>仅可信代码，教学演示</td>
+</tr>
+<tr>
+<td>子进程</td>
+<td>fork/exec + 资源限制</td>
+<td>弱</td>
+<td>毫秒</td>
+<td>本地只读工具</td>
+</tr>
+<tr>
+<td>容器</td>
+<td>namespace + cgroup + seccomp</td>
+<td>中</td>
+<td>百毫秒–秒</td>
+<td>大多数代码执行</td>
+</tr>
+<tr>
+<td>gVisor</td>
+<td>用户态内核</td>
+<td>中强</td>
+<td>秒级</td>
+<td>多租户代码执行</td>
+</tr>
+<tr>
+<td>微虚拟机</td>
+<td>Firecracker 等</td>
+<td>强</td>
+<td>百毫秒–秒</td>
+<td>不可信代码、多租户</td>
+</tr>
+<tr>
+<td>独立 VM</td>
+<td>完整虚拟化</td>
+<td>最强</td>
+<td>秒–分钟</td>
+<td>高风险/桌面操作</td>
+</tr>
+<tr>
+<td>WASM</td>
+<td>能力型沙箱</td>
+<td>强（但生态受限）</td>
+<td>毫秒</td>
+<td>插件、轻量计算</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>容器不是安全边界。共享内核意味着内核漏洞可能逃逸；对不可信代码，优先微虚拟机或 gVisor，并叠加 seccomp/AppArmor、只读根文件系统、无特权用户。</p>
+</blockquote>
+<h3 id="选择建议">选择建议</h3>
+<ul>
+<li><strong>内部工具、可信代码</strong>：子进程 + 超时 + 工作目录隔离，够用。</li>
+<li><strong>多租户、模型生成代码</strong>：容器 + 严格 seccomp/网络策略；高风险场景上微虚拟机。</li>
+<li><strong>Computer Use</strong>：独立 VM/桌面会话，不碰宿主机。</li>
+<li><strong>浏览器</strong>：独立 profile、禁用扩展、限制下载、代理出口。</li>
+</ul>
+<h2 id="三资源限制必须有的六条">三、资源限制：必须有的六条</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 墙钟超时（含工具内部阻塞）
+2. CPU 时间上限
+3. 内存上限（OOM 可杀）
+4. 磁盘/输出大小上限
+5. 进程/线程数上限
+6. 网络出口白名单 + 带宽/请求数限制
+</code></pre></div>
+<p>没有超时的工具，是 Agent 系统里的定时炸弹。模型可能生成一个死循环，或者调用一个永不返回的 API。</p>
+<h3 id="输出也要限制">输出也要限制</h3>
+<p>一个 <code>cat</code> 大文件、一次 <code>npm install</code> 日志、一个网页全文，都可能瞬间撑爆上下文。运行时应该：</p>
+<ul>
+<li>截断 stdout/stderr（保留头尾，标注截断）。</li>
+<li>把完整输出写到文件，返回路径 + 摘要。</li>
+<li>限制单次工具返回的字节数。</li>
+</ul>
+<h2 id="四文件系统最小可见性">四、文件系统：最小可见性</h2>
+<p>推荐布局：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>/workspace       读写，任务目录（挂载）
+/workspace/.git  只读或受限（防止改写历史）
+/input           只读，用户上传
+/output          只写，产物
+/tmp             临时，任务结束清理
+</code></pre></div>
+<p>原则：</p>
+<ul>
+<li>默认只读，按需开放写。</li>
+<li>不挂载宿主机 home、SSH key、云凭证。</li>
+<li>不暴露 Docker socket（等于 root）。</li>
+<li>路径规范化，阻止 <code>..</code> 穿越和符号链接逃逸。</li>
+<li>任务结束销毁或快照，避免残留。</li>
+</ul>
+<h2 id="五网络默认拒绝">五、网络：默认拒绝</h2>
+<p>Agent 需要联网（查资料、装依赖），但网络是数据外泄的主要通道。</p>
+<p>推荐：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>默认：无网络
+按需：域名白名单 + 方法/端口限制
+代理：所有流量经审计代理，记录域名与字节数
+禁止：云元数据地址（169.254.169.254）、内网网段、控制面
+</code></pre></div>
+<p>尤其注意<strong>云元数据服务</strong>：如果沙箱能访问它，攻击者可能拿到实例凭证。</p>
+<h3 id="数据外泄的隐蔽通道">数据外泄的隐蔽通道</h3>
+<p>即使限制 HTTP，仍有：</p>
+<ul>
+<li>DNS 查询（把数据编码进子域名）。</li>
+<li>时间侧信道。</li>
+<li>图片加载/像素追踪。</li>
+<li>剪贴板、打印、通知。</li>
+</ul>
+<p>高安全场景需要更严格的出口控制，甚至离线执行 + 人工导出。</p>
+<h2 id="六密钥不要放进沙箱">六、密钥：不要放进沙箱</h2>
+<p>最常见的错误：把 API Key、数据库密码作为环境变量注入沙箱。一旦模型能执行代码，它就能读环境变量、读文件、发网络请求。</p>
+<p>更好的模式：</p>
+<ul>
+<li><strong>凭据不进沙箱</strong>：由宿主代理调用外部 API，沙箱只拿短期、限权、限时的 token。</li>
+<li><strong>按需注入</strong>：只在特定工具调用时注入，且绑定用户/租户/任务。</li>
+<li><strong>最小权限</strong>：只读 token、单资源 scope、短 TTL。</li>
+<li><strong>可撤销</strong>：任务结束立即失效。</li>
+<li><strong>审计</strong>：记录谁在何时用哪个凭据做了什么。</li>
+</ul>
+<h2 id="七computer-use把整个桌面当工具">七、Computer Use：把整个桌面当工具</h2>
+<p>Computer Use 让模型通过截图 + 鼠标/键盘操作软件。它的运行时通常是：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>独立桌面 VM
+  ├─ 虚拟显示器（固定分辨率）
+  ├─ 浏览器/应用
+  ├─ 输入注入（鼠标/键盘）
+  ├─ 截图/OCR
+  └─ 无宿主机文件/网络直通
+</code></pre></div>
+<h3 id="工程难点">工程难点</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>难点</th>
+<th>表现</th>
+<th>缓解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>延迟高</td>
+<td>每步截图 + 推理，秒级</td>
+<td>降低截图频率、区域裁剪、并行</td>
+</tr>
+<tr>
+<td>坐标脆弱</td>
+<td>分辨率/缩放/弹窗导致点错</td>
+<td>固定环境、先用可访问性树/选择器</td>
+</tr>
+<tr>
+<td>状态不可见</td>
+<td>不知道页面是否加载完</td>
+<td>等待条件、截图差分、显式检查</td>
+</tr>
+<tr>
+<td>验证困难</td>
+<td>点完不知道成功没</td>
+<td>读回状态、断言、人工确认</td>
+</tr>
+<tr>
+<td>注入风险</td>
+<td>页面内容诱导点击</td>
+<td>高风险动作确认、域名白名单</td>
+</tr>
+<tr>
+<td>成本高</td>
+<td>每步都传截图</td>
+<td>压缩、只在需要时看屏幕</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Computer Use 是“最后手段”。能用 API 就用 API，能用 DOM/选择器就用选择器，都不行才用坐标点击。</p>
+</blockquote>
+<h2 id="八可复现性出了事能重放">八、可复现性：出了事能重放</h2>
+<p>一个生产级运行时应该记录：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;task_id&quot;: &quot;...&quot;,
+  &quot;image_digest&quot;: &quot;sha256:...&quot;,
+  &quot;command&quot;: [&quot;python&quot;, &quot;fix.py&quot;],
+  &quot;cwd&quot;: &quot;/workspace&quot;,
+  &quot;env_keys&quot;: [&quot;PATH&quot;, &quot;LANG&quot;],
+  &quot;stdin&quot;: null,
+  &quot;exit_code&quot;: 1,
+  &quot;stdout_sha256&quot;: &quot;...&quot;,
+  &quot;stderr_sha256&quot;: &quot;...&quot;,
+  &quot;duration_ms&quot;: 1240,
+  &quot;resource_usage&quot;: {&quot;cpu_ms&quot;: 900, &quot;max_rss_kb&quot;: 120000},
+  &quot;network&quot;: [{&quot;host&quot;: &quot;pypi.org&quot;, &quot;bytes&quot;: 1200}],
+  &quot;artifacts&quot;: [&quot;/output/patch.diff&quot;]
+}
+</code></pre></div>
+<p>可复现的关键：</p>
+<ul>
+<li>镜像/依赖版本锁定（digest、lockfile）。</li>
+<li>环境变量白名单。</li>
+<li>随机种子（能固定的部分）。</li>
+<li>输入快照。</li>
+<li>输出与副作用记录。</li>
+</ul>
+<h2 id="九一个安全的子进程执行器">九、一个安全的子进程执行器</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>import os, resource, subprocess, tempfile
+from pathlib import Path
+
+def run_sandboxed(cmd: list[str], workspace: Path, timeout_s: int = 30,
+                  max_mem_mb: int = 512) -&gt; dict:
+    env = {&quot;PATH&quot;: &quot;/usr/local/bin:/usr/bin:/bin&quot;, &quot;LANG&quot;: &quot;C.UTF-8&quot;}
+
+    def limits():
+        resource.setrlimit(resource.RLIMIT_CPU, (timeout_s, timeout_s))
+        resource.setrlimit(resource.RLIMIT_AS,
+                           (max_mem_mb * 1024 * 1024,) * 2)
+        resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024,) * 2)
+        os.setsid()
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=workspace,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            preexec_fn=limits,
+            shell=False,          # 禁止 shell 注入
+        )
+        return {
+            &quot;ok&quot;: proc.returncode == 0,
+            &quot;exit_code&quot;: proc.returncode,
+            &quot;stdout&quot;: truncate(proc.stdout, 20_000),
+            &quot;stderr&quot;: truncate(proc.stderr, 20_000),
+        }
+    except subprocess.TimeoutExpired:
+        return {&quot;ok&quot;: False, &quot;error&quot;: &quot;timeout&quot;, &quot;retryable&quot;: True}
+</code></pre></div>
+<p>这段代码只是<strong>最低限度</strong>的本地隔离，不是安全沙箱。生产环境请用容器/微虚拟机，并叠加：</p>
+<ul>
+<li>非 root 用户。</li>
+<li>只读根文件系统。</li>
+<li>seccomp 白名单。</li>
+<li>网络策略。</li>
+<li>审计与告警。</li>
+</ul>
+<h2 id="十审批把不可逆动作交给人">十、审批：把不可逆动作交给人</h2>
+<p>不是所有动作都适合同一个权限级别：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>例子</th>
+<th>策略</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>只读</td>
+<td>读文件、搜索</td>
+<td>自动允许</td>
+</tr>
+<tr>
+<td>低风险写</td>
+<td>写工作区、生成草稿</td>
+<td>自动 + 审计</td>
+</tr>
+<tr>
+<td>中风险</td>
+<td>提交代码、发内部消息</td>
+<td>可配置审批</td>
+</tr>
+<tr>
+<td>高风险</td>
+<td>转账、删除生产数据、发外部邮件</td>
+<td>强制人工确认</td>
+</tr>
+<tr>
+<td>禁止</td>
+<td>提权、访问密钥、修改审计</td>
+<td>直接拒绝</td>
+</tr>
+</tbody>
+</table></div>
+<p>审批界面要给出：<strong>做什么、为什么、影响范围、可回滚吗、证据</strong>。不要只弹一个“允许/拒绝”。</p>
+<h2 id="十一运行时的度量">十一、运行时的度量</h2>
+<ul>
+<li>沙箱启动延迟、执行延迟 P50/P95。</li>
+<li>超时率、OOM 率、被杀率。</li>
+<li>网络拒绝次数（可能是攻击信号）。</li>
+<li>资源利用率与成本。</li>
+<li>逃逸/越权告警（应为 0）。</li>
+<li>任务可复现率（同样输入能否得到同样环境）。</li>
+</ul>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>命令偶尔卡死</td>
+<td>是否有超时/进程组清理</td>
+<td>墙钟超时 + kill 进程组</td>
+</tr>
+<tr>
+<td>磁盘被写满</td>
+<td>输出/临时文件限制</td>
+<td>配额、清理、只读挂载</td>
+</tr>
+<tr>
+<td>密钥泄露</td>
+<td>是否注入环境变量</td>
+<td>移出沙箱、短期 token</td>
+</tr>
+<tr>
+<td>能访问内网</td>
+<td>网络策略</td>
+<td>默认拒绝 + 白名单 + 禁元数据</td>
+</tr>
+<tr>
+<td>同样任务结果不同</td>
+<td>环境/依赖/数据漂移</td>
+<td>镜像 digest + 快照</td>
+</tr>
+<tr>
+<td>点错按钮</td>
+<td>坐标/等待/分辨率</td>
+<td>选择器优先、固定环境、断言</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>列出你的 Agent 能访问的文件、网络、密钥，逐项标注“是否必要”。</li>
+<li>为代码执行设计一个 30 秒超时 + 512MB 内存 + 无网络的沙箱配置。</li>
+<li>设计一个高风险动作的审批卡：需要展示哪些信息，才能让人做出判断？</li>
+</ol>
+<p>下一步：<a href="testing.html">测试与验证</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="orchestration.html"><span>上一篇</span><strong>编排层</strong></a><a class="next" href="testing.html"><span>下一篇</span><strong>测试与验证</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

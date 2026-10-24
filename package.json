@@ -1,0 +1,23 @@
+{
+  "name": "diagram-first-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "从 ReAct 到 Agent 平台：架构分层、演进、网关、RAG、多 Agent、计费、内容安全与合规",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "test": "python3 -m unittest discover -s tests -v",
+    "demo": "python3 -m examples.mini_agent.cli --demo",
+    "eval": "python3 -m examples.mini_agent.eval",
+    "build:offline": "node tools/build-offline.mjs"
+  },
+  "devDependencies": {
+    "markdown-it": "^15.0.3",
+    "markdown-it-container": "^4.0.0",
+    "mermaid": "^11.12.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>内容安全与审核 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item active" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>内容安全与审核</strong></div>
+        <article class="doc"><h1 id="内容安全与审核管住说错什么">内容安全与审核：管住“说错什么”</h1>
+<div class="custom-block tip"><p class="custom-block-title">与「安全与权限」的分工</p>
+<p><a href="security.html">安全与权限</a> 处理的是<strong>动作</strong>越界：注入、越权、外泄、沙箱逃逸，防线是权限与隔离。
+本章处理的是<strong>内容</strong>越界：违法不良信息、隐私、泄密、有害建议，防线是审核与处置策略。</p>
+<p>两者共享同一条边界，但不能互相替代：沙箱挡不住一句违法建议，审核也挡不住一次越权调用。</p>
+</div>
+<p>在聊天产品里，“说错话”是体验问题；在 Agent 里，它是<strong>责任问题</strong>——因为这句话可能被写进邮件、存进文件、发给客户、记进长期记忆。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  U[&quot;用户输入&quot;] --&gt; G1{&quot;① 输入审核&quot;}
+  G1 --&gt;|block| R[&quot;拒答 / 转人工&quot;]
+  G1 --&gt;|allow| M[&quot;模型&quot;]
+  M --&gt; G2{&quot;② 增量审核&quot;}
+  G2 --&gt;|block| R
+  G2 --&gt; O[&quot;输出&quot;]
+  T[&quot;工具返回 / RAG 片段&quot;] --&gt; G3{&quot;③ 上下文审核&quot;}
+  G3 --&gt;|block| R
+  G3 --&gt;|allow| M
+  O --&gt; G4{&quot;④ 出口审核&quot;}
+  G4 --&gt;|block| R
+  G4 --&gt;|allow| USER[&quot;用户&quot;]
+  O --&gt; G5{&quot;⑤ 记忆写入审核&quot;}
+  G5 --&gt;|block| DROP[&quot;丢弃&quot;]
+  G5 --&gt;|allow| MEM[(&quot;长期记忆&quot;)]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 内容安全不是一个检查点，而是五个卡点：输入、生成中、上下文、出口、记忆</p>
+<p>本章另有 3 张图：图 1 阈值取舍，图 2 机审—人审—申诉，图 3 流式缓冲与断流。</p>
+<h2 id="它属于哪一层">它属于哪一层</h2>
+<p><strong>内容安全不是第九层，是横切能力。</strong> 它由策略（类目、阈值、处置）和执行点（下面五个卡点）组成，横跨多个层的边界：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>卡点</th>
+<th>职责七层</th>
+<th>平台六层</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用户输入</td>
+<td>L7 应用与交互（定标准）+ L2 入口</td>
+<td>接入层</td>
+</tr>
+<tr>
+<td>生成中（流式）</td>
+<td>L2 模型与推理（出口）</td>
+<td>能力层</td>
+</tr>
+<tr>
+<td>工具返回 / RAG 片段</td>
+<td>L4 工具 + L5 上下文</td>
+<td>能力层</td>
+</tr>
+<tr>
+<td>最终输出</td>
+<td>L2 出口 + L7 呈现前</td>
+<td>能力层</td>
+</tr>
+<tr>
+<td>记忆写入</td>
+<td>L5 上下文与记忆</td>
+<td>数据层</td>
+</tr>
+<tr>
+<td>类目、阈值、处置动作</td>
+<td>不属于任何一层：控制面</td>
+<td>治理面</td>
+</tr>
+</tbody>
+</table></div>
+<p>非要指一个责任层，就这样分工：<strong>L7 定标准，L2 卡出口，L5 守入口，策略放控制面。</strong></p>
+<p>审核服务本身可以做成共享基础设施（L1），由多个 Agent 共用；但“什么算违规、拦到什么程度”必须由应用层（L7）定义，否则每个团队会各维护一套标准。这也是<a href="../foundations/architecture.html">分层架构</a>把它列进“三条横切能力”、而不给它一个 L 编号的原因。</p>
+<h2 id="一两种失败两种防线">一、两种失败，两种防线</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>安全与权限</th>
+<th>内容安全</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>失败表现</td>
+<td>Agent <strong>做了</strong>不该做的事</td>
+<td>Agent <strong>说了</strong>不该说的内容</td>
+</tr>
+<tr>
+<td>典型事件</td>
+<td>删库、越权读文件、把密钥发到外部</td>
+<td>违法建议、仇恨言论、泄露他人隐私、冒充官方</td>
+</tr>
+<tr>
+<td>防线位置</td>
+<td>运行时、工具网关、策略引擎</td>
+<td>输入前、生成中、输出后、写入前</td>
+</tr>
+<tr>
+<td>判断依据</td>
+<td>主体、权限、资源、动作</td>
+<td>文本/图像/音频的语义与类别</td>
+</tr>
+<tr>
+<td>判定性质</td>
+<td>确定性（能不能做）</td>
+<td>概率性（像不像违规）</td>
+</tr>
+<tr>
+<td>出错代价</td>
+<td>事故、数据损失</td>
+<td>合规处罚、公关危机、用户伤害</td>
+</tr>
+</tbody>
+</table></div>
+<p>把两者混为一谈的典型症状：<strong>以为加了一句“不要生成违法内容”就有了内容安全</strong>。提示词是概率约束，审核是工程约束。</p>
+<h2 id="二五个卡点">二、五个卡点</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>卡点</th>
+<th>审什么</th>
+<th>漏掉的后果</th>
+<th>典型处置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 输入</td>
+<td>用户请求、上传文件、图片</td>
+<td>直接生成违规内容；浪费 token</td>
+<td>block / 转人工</td>
+</tr>
+<tr>
+<td>② 生成中</td>
+<td>流式增量文本</td>
+<td>违规内容已经推到用户屏幕</td>
+<td>block + 断流</td>
+</tr>
+<tr>
+<td>③ 上下文</td>
+<td>工具返回、RAG 片段、网页</td>
+<td>脏数据被复述、被当成指令</td>
+<td>block / 打标 / 截断</td>
+</tr>
+<tr>
+<td>④ 出口</td>
+<td>最终答案、附件、结构化字段</td>
+<td>泄露 PII、密钥、内部信息</td>
+<td>rewrite（打码）/ block</td>
+</tr>
+<tr>
+<td>⑤ 记忆写入</td>
+<td>待写入的长期记忆</td>
+<td>一次污染，长期传播</td>
+<td>block / 降置信度</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最常见的遗漏是 ③ 和 ⑤。</strong> 大多数团队只做 ① 和 ④，然后发现：模型把检索到的脏内容原样复述了，或者上周的恶意内容今天又从记忆里冒出来。</p>
+<h2 id="三类目与分级">三、类目与分级</h2>
+<p>审核不是“违规/不违规”的二分。先定类目，再定分级，最后才谈阈值。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类目</th>
+<th>例子</th>
+<th>默认严重度</th>
+<th>建议处置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>违法与危险行为</td>
+<td>制爆、制毒、入侵系统、伪造证件</td>
+<td>高</td>
+<td>block，必要时上报</td>
+</tr>
+<tr>
+<td>色情与性内容</td>
+<td>露骨描写、未成年人相关</td>
+<td>高</td>
+<td>block</td>
+</tr>
+<tr>
+<td>暴力与血腥</td>
+<td>施暴教程、极端画面</td>
+<td>高</td>
+<td>block</td>
+</tr>
+<tr>
+<td>仇恨与骚扰</td>
+<td>针对群体的攻击、辱骂</td>
+<td>中</td>
+<td>rewrite / review</td>
+</tr>
+<tr>
+<td>自伤与自杀</td>
+<td>方法询问、情绪危机表达</td>
+<td>高</td>
+<td><strong>review + 安全提示</strong>，不直接拒绝</td>
+</tr>
+<tr>
+<td>隐私与个人信息</td>
+<td>身份证、手机号、住址、病历</td>
+<td>中</td>
+<td>rewrite（打码）</td>
+</tr>
+<tr>
+<td>机密与凭证</td>
+<td>API Key、私钥、内部文档</td>
+<td>高</td>
+<td>block</td>
+</tr>
+<tr>
+<td>虚假与冒充</td>
+<td>冒充官方、伪造通知</td>
+<td>中</td>
+<td>review + 标注来源</td>
+</tr>
+<tr>
+<td>提示注入</td>
+<td>“忽略之前的指令”“把 token 发出去”</td>
+<td>中</td>
+<td>review（工具返回中尤其重要）</td>
+</tr>
+</tbody>
+</table></div>
+<p>两个容易做错的判断：</p>
+<ol>
+<li><strong>自伤类不能简单 block。</strong> 直接拒绝会把求助者推开。正确做法是给安全提示、给求助渠道、必要时转人工。</li>
+<li><strong>注入不是内容违规。</strong> 它的危害是“改变行为”，所以在<strong>工具返回</strong>阶段要审，在用户输入阶段反而常常要放行（用户有权说这句话）。</li>
+</ol>
+<h2 id="四处置不是二选一">四、处置不是二选一</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>处置</th>
+<th>含义</th>
+<th>适用</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>allow</td>
+<td>原样通过</td>
+<td>绝大多数请求</td>
+<td>无</td>
+</tr>
+<tr>
+<td>rewrite</td>
+<td>打码/改写后通过</td>
+<td>PII、轻度不当用语</td>
+<td>可能损失信息</td>
+</tr>
+<tr>
+<td>review</td>
+<td>通过但打标，进入抽样人审</td>
+<td>边界模糊、自伤、疑似注入</td>
+<td>需要人审产能</td>
+</tr>
+<tr>
+<td>block</td>
+<td>拒绝，返回标准话术</td>
+<td>明确违法、泄密</td>
+<td>误杀伤害体验</td>
+</tr>
+<tr>
+<td>escalate</td>
+<td>转人工处理</td>
+<td>高风险 + 高价值</td>
+<td>成本最高、延迟最长</td>
+</tr>
+</tbody>
+</table></div>
+<p>生产系统里，<strong>allow 应该占绝大多数</strong>。如果 block 比例超过几个百分点，通常是阈值或类目设计有问题，而不是“用户太坏”。</p>
+<h2 id="五阈值两类错误的成本不对称">五、阈值：两类错误的成本不对称</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  S[&quot;审核分数&quot;] --&gt; T1[&quot;低阈值&quot;]
+  S --&gt; T2[&quot;高阈值&quot;]
+  T1 -.-&gt; FP[&quot;误杀多：正常请求被拒&quot;]
+  T2 -.-&gt; FN[&quot;漏杀多：违规内容流出&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 同一个模型，两个阈值就是两种产品：一个难用，一个危险</p>
+<p>定阈值时问三个问题：</p>
+<ol>
+<li><strong>这个类目漏一次，代价是什么？</strong> 违法内容可能是一次监管处罚；轻度脏话可能只是一次投诉。</li>
+<li><strong>这个类目误杀一次，代价是什么？</strong> 医疗、法律、教育场景里，误杀会把用户直接推走。</li>
+<li><strong>能不能换处置而不是换阈值？</strong> 把“拦截”改成“打码 + 提示”，往往比调阈值更划算。</li>
+</ol>
+<p>按类目分别定阈值，按场景覆盖默认值，这是唯一可维护的做法。一个全局阈值一定会在某个类目上出问题。</p>
+<h2 id="六机审人审与申诉">六、机审、人审与申诉</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart LR
+  I[&quot;内容&quot;] --&gt; M[&quot;机审&quot;]
+  M --&gt;|高置信通过| P[&quot;放行&quot;]
+  M --&gt;|高置信违规| B[&quot;拦截&quot;]
+  M --&gt;|灰区| H[&quot;人审队列&quot;]
+  H --&gt;|改判| P
+  H --&gt;|确认| B
+  B --&gt; A[&quot;申诉入口&quot;]
+  A --&gt; H
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 机审做分拣，人审做灰区，申诉做纠错；三者缺一，系统都会退化</p>
+<p>几个工程细节：</p>
+<ul>
+<li><strong>灰区要限流。</strong> 人审是稀缺资源，按“风险 × 流量”排序，不要 FIFO。</li>
+<li><strong>抽样率要可算。</strong> 若每天 10 万条、抽 0.1%，只有 100 条样本，漏杀率估不准。用分层抽样：高风险类目全量，低风险类目低比例。</li>
+<li><strong>申诉必须闭环。</strong> 申诉结果要回到规则/阈值/评测集，否则同一类误杀会永远重复。</li>
+<li><strong>人审要看到上下文。</strong> 只给一句话，审不出“这句话是不是在回答医疗问题”。</li>
+</ul>
+<h2 id="七流式输出已经发出去的字符收不回来">七、流式输出：已经发出去的字符收不回来</h2>
+<p>这是内容安全和普通 API 过滤最大的区别。非流式可以先审后发；流式是边生成边发。</p>
+<p>见<strong>图 3</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant M as 模型
+  participant G as 增量审核
+  participant U as 用户
+  M-&gt;&gt;G: 片段 1（未成句）
+  G-&gt;&gt;G: 缓冲，不发送
+  M-&gt;&gt;G: 片段 2（到句末）
+  G-&gt;&gt;G: 审核整句
+  G-&gt;&gt;U: 放行已通过的部分
+  M-&gt;&gt;G: 片段 3（命中高危）
+  G-&gt;&gt;U: 断流 + 替换为拒答话术
+</div>
+<p class="diagram-caption"><strong>图 3</strong> · 以句为单位缓冲审核；代价是首字延迟，收益是“发出去就收不回”的风险可控</p>
+<p>三种可选策略：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>做法</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>整句缓冲</td>
+<td>攒到句末再审</td>
+<td>判断准</td>
+<td>首字变慢</td>
+</tr>
+<tr>
+<td>固定窗口</td>
+<td>每 N 字审一次</td>
+<td>延迟低</td>
+<td>跨窗口的语义可能被切碎</td>
+</tr>
+<tr>
+<td>双通道</td>
+<td>先发“安全前缀”，后发正文</td>
+<td>体验好</td>
+<td>实现复杂，仍有残留风险</td>
+</tr>
+</tbody>
+</table></div>
+<p>无论哪种，都要接受一个事实：<strong>hold-back 窗口就是风险窗口</strong>。窗口越大越安全，越小越流畅；这个取舍要产品来定，不能由工程偷偷决定。</p>
+<h2 id="八脏数据从哪来">八、脏数据从哪来</h2>
+<p>Agent 的内容污染有三个入口，比用户输入更隐蔽：</p>
+<ol>
+<li><strong>检索片段</strong>：知识库里被上传的违规/过时内容，被当成“事实”复述。</li>
+<li><strong>工具返回</strong>：第三方 API、网页抓取、用户上传的文档，里面可能藏着注入指令或隐私数据。</li>
+<li><strong>记忆</strong>：上一轮的错误结论被固化，之后每次都被当作背景。</li>
+</ol>
+<p>对策不是“审一遍就完了”，而是给来源打标：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>&lt;untrusted source=&quot;web&quot; trust=&quot;low&quot;&gt;...网页正文...&lt;/untrusted&gt;
+&lt;retrieved source=&quot;kb:faq&quot; trust=&quot;medium&quot; updated=&quot;2026-03&quot;&gt;...片段...&lt;/retrieved&gt;
+</code></pre></div>
+<p>然后在生成后检查：<strong>结论是否只依赖了低信任来源</strong>。这类“引用核对”比逐字审核更能抓住“看起来很合理但完全错误”的输出。</p>
+<h2 id="九拒答也是一次产品设计">九、拒答也是一次产品设计</h2>
+<p>同一句“我不能帮你”，效果可以差十倍。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>差</th>
+<th>好</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“抱歉，我无法回答。”</td>
+<td>“这个问题涉及具体用药剂量，我不能给建议。可以帮你整理症状清单，方便你和医生沟通。”</td>
+</tr>
+<tr>
+<td>直接断流、无提示</td>
+<td>“后面的内容被安全策略中断了，需要我把前面的结论整理成要点吗？”</td>
+</tr>
+<tr>
+<td>对所有拒绝都一样</td>
+<td>按类目给不同替代路径：转人工、给通用信息、给查询入口</td>
+</tr>
+</tbody>
+</table></div>
+<p>拒答要包含三件事：<strong>拒绝什么、为什么、还能做什么</strong>。拒答率本身是产品指标，不是安全指标。</p>
+<h2 id="十一个可测试的护栏骨架">十、一个可测试的护栏骨架</h2>
+<p>策略必须是确定性代码，能单测、能版本化、能灰度。分类器可以是模型，但“命中之后做什么”不能交给模型。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>ALLOW, REWRITE, REVIEW, BLOCK = &quot;allow&quot;, &quot;rewrite&quot;, &quot;review&quot;, &quot;block&quot;
+
+@dataclass(frozen=True)
+class Rule:
+    name: str
+    category: str
+    severity: int          # 1 低 / 2 中 / 3 高
+    pattern: Pattern[str]
+    mask: str = &quot;&quot;         # rewrite 时用的替换文本
+
+class Guard:
+    def check(self, text: str, stage: str) -&gt; GuardResult:
+        findings = self._scan(text)
+        action = self._decide(findings, stage)   # 同一规则，不同阶段不同处置
+        if action == REWRITE:
+            return GuardResult(action, self._apply_masks(text, findings), findings)
+        if action == BLOCK:
+            return GuardResult(action, &quot;&quot;, findings)
+        return GuardResult(action, text, findings)
+</code></pre></div>
+<p>关键设计是 <strong>stage 参数</strong>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>DEFAULT_ACTIONS = {
+    (&quot;secret&quot;, &quot;*&quot;): BLOCK,            # 密钥在任何阶段都不许出现
+    (&quot;pii&quot;, &quot;output&quot;): REWRITE,        # 输出时打码
+    (&quot;pii&quot;, &quot;input&quot;): ALLOW,           # 用户自己给的手机号不必拦
+    (&quot;self_harm&quot;, &quot;*&quot;): REVIEW,        # 给帮助信号，不硬拒绝
+    (&quot;prompt_injection&quot;, &quot;tool_result&quot;): REVIEW,   # 工具返回里的注入要标记
+}
+</code></pre></div>
+<p>同样的文本，在“用户输入”里合法，在“模型输出”里就该打码，在“记忆写入”里可能该拒绝。<strong>按阶段定策略，比按内容定策略更接近真实需求。</strong></p>
+<p>本章的完整实现放在 Mini Agent 的 guard.py 里：规则表、阶段策略、流式护栏，以及覆盖它们的单元测试。见<a href="../practice/mini-agent.html">从零实现 Mini Agent</a>。</p>
+<h2 id="十一度量">十一、度量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>定义</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>拦截率</td>
+<td>block 数 / 总请求</td>
+<td>过高说明阈值或类目有问题</td>
+</tr>
+<tr>
+<td>误杀率</td>
+<td>人审改判为通过的比例</td>
+<td>直接对应体验损失</td>
+</tr>
+<tr>
+<td>漏杀率</td>
+<td>红队集中未被拦截的比例</td>
+<td>直接对应合规风险</td>
+</tr>
+<tr>
+<td>灰区占比</td>
+<td>review 数 / 总请求</td>
+<td>决定人审产能</td>
+</tr>
+<tr>
+<td>审核时延</td>
+<td>P50 / P95 增量延迟</td>
+<td>流式场景决定首字体验</td>
+</tr>
+<tr>
+<td>拒答转化</td>
+<td>拒答后用户继续对话的比例</td>
+<td>说明拒答话术是否有替代路径</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>红队集是内容安全的回归测试。</strong> 每次改规则、换模型、调阈值，都跑一遍；漏杀率上升就不许发布。</p>
+<p>审核只回答“内容是否违规”。要不要备案、生成内容怎么标识、留痕保存多久，属于合规问题，见<a href="compliance.html">合规与法律</a>。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：已经有模型厂商的审核接口，还需要自己的策略吗？</strong>
+需要。厂商接口给的是“类别 + 分数”，不给“你的产品该怎么处置”。阶段策略、打码规则、灰区路由、申诉闭环都在你这边。</p>
+<p><strong>Q：为什么不能只用一个总分？</strong>
+不同类目的代价不对称。把“色情 0.8”和“脏话 0.8”用同一个阈值处理，必然一边误杀、一边漏杀。</p>
+<p><strong>Q：审核会不会把正常业务也拦掉？</strong>
+会，所以要按类目定阈值、把 block 尽量改成 rewrite/review、并保留申诉通道。审核系统的质量体现在误杀率，不只是拦截率。</p>
+<p><strong>Q：多模态怎么办？</strong>
+图片、音频需要独立审核通道；但 OCR/ASR 之后的文本仍要过一遍文本审核，因为很多违规信息是“图里的字”。</p>
+<p><strong>Q：自伤内容该不该拦？</strong>
+不该简单拦。给安全提示、给求助资源、必要时转人工，比一句“无法回答”更负责。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 五个卡点是否都覆盖：输入、生成中、上下文、出口、记忆写入？</li>
+<li>[ ] 类目和阈值是否按业务分别定义，而不是一个全局值？</li>
+<li>[ ] block 之外是否还有 rewrite / review / escalate？</li>
+<li>[ ] 流式输出是否有 hold-back 窗口和断流话术？</li>
+<li>[ ] 工具返回与 RAG 片段是否打了信任标记？</li>
+<li>[ ] 是否有红队集，且进入发布门禁？</li>
+<li>[ ] 误杀率、漏杀率、灰区占比是否在看板上？</li>
+<li>[ ] 申诉是否能改判，改判结果是否回流到规则和评测集？</li>
+<li>[ ] 拒答话术是否包含“拒绝什么、为什么、还能做什么”？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你的 Agent 画出五个卡点，标出当前实现了哪几个、漏了哪几个。</li>
+<li>为“自伤”和“脏话”分别设计处置策略，说明为什么不能相同。</li>
+<li>写一个流式护栏的测试：构造一个在句末才出现的违规片段，验证它不会先被发给用户。</li>
+<li>统计一次线上误杀，追问：是类目错了、阈值错了，还是处置选错了？</li>
+</ol>
+<p>下一步：<a href="privacy.html">隐私与数据治理</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="security.html"><span>上一篇</span><strong>安全与权限</strong></a><a class="next" href="privacy.html"><span>下一篇</span><strong>隐私与数据治理</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

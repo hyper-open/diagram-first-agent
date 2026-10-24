@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型层 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item active" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>模型层</strong></div>
+        <article class="doc"><h1 id="模型层agent-的策略函数">模型层：Agent 的“策略函数”</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  A[&quot;上下文 + 工具&quot;] --&gt; M[&quot;模型&quot;]
+  P[&quot;参数 / 路由&quot;] --&gt; M
+  M --&gt; D[&quot;tool_call / 最终答案&quot;]
+  M --&gt; U[&quot;usage / latency&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 模型层是策略函数：输入上下文，输出动作或答案，同时产生用量与延迟</p>
+<div class="custom-block tip"><p class="custom-block-title">平台视角</p>
+<p>当系统接入多家模型、需要路由/回退/配额/计费时，这一层的职责会外移成<a href="../evolution/model-gateway.html">模型网关</a>。本篇讲模型能力与调用细节，网关篇讲平台边界。</p>
+</div>
+<p>在 Agent 里，模型不是“知道答案的人”，而是<strong>策略函数</strong>：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>π(下一步动作 | 目标, 上下文, 可用工具, 历史观察)
+</code></pre></div>
+<p>它输出的是“接下来做什么”，而不是“世界的真相”。理解这一点，才能正确地选模型、写调用、做优化。</p>
+<h2 id="一选型不要只看排行榜">一、选型：不要只看排行榜</h2>
+<p>模型能力是多维的，不同任务吃的维度不同：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>对 Agent 的影响</th>
+<th>怎么测</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>指令遵循</td>
+<td>是否遵守格式、边界、禁止事项</td>
+<td>固定 prompt 的合规率</td>
+</tr>
+<tr>
+<td>工具调用</td>
+<td>选对工具、参数合法、少编造</td>
+<td>工具选择准确率、参数合法率</td>
+</tr>
+<tr>
+<td>多步推理</td>
+<td>规划、纠错、长链任务</td>
+<td>你的任务集上的端到端成功率</td>
+</tr>
+<tr>
+<td>长上下文</td>
+<td>能否在长文档中定位信息</td>
+<td>关键信息召回率、干扰项测试</td>
+</tr>
+<tr>
+<td>结构化输出</td>
+<td>JSON/schema 合法率</td>
+<td>解析失败率</td>
+</tr>
+<tr>
+<td>多模态</td>
+<td>截图/图表/文档理解</td>
+<td>视觉任务通过率</td>
+</tr>
+<tr>
+<td>延迟</td>
+<td>影响交互与并行策略</td>
+<td>首 token / 尾 token P50/P95</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>决定能否规模化</td>
+<td>每任务 token 成本</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>同样输入是否可复现</td>
+<td>多次运行方差</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>排行榜测的是“平均能力”，你的系统关心的是“在你的分布上的可靠能力”。<strong>用 30–50 条自己的样本做选型，比看十张榜单有用。</strong></p>
+</blockquote>
+<h3 id="一个实用的模型组合">一个实用的模型组合</h3>
+<p>生产系统通常不是“一个模型打天下”，而是分层：</p>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  T[任务] --&gt; R{路由器}
+  R --&gt;|简单/高频| S[小模型]
+  R --&gt;|复杂/低频| L[大模型]
+  R --&gt;|需要深推理| X[推理模型]
+  S --&gt;|失败/低置信| L
+  L --&gt;|仍失败| X
+  X --&gt; O[输出 + 验证]
+</div>
+<p class="diagram-caption"><strong>图 1 · 级联路由：先小模型，失败或低置信再升级</strong></p>
+<ul>
+<li><strong>小模型</strong>：分类、抽取、格式化、简单工具调用。</li>
+<li><strong>通用大模型</strong>：大多数对话与工具使用。</li>
+<li><strong>推理模型</strong>：复杂规划、代码、数学、长链验证。</li>
+<li><strong>专用模型</strong>：嵌入、重排、语音、视觉。</li>
+</ul>
+<p>路由的收益来自“任务难度分布”：如果 80% 的请求很简单，把简单请求分流到小模型能显著降本；如果任务普遍很难，级联只会增加延迟。</p>
+<h2 id="二调用参数每个都有语义">二、调用参数：每个都有语义</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>response = client.chat.completions.create(
+    model=&quot;...&quot;,
+    messages=messages,
+    tools=tools,
+    tool_choice=&quot;auto&quot;,        # auto / required / 指定工具
+    temperature=0.2,           # 越低越确定，但不等于事实正确
+    top_p=1.0,
+    max_tokens=2048,
+    stop=[&quot;&lt;/answer&gt;&quot;],
+    seed=42,                   # 若支持，帮助复现（不保证）
+)
+</code></pre></div>
+<p>几个常见误区：</p>
+<ul>
+<li><strong>temperature=0 不等于完全确定</strong>：并行计算、批处理、模型版本更新都会带来差异。</li>
+<li><strong>max_tokens 不是“回答长度”</strong>：推理模型的 thinking token 也占预算，设太小会导致答案被截断。</li>
+<li><strong>stop 序列可能被模型“学会”</strong>：如果 stop 出现在正常内容里，会提前截断。</li>
+<li><strong>tool_choice=required 不等于一定调用正确工具</strong>：它只强制“必须调用”，不保证选对。</li>
+</ul>
+<h3 id="结构化输出">结构化输出</h3>
+<p>三种常见方式，可靠性依次上升：</p>
+<ol>
+<li><strong>提示词要求 JSON</strong>：最脆弱，模型可能加解释、漏引号。</li>
+<li><strong>JSON mode</strong>：保证是合法 JSON，但不保证符合你的 schema。</li>
+<li><strong>Schema 约束 / 原生结构化输出</strong>：按 schema 生成，仍要在服务端校验。</li>
+</ol>
+<p>无论哪种，<strong>服务端都必须校验</strong>。模型输出是“不可信输入”，不是“可信函数返回值”。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>from jsonschema import validate, ValidationError
+
+def parse_decision(raw: str, schema: dict) -&gt; dict:
+    try:
+        data = json.loads(raw)
+        validate(instance=data, schema=schema)
+        return data
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise InvalidModelOutput(str(exc)) from exc
+</code></pre></div>
+<p>校验失败后的策略：</p>
+<ul>
+<li>把错误信息回给模型，要求重试（最多 1–2 次）。</li>
+<li>用更保守的解析器做兜底（如只提取第一个 JSON 对象）。</li>
+<li>降级到“让用户确认”或“使用上次有效结果”。</li>
+</ul>
+<h2 id="三推理模型更多思考不等于更好">三、推理模型：更多思考，不等于更好</h2>
+<p>推理模型通过更长的内部推理（test-time compute）提升复杂任务表现。它适合：</p>
+<ul>
+<li>多步规划、约束满足、代码修复。</li>
+<li>需要自我检查的数学/逻辑任务。</li>
+<li>长程任务中的关键决策点。</li>
+</ul>
+<p>不适合：</p>
+<ul>
+<li>简单分类、抽取、格式化（浪费钱和延迟）。</li>
+<li>对延迟极敏感的交互。</li>
+<li>需要严格实时性的场景。</li>
+</ul>
+<h3 id="使用推理模型的三个注意点">使用推理模型的三个注意点</h3>
+<ol>
+<li><strong>不要过度提示“逐步思考”</strong>：推理模型已经内置了推理过程，外部再要求 CoT 可能干扰它，或产生冗余 token。</li>
+<li><strong>给足输出预算</strong>：thinking token 算在 max_tokens 里，预算太小会导致答案截断。</li>
+<li><strong>区分“思考”和“答案”</strong>：如果 API 返回 reasoning 字段，不要把它当作最终答案；也不要假设它一定忠实反映计算过程。</li>
+</ol>
+<blockquote>
+<p>推理模型的“推理轨迹”是产品能力，不是审计证据。要验证结论，仍然需要外部工具和测试。</p>
+</blockquote>
+<h2 id="四成本算清楚才能优化">四、成本：算清楚，才能优化</h2>
+<p>Agent 的成本通常按 token 计费，但真实成本还包括工具调用、沙箱、检索、重试和人工。</p>
+<p>一个简化的单步成本：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>cost_step = input_tokens × price_in
+          + cached_tokens × price_cached
+          + output_tokens × price_out
+          + tool_cost
+</code></pre></div>
+<p>多步任务：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>cost_task = Σ cost_step + retries + overhead
+</code></pre></div>
+<h3 id="成本失控的五个来源">成本失控的五个来源</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>表现</th>
+<th>优化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>历史全量拼接</td>
+<td>每步 input token 线性增长</td>
+<td>压缩、摘要、只保留相关观察</td>
+</tr>
+<tr>
+<td>工具结果过大</td>
+<td>网页/日志/文件整段进上下文</td>
+<td>分页、截断、外部存储 + 引用</td>
+</tr>
+<tr>
+<td>重复推理</td>
+<td>相同子问题反复问</td>
+<td>结果缓存、计划复用</td>
+</tr>
+<tr>
+<td>无效重试</td>
+<td>错误后原样重试</td>
+<td>错误分类、退避、换策略</td>
+</tr>
+<tr>
+<td>过度使用大模型</td>
+<td>简单任务也走最贵模型</td>
+<td>路由、级联、小模型</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="prompt-caching">Prompt Caching</h3>
+<p>多数厂商支持对<strong>稳定前缀</strong>做缓存（系统提示、工具定义、长文档）。要点：</p>
+<ul>
+<li>把稳定内容放前面，变化内容放后面。</li>
+<li>缓存有 TTL，隔太久会失效。</li>
+<li>缓存命中通常按更低价格计费，但仍有写入成本。</li>
+<li>不要为了缓存把不该放的内容塞进前缀。</li>
+</ul>
+<h2 id="五可靠性模型是概率系统">五、可靠性：模型是概率系统</h2>
+<h3 id="常见失败模式">常见失败模式</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>症状</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>幻觉工具</td>
+<td>调用不存在的工具</td>
+<td>工具白名单校验，返回可用工具列表</td>
+</tr>
+<tr>
+<td>参数编造</td>
+<td>缺字段、类型错、枚举越界</td>
+<td>schema 校验 + 错误回传</td>
+</tr>
+<tr>
+<td>指令漂移</td>
+<td>多轮后忘记约束</td>
+<td>每轮重申关键约束；结构化状态</td>
+</tr>
+<tr>
+<td>过度自信</td>
+<td>说“已完成”但没做</td>
+<td>外部验证、要求证据</td>
+</tr>
+<tr>
+<td>拒绝</td>
+<td>安全策略误伤</td>
+<td>改写请求、提供上下文、降级</td>
+</tr>
+<tr>
+<td>截断</td>
+<td>输出不完整</td>
+<td>检查 finish_reason，必要时续写</td>
+</tr>
+<tr>
+<td>上下文超限</td>
+<td>请求失败</td>
+<td>预算控制、压缩、分块</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="重试不是万能药">重试不是万能药</h3>
+<p>重试适用于<strong>瞬态错误</strong>：网络超时、429、5xx。
+不适用于<strong>语义错误</strong>：参数错、工具不存在、任务理解错。后者重试只会重复犯错。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>RETRYABLE = {408, 409, 425, 429, 500, 502, 503, 504}
+
+def should_retry(exc) -&gt; bool:
+    if isinstance(exc, (TimeoutError, ConnectionError)):
+        return True
+    status = getattr(exc, &quot;status_code&quot;, None)
+    return status in RETRYABLE
+</code></pre></div>
+<p>重试要带：</p>
+<ul>
+<li>指数退避 + 抖动。</li>
+<li>最大次数（通常 2–3 次）。</li>
+<li>总 deadline，避免重试把延迟拖爆。</li>
+<li>幂等键（对写操作尤其重要）。</li>
+</ul>
+<h2 id="六缓存别把相似当相同">六、缓存：别把“相似”当“相同”</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>缓存类型</th>
+<th>命中条件</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt cache</td>
+<td>前缀 token 完全一致</td>
+<td>前缀变动导致失效</td>
+</tr>
+<tr>
+<td>结果缓存</td>
+<td>请求完全相同</td>
+<td>外部状态变化后结果过期</td>
+</tr>
+<tr>
+<td>语义缓存</td>
+<td>向量相似度高</td>
+<td>相似问题答案不同，返回错误</td>
+</tr>
+<tr>
+<td>工具缓存</td>
+<td>相同工具 + 参数</td>
+<td>数据时效性、权限差异</td>
+</tr>
+</tbody>
+</table></div>
+<p>语义缓存要非常谨慎：<strong>“退款政策是什么”和“如何申请退款”向量很近，但答案不同。</strong> 如果要用，必须加业务键、时效和人工抽检。</p>
+<h2 id="七模型层的度量">七、模型层的度量</h2>
+<p>不要只记录“调用成功”。至少记录：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;model&quot;: &quot;...&quot;,
+  &quot;step&quot;: 3,
+  &quot;input_tokens&quot;: 4210,
+  &quot;cached_tokens&quot;: 3200,
+  &quot;output_tokens&quot;: 180,
+  &quot;latency_ms&quot;: 1240,
+  &quot;finish_reason&quot;: &quot;tool_calls&quot;,
+  &quot;schema_valid&quot;: true,
+  &quot;tool_name&quot;: &quot;search&quot;,
+  &quot;retry_count&quot;: 0,
+  &quot;cost_usd&quot;: 0.0031
+}
+</code></pre></div>
+<p>按任务聚合：</p>
+<ul>
+<li>成功率 / 通过率</li>
+<li>P50 / P95 延迟</li>
+<li>每任务 token 与成本</li>
+<li>schema 合法率</li>
+<li>工具选择准确率</li>
+<li>重试率、降级率</li>
+<li>不同模型版本的 A/B 对比</li>
+</ul>
+<h2 id="八一个带校验与路由的模型客户端">八、一个带校验与路由的模型客户端</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class ModelClient:
+    def __init__(self, router, schemas):
+        self.router = router
+        self.schemas = schemas
+
+    def decide(self, messages, tools, task_profile):
+        model = self.router.pick(task_profile)
+        for attempt in range(3):
+            try:
+                resp = self._call(model, messages, tools)
+                decision = parse_decision(resp, self.schemas)
+                return decision
+            except InvalidModelOutput as exc:
+                messages = messages + [
+                    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;输出不符合 schema：{exc}。请只返回合法 JSON。&quot;}
+                ]
+            except RetryableError:
+                time.sleep(backoff(attempt))
+        # 降级：换更稳的模型或返回“需要人工”
+        return self._fallback(messages, tools)
+</code></pre></div>
+<p>这段代码体现三个原则：</p>
+<ol>
+<li><strong>模型可替换</strong>：路由层决定用哪个。</li>
+<li><strong>输出必校验</strong>：不信任模型的结构化输出。</li>
+<li><strong>失败有降级</strong>：不是所有错误都值得重试。</li>
+</ol>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具参数经常错</td>
+<td>schema 是否清晰、字段是否太多</td>
+<td>简化参数、加示例、枚举约束</td>
+</tr>
+<tr>
+<td>回答越来越慢</td>
+<td>上下文是否线性增长</td>
+<td>压缩、缓存、裁剪工具结果</td>
+</tr>
+<tr>
+<td>成本突然翻倍</td>
+<td>是否进入长循环/重试</td>
+<td>预算、无进展检测、日志</td>
+</tr>
+<tr>
+<td>同一输入结果不同</td>
+<td>温度、模型版本、并行</td>
+<td>固定 seed、记录版本、评测方差</td>
+</tr>
+<tr>
+<td>模型不遵守格式</td>
+<td>是否只靠提示词</td>
+<td>用 schema/结构化输出 + 服务端校验</td>
+</tr>
+<tr>
+<td>简单任务也用大模型</td>
+<td>有没有路由</td>
+<td>加分类器/规则路由，按难度分流</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>用你的任务集比较两个模型：固定 20 条样本，记录成功率、P95 延迟、单任务成本，画一张二维图。</li>
+<li>给你的模型调用加“schema 校验 + 一次修复重试 + 降级”，统计修复率。</li>
+<li>估算：如果每步 input 从 4K 降到 1.5K，一个 20 步任务能省多少 token？哪些信息可以安全丢弃？</li>
+</ol>
+<p>下一步：<a href="model-adaptation.html">模型适配与微调</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="../foundations/evolution.html"><span>上一篇</span><strong>技术演进史</strong></a><a class="next" href="model-adaptation.html"><span>下一篇</span><strong>模型适配</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

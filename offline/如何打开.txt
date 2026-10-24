@@ -1,0 +1,9 @@
+Agent 学习手册（diagram-first-agent） · 离线版
+
+直接双击本目录下的 index.html，即可在浏览器中阅读。
+不需要启动服务器，也不需要联网。
+
+章节之间使用相对路径跳转；左侧目录、上一篇/下一篇、筛选框都可以直接使用。
+Mermaid 架构图由本地 assets/mermaid.min.js 渲染，首次打开可能稍慢。
+
+重新生成：pnpm build:offline

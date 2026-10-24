@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>版本与发布 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item active" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>版本与发布</strong></div>
+        <article class="doc"><h1 id="版本与发布一次改提示等于一次上线">版本与发布：一次改提示，等于一次上线</h1>
+<p>Agent 的“版本”不止一个。改一句提示、换一个模型、加一个工具、调一条策略，都会改变行为，而且<strong>都不需要改代码</strong>。这让发布变得容易，也让事故变得容易。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  C[&quot;变更&lt;br/&gt;prompt · model · tool · policy&quot;] --&gt; B[&quot;构建&lt;br/&gt;版本号 + 配置快照&quot;]
+  B --&gt; O[&quot;离线回归&lt;br/&gt;单测 + 评测集&quot;]
+  O --&gt;|不达标| C
+  O --&gt; S[&quot;影子流量&lt;br/&gt;只观察不生效&quot;]
+  S --&gt; G[&quot;灰度&lt;br/&gt;按租户/流量分桶&quot;]
+  G --&gt;|护栏告警| RB[&quot;自动回滚&quot;]
+  G --&gt;|指标正常| F[&quot;全量&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 发布不是一次动作，而是一条带闸门的通道；每一道闸门都要能独立触发回滚</p>
+<h2 id="一七类需要版本化的东西">一、七类需要版本化的东西</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>对象</th>
+<th>例子</th>
+<th>变更影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>代码</td>
+<td>循环、校验、路由</td>
+<td>逻辑与终止条件</td>
+</tr>
+<tr>
+<td>提示模板</td>
+<td>system prompt、few-shot</td>
+<td>语气、格式、工具选择</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>型号、版本、区域</td>
+<td>能力、成本、延迟</td>
+</tr>
+<tr>
+<td>工具 schema</td>
+<td>参数、描述、错误码</td>
+<td>模型能否正确调用</td>
+</tr>
+<tr>
+<td>策略</td>
+<td>审批规则、内容阈值</td>
+<td>合规与安全边界</td>
+</tr>
+<tr>
+<td>索引</td>
+<td>知识库、embedding 模型</td>
+<td>检索结果与引用</td>
+</tr>
+<tr>
+<td>记忆 schema</td>
+<td>字段、TTL、隔离键</td>
+<td>老数据能否读取</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>只要其中一项变了，行为就可能变。</strong> 所以版本号要能描述这个组合，而不是只描述代码：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>agent= support-agent
+build= 2026.03.14-1
+prompt= support@v17
+model= gpt-4.1-mini@2026-02
+tools= crm@v3, refund@v5
+policy= policy@v9
+index= kb-support@2026w11
+</code></pre></div>
+<p>出事故时，这张表决定你能不能在五分钟内定位“是哪一项变的”。</p>
+<h2 id="二提示词是产物不是字符串">二、提示词是产物，不是字符串</h2>
+<p>把 prompt 当代码管理，需要四个能力：</p>
+<ol>
+<li><strong>模板化</strong>：变量显式声明，缺失时报错而不是拼出空字符串。</li>
+<li><strong>可 diff</strong>：每次改动能看出加了哪句、删了哪句。</li>
+<li><strong>可评审</strong>：高风险改动需要第二个人看。</li>
+<li><strong>可 pin</strong>：运行时锁定版本，不随线上最新值漂移。</li>
+</ol>
+<p>最常见的坑：<strong>提示写在配置中心，改了不留痕</strong>。出事时只能看到“当前值”，看不到“改动前是什么”。</p>
+<h2 id="三变更分级">三、变更分级</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>级别</th>
+<th>例子</th>
+<th>门禁</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>低</td>
+<td>文案、日志、非关键提示</td>
+<td>单测 + 自动发布</td>
+</tr>
+<tr>
+<td>中</td>
+<td>few-shot、工具描述、检索参数</td>
+<td>单测 + 冒烟评测 + 灰度 5%</td>
+</tr>
+<tr>
+<td>高</td>
+<td>模型切换、策略阈值、工具新增、记忆 schema</td>
+<td>全量评测 + 影子 + 灰度 1% 起 + 人工确认</td>
+</tr>
+</tbody>
+</table></div>
+<p>分级的价值是<strong>让高风险变更贵一点，低风险变更快一点</strong>。所有变更都走同一套流程，团队一定会绕过它。</p>
+<h2 id="四离线回归三层评测集">四、离线回归：三层评测集</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>规模</th>
+<th>跑多久</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>冒烟集</td>
+<td>20~50</td>
+<td>分钟</td>
+<td>挡住明显崩坏</td>
+</tr>
+<tr>
+<td>核心集</td>
+<td>200~500</td>
+<td>十几分钟</td>
+<td>覆盖主流程与常见失败</td>
+</tr>
+<tr>
+<td>长尾集</td>
+<td>1000+</td>
+<td>小时级</td>
+<td>分布覆盖、发布前跑</td>
+</tr>
+</tbody>
+</table></div>
+<p>通过标准要写死，不能靠感觉：</p>
+<ul>
+<li>冒烟集 <strong>必须 100% 通过</strong>。</li>
+<li>核心集通过率下降超过 <strong>2 个百分点</strong> 即阻断（阈值要按评测集方差定，别拍脑袋）。</li>
+<li>长尾集只看趋势，不作为单次门禁。</li>
+</ul>
+<h2 id="五影子流量">五、影子流量</h2>
+<p>影子流量 = 新版本跟着真实流量跑，但结果不外发。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>能发现</th>
+<th>发现不了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>崩溃、超时、schema 错</td>
+<td>用户是否喜欢</td>
+</tr>
+<tr>
+<td>成本与延迟变化</td>
+<td>需要交互才能暴露的问题</td>
+</tr>
+<tr>
+<td>新旧答案差异</td>
+<td>有副作用的动作（不能真执行）</td>
+</tr>
+</tbody>
+</table></div>
+<p>所以影子流量必须<strong>关闭写操作</strong>：读路径可以影子，写路径只能灰度。</p>
+<h2 id="六灰度与自动熔断">六、灰度与自动熔断</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  R[&quot;请求&quot;] --&gt; B{&quot;分桶&quot;}
+  B --&gt;|1%| N[&quot;新版本&quot;]
+  B --&gt;|99%| O[&quot;旧版本&quot;]
+  N --&gt; M[&quot;护栏指标&quot;]
+  M --&gt;|超阈值| X[&quot;熔断 + 回滚&quot;]
+  M --&gt;|正常| E[&quot;扩大比例&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 灰度的关键不是分桶，而是护栏指标与自动熔断</p>
+<p>护栏指标（任一触发就回滚）：</p>
+<ul>
+<li>成功率下降 &gt; 3%</li>
+<li>P95 延迟上升 &gt; 30%</li>
+<li>每任务成本上升 &gt; 20%</li>
+<li>工具错误率上升</li>
+<li>内容拦截率/投诉率异常</li>
+<li>人工接管率上升</li>
+</ul>
+<p>分桶要按<strong>租户 + 用户</strong>稳定哈希，否则同一个用户一会新一会旧，问题无法复现。</p>
+<h2 id="七回滚不是把代码退回去">七、回滚：不是把代码退回去</h2>
+<p>Agent 的回滚有四个层次，难度递增：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层次</th>
+<th>动作</th>
+<th>时间</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>开关</td>
+<td>关掉新工具/新路径</td>
+<td>秒级</td>
+</tr>
+<tr>
+<td>版本</td>
+<td>切回上一个 build</td>
+<td>分钟级</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>回退 prompt/模型/策略</td>
+<td>分钟级</td>
+</tr>
+<tr>
+<td>数据</td>
+<td>回退索引、记忆 schema</td>
+<td>小时级，可能不可逆</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>数据层回滚最难</strong>，所以 schema 变更必须向前兼容：先加字段、双写、观察，再切读，最后删旧字段。想做“一键回滚”，就得先放弃“就地改 schema”。</p>
+<p>回滚演练：每季度真跑一次，确认开关有效、旧版本还能启动、记忆还能读。</p>
+<h2 id="八变更审计">八、变更审计</h2>
+<p>每次发布记录六件事：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>谁（提交人 + 审批人）
+改了什么（prompt/tool/model/policy 的具体 diff）
+为什么（关联 issue / 事故 / 需求）
+影响谁（租户范围、流量比例）
+怎么验证（评测结果、影子对比）
+怎么回滚（开关名 / 上一版版本号）
+</code></pre></div>
+<p>没有第 5、6 条，这次发布就不算完成。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：小团队也需要这么重吗？</strong>
+不需要全流程，但至少要有：版本号、一个冒烟集、一个能秒关的开关。这三样是底线。</p>
+<p><strong>Q：模型供应商悄悄升级模型怎么办？</strong>
+pin 具体版本；无法 pin 的，用每日评测集做“漂移检测”，指标掉了再决定是否迁移。</p>
+<p><strong>Q：提示词改动要不要 A/B？</strong>
+要，当目标是“体验指标”时；当目标是“修 bug”时，回归测试就够。</p>
+<p><strong>Q：灰度期间用户投诉怎么办？</strong>
+先按租户定位是否在新桶里，再决定是回滚还是补偿。没有按租户分桶，就只能全量回滚。</p>
+<h2 id="发布清单">发布清单</h2>
+<ul>
+<li>[ ] 版本号覆盖代码/提示/模型/工具/策略/索引？</li>
+<li>[ ] 提示模板可 diff、可评审、可 pin？</li>
+<li>[ ] 变更已分级，高风险变更有人确认？</li>
+<li>[ ] 冒烟集 100% 通过，核心集无显著下降？</li>
+<li>[ ] 影子流量已关闭写操作？</li>
+<li>[ ] 灰度按租户稳定分桶，护栏指标已配置？</li>
+<li>[ ] 熔断与回滚能自动触发，且演练过？</li>
+<li>[ ] schema 变更向前兼容，回滚不丢数据？</li>
+<li>[ ] 变更记录包含验证结果与回滚方式？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>列出你系统的七类版本，看哪几类现在没有版本号。</li>
+<li>为一次“更换模型”设计发布路径：影子多久、灰度多大、看哪些指标。</li>
+<li>写一条回滚演练脚本：从告警到恢复，每一步谁执行、多久。</li>
+</ol>
+<p>下一步：<a href="security.html">安全与权限</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="evaluation.html"><span>上一篇</span><strong>评测与可观测性</strong></a><a class="next" href="security.html"><span>下一篇</span><strong>安全与权限</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

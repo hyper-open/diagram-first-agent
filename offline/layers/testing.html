@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>测试与验证 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item active" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>测试与验证</strong></div>
+        <article class="doc"><h1 id="测试与验证让-agent-可以被断言">测试与验证：让 Agent 可以被断言</h1>
+<p>评测回答“它有多好”，测试回答“它有没有坏”。两者常被混为一谈：评测是统计的、跑在评测集上；测试是确定的、跑在 CI 里。<strong>没有测试的 Agent，每次改提示都像掷骰子。</strong></p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  L5[&quot;线上监控&lt;br/&gt;成功率 · 成本 · 事故&quot;] --&gt; L4
+  L4[&quot;评测集&lt;br/&gt;统计 · 通过率 · 回归&quot;] --&gt; L3
+  L3[&quot;场景回放&lt;br/&gt;轨迹 · 工具序列&quot;] --&gt; L2
+  L2[&quot;契约测试&lt;br/&gt;模型客户端 · 工具 schema · MCP&quot;] --&gt; L1
+  L1[&quot;单元测试&lt;br/&gt;校验 · 预算 · 终止 · 错误契约&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 越往下越确定、越快、越便宜；越往上越接近真实，也越难复现</p>
+<h2 id="一四类不确定性">一、四类不确定性</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>表现</th>
+<th>控制手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型采样</td>
+<td>同输入不同输出</td>
+<td>假模型、温度 0、固定种子</td>
+</tr>
+<tr>
+<td>外部依赖</td>
+<td>API 超时、限流、数据变化</td>
+<td>打桩、录制回放、fixture</td>
+</tr>
+<tr>
+<td>时间与环境</td>
+<td>超时判定、时区、并发</td>
+<td>注入时钟、固定工作区</td>
+</tr>
+<tr>
+<td>长链路</td>
+<td>第 3 步错了，第 7 步才崩</td>
+<td>轨迹断言、逐步快照</td>
+</tr>
+</tbody>
+</table></div>
+<p>测试的第一原则：<strong>先让不确定的东西变成确定的</strong>，再谈断言。</p>
+<h2 id="二把模型换成假的">二、把模型换成假的</h2>
+<p>Agent 测试里最重要的一个动作：把 LLM 当成可注入的依赖。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 假模型按脚本返回，测试的是循环而不是模型
+agent = MiniAgent(
+    llm=MockLLM([
+        tool(&quot;calculator&quot;, expression=&quot;23 * 7 + 1&quot;),
+        final(&quot;162&quot;),
+    ]),
+    tools=build_default_tools(workspace),
+    budget=Budget(max_steps=4),
+)
+result = agent.run(&quot;23 * 7 + 1 等于多少？&quot;)
+assert result.status == &quot;success&quot;
+assert result.trace.steps[0].tool_calls[0].name == &quot;calculator&quot;
+</code></pre></div>
+<p>这样能测的东西很多：工具选择顺序、预算耗尽、停滞检测、验证器拒绝、错误重试。这些都是<strong>确定性逻辑</strong>，不该交给真实模型去碰运气。</p>
+<p>假模型不该只测“成功路径”。更有价值的是：</p>
+<ul>
+<li>返回不存在的工具名 → 是否有可读的错误？</li>
+<li>返回非法参数 → 是否回传 hint 让模型自我修正？</li>
+<li>返回空内容 → 循环是否卡死？</li>
+<li>永远调用同一个工具 → 停滞检测是否触发？</li>
+</ul>
+<h2 id="三单测该覆盖什么">三、单测该覆盖什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>对象</th>
+<th>必测项</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参数校验</td>
+<td>缺字段、类型错、多余字段、注入字符</td>
+</tr>
+<tr>
+<td>路径与权限</td>
+<td>目录穿越、绝对路径、只读模式、越界写入</td>
+</tr>
+<tr>
+<td>错误契约</td>
+<td>错误类型、可重试标记、hint 是否存在</td>
+</tr>
+<tr>
+<td>预算</td>
+<td>步数、工具次数、token、时间四类上限</td>
+</tr>
+<tr>
+<td>终止</td>
+<td>正常结束、空回复、重复调用、验证器连续拒绝</td>
+</tr>
+<tr>
+<td>上下文</td>
+<td>消息顺序、角色合法性、超长截断</td>
+</tr>
+<tr>
+<td>输出契约</td>
+<td>JSON 合法性、必填字段、截断标记</td>
+</tr>
+</tbody>
+</table></div>
+<p>判断标准：<strong>这个失败能不能用一段断言描述？</strong> 能，就该有单测。</p>
+<h2 id="四契约测试跨边界的假设">四、契约测试：跨边界的假设</h2>
+<p>Agent 的 Bug 大量来自“我以为对方是这样”。契约测试就是把假设写成断言：</p>
+<ul>
+<li><strong>模型客户端</strong>：流式与非流式返回结构是否一致；usage 缺失时是否兜底；429/5xx 是否按策略重试。</li>
+<li><strong>工具网关</strong>：schema 变更是否向后兼容；新增必填字段会不会打挂老 Agent。</li>
+<li><strong>MCP Server</strong>：工具列表变化、超时、错误码是否符合约定。</li>
+<li><strong>存储</strong>：记忆 schema 迁移后旧数据能否读取。</li>
+</ul>
+<p>契约测试应该跑在<strong>集成环境</strong>，用真实协议、假数据。</p>
+<h2 id="五场景回放">五、场景回放</h2>
+<p>录制一次真实轨迹，回放时断言“该调什么、不该调什么”。</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;goal&quot;: &quot;把 notes.md 里的构建命令总结给用户&quot;,
+  &quot;expect&quot;: {
+    &quot;tools&quot;: [&quot;read_file&quot;],
+    &quot;forbid_tools&quot;: [&quot;write_file&quot;, &quot;shell&quot;],
+    &quot;final_contains&quot;: [&quot;make test&quot;],
+    &quot;max_steps&quot;: 4
+  }
+}
+</code></pre></div>
+<p>回放的价值不在“答案一样”，而在<strong>行为边界一样</strong>：不许写文件、不许越权、步数不失控。这类断言比文本相似度稳定得多。</p>
+<h2 id="六评测集与测试的分工">六、评测集与测试的分工</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>单元 / 契约 / 回放</th>
+<th>评测集</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>性质</td>
+<td>确定性断言</td>
+<td>统计分布</td>
+</tr>
+<tr>
+<td>频率</td>
+<td>每次提交</td>
+<td>每次发布 / 每日</td>
+</tr>
+<tr>
+<td>失败含义</td>
+<td>回归，必须修</td>
+<td>指标变化，需判断</td>
+</tr>
+<tr>
+<td>数量</td>
+<td>几十到几百</td>
+<td>几百到几千</td>
+</tr>
+<tr>
+<td>谁维护</td>
+<td>研发</td>
+<td>产品 + 研发</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>不要用评测集代替单测</strong>：跑得慢、结果波动、失败原因难定位。也不要用单测代替评测：单测覆盖不到“真实任务的完成率”。</p>
+<h2 id="七ci-门禁设计">七、CI 门禁设计</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>提交 → 单测（&lt; 1 分钟，必过）
+     → 契约测试（&lt; 5 分钟，必过）
+     → 场景回放（&lt; 10 分钟，必过）
+     → 评测集（每日 / 发布前，指标不下降）
+     → 灰度（线上指标护栏）
+</code></pre></div>
+<p>三个实践细节：</p>
+<ol>
+<li><strong>分层超时</strong>：不能让单测跑十分钟，否则大家会跳过它。</li>
+<li><strong>Flaky 要修不要重跑</strong>：Agent 测试的 flaky 通常意味着真实的不稳定（超时、并发、状态泄漏）。</li>
+<li><strong>失败要可归因</strong>：断言信息里带轨迹 ID 与关键步骤，而不是只有 AssertionError。</li>
+</ol>
+<h2 id="八一个真实的最小测试">八、一个真实的最小测试</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def test_budget_returns_partial(self):
+    agent = self.agent([tool(&quot;calculator&quot;, expression=&quot;1 + 1&quot;)] * 5)
+    result = agent.run(&quot;反复计算&quot;)
+    self.assertEqual(result.status, &quot;partial&quot;)
+    self.assertIn(&quot;预算&quot;, result.output)
+</code></pre></div>
+<p>它断言的不是“模型聪明”，而是“系统在资源耗尽时优雅退出”。这正是单测该管的事。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：假模型会不会测不出真实问题？</strong>
+会。所以假模型测“机制”，评测集测“效果”，线上监控测“真实分布”。三者不能互相替代。</p>
+<p><strong>Q：多 Agent 怎么测？</strong>
+先测单个 Agent 的契约，再测消息传递与终止条件。多 Agent 的测试重点在“错误是否被吞掉”“责任是否清楚”，而不是“讨论是否精彩”。</p>
+<p><strong>Q：要不要给提示词写测试？</strong>
+要，但测的是<strong>结构</strong>：是否包含必填约束、是否注入了不可信标记、版本变更是否影响输出 schema。</p>
+<p><strong>Q：测试覆盖率有意义吗？</strong>
+对工具与编排有意义，对模型调用意义有限。别用覆盖率安慰自己。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] LLM 是可注入依赖，测试里可以替换成假模型？</li>
+<li>[ ] 工具的参数校验、路径越界、错误契约都有测试？</li>
+<li>[ ] 预算与终止的每条路径都有测试？</li>
+<li>[ ] 关键流程有场景回放与行为断言？</li>
+<li>[ ] 契约测试覆盖模型客户端与外部工具？</li>
+<li>[ ] CI 分层，单测足够快？</li>
+<li>[ ] 评测集与单测职责分清？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你的 Agent 写一个“模型返回不存在工具”的测试，断言错误信息里包含可用工具列表。</li>
+<li>设计一个回放用例，断言“只读任务绝不调用写工具”。</li>
+<li>统计最近 20 个线上问题，看有多少本可以被单测拦住。</li>
+</ol>
+<p>下一步：<a href="evaluation.html">评测与可观测性</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="runtime.html"><span>上一篇</span><strong>运行时与沙箱</strong></a><a class="next" href="evaluation.html"><span>下一篇</span><strong>评测与可观测性</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

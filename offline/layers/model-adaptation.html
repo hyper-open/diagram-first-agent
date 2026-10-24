@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型适配 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item active" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>模型适配</strong></div>
+        <article class="doc"><h1 id="模型适配改上下文还是改模型">模型适配：改上下文，还是改模型</h1>
+<p>团队遇到效果不好，第一反应常是“去微调一个”。但 Agent 的失败大多不在模型权重里，而在上下文、工具契约和评测缺失里。微调解决的是<strong>分布与格式</strong>问题，不是“模型太笨”。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  P[&quot;效果不好&quot;] --&gt; Q1{&quot;是缺知识吗？&quot;}
+  Q1 --&gt;|是| R[&quot;先补 RAG / 工具&quot;]
+  Q1 --&gt;|否| Q2{&quot;是输出格式不稳？&quot;}
+  Q2 --&gt;|是| S[&quot;先改 schema / 少样本 / 约束解码&quot;]
+  Q2 --&gt;|否| Q3{&quot;是任务分布特殊？&quot;}
+  Q3 --&gt;|是| T[&quot;微调 / 蒸馏&quot;]
+  Q3 --&gt;|否| U[&quot;多半是编排或评测问题&quot;]
+  T --&gt; V[&quot;数据飞轮：线上失败 → 标注 → 训练 → 评测&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 适配手段有先后：提示 → 检索/工具 → 格式约束 → 微调 → 蒸馏</p>
+<p>本章另有 2 张图：图 1 SFT 流程，图 2 蒸馏回路。</p>
+<h2 id="一三种问题三种解法">一、三种问题，三种解法</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>根因</th>
+<th>该动的地方</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>答不出内部信息</td>
+<td>缺知识</td>
+<td>RAG、工具、知识库</td>
+</tr>
+<tr>
+<td>知道但格式总错</td>
+<td>指令或 schema 问题</td>
+<td>提示、少样本、结构化输出、校验重试</td>
+</tr>
+<tr>
+<td>领域黑话听不懂</td>
+<td>分布差异</td>
+<td>微调（SFT）</td>
+</tr>
+<tr>
+<td>推理链太啰嗦/太短</td>
+<td>行为偏好</td>
+<td>提示、偏好优化</td>
+</tr>
+<tr>
+<td>太贵/太慢</td>
+<td>模型过大</td>
+<td>蒸馏、路由到小模型、缓存</td>
+</tr>
+<tr>
+<td>时好时坏</td>
+<td>缺评测与稳定性</td>
+<td>先补评测，再谈优化</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>判断标准很简单：换一段上下文能不能解决？</strong> 能，就不要微调——上下文可以每天改，权重不能。</p>
+<h2 id="二四种手段的取舍">二、四种手段的取舍</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>手段</th>
+<th>生效速度</th>
+<th>单次成本</th>
+<th>可解释性</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>提示工程</td>
+<td>分钟</td>
+<td>低（token 变多）</td>
+<td>高</td>
+<td>格式、语气、流程</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>小时</td>
+<td>中（检索+token）</td>
+<td>高（可引用）</td>
+<td>事实、私有知识、时效</td>
+</tr>
+<tr>
+<td>微调（SFT）</td>
+<td>天</td>
+<td>中高（训练+托管）</td>
+<td>低</td>
+<td>风格、领域术语、稳定格式</td>
+</tr>
+<tr>
+<td>蒸馏</td>
+<td>周</td>
+<td>训练高、推理低</td>
+<td>低</td>
+<td>降本、低延迟、边缘部署</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个常见误判：<strong>用微调记知识</strong>。权重里塞事实既贵又难更新，还会与检索结果冲突。知识用检索，行为用微调。</p>
+<h2 id="三sft-的最小可行流程">三、SFT 的最小可行流程</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[&quot;收集轨迹&quot;] --&gt; B[&quot;清洗与去重&quot;]
+  B --&gt; C[&quot;构造 (输入, 输出) 对&quot;]
+  C --&gt; D[&quot;切分 train / dev / test&quot;]
+  D --&gt; E[&quot;训练&quot;]
+  E --&gt; F[&quot;离线评测 + 回归&quot;]
+  F --&gt;|不达标| G[&quot;分析失败样本&quot;]
+  G --&gt; C
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 微调的瓶颈从来不是训练，而是数据构造与评测</p>
+<p>数据格式通常就是对话消息列表：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;messages&quot;: [
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;你是工单分类助手，只输出 JSON。&quot;},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;退款三天了还没到账&quot;},
+    {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;{\&quot;category\&quot;:\&quot;refund\&quot;,\&quot;urgency\&quot;:\&quot;high\&quot;}&quot;}
+  ]
+}
+</code></pre></div>
+<p>几条实践经验：</p>
+<ul>
+<li><strong>质量 &gt; 数量</strong>：几百条高质量样本，常常胜过几万条噪声样本。</li>
+<li><strong>覆盖失败模式</strong>：从线上失败里采样，比从成功里采样有价值。</li>
+<li><strong>保留真实分布</strong>：训练集里 90% 是简单样本，模型就只会做简单样本。</li>
+<li><strong>必须留 holdout</strong>：用训练时没见过的样本评测，否则数字只是记忆。</li>
+<li><strong>警惕灾难性遗忘</strong>：微调后通用能力可能下降，用通用评测集做护栏。</li>
+</ul>
+<h2 id="四偏好优化什么时候值得">四、偏好优化：什么时候值得</h2>
+<p>SFT 教“怎么做”，偏好优化教“哪种更好”。当你有<strong>成对比较</strong>（A 比 B 好）时，DPO 一类方法比人工写标准答案更省力。</p>
+<p>值得做的信号：</p>
+<ul>
+<li>输出都“对”，但风格/详略不稳定。</li>
+<li>有明确的好坏排序，且能低成本采集（人工标注、用户反馈、规则打分）。</li>
+</ul>
+<p>不值得做的信号：</p>
+<ul>
+<li>你连“好”的定义都写不出来——那还没有评测标准，先补评测。</li>
+<li>问题其实是知识缺失——偏好优化不会让模型知道新事实。</li>
+</ul>
+<h2 id="五蒸馏降本的主力">五、蒸馏：降本的主力</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart LR
+  T[&quot;大模型（teacher）&quot;] --&gt;|生成/标注| D[&quot;蒸馏数据&quot;]
+  D --&gt; S[&quot;小模型（student）&quot;]
+  S --&gt; E[&quot;评测：能力保持率&quot;]
+  E --&gt;|不达标| D
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 蒸馏的本质是“用大模型的输出当标注”，数据质量决定学生上限</p>
+<p>工程要点：</p>
+<ul>
+<li><strong>只蒸馏窄任务</strong>：客服分类、抽取、改写，效果稳定；开放推理容易掉。</li>
+<li><strong>保留拒答样本</strong>：否则学生模型会“什么都敢答”。</li>
+<li><strong>按任务路由</strong>：简单任务走学生，复杂任务升级到老师，比全量替换更划算。</li>
+<li><strong>蒸馏数据也要合规</strong>：教师模型的输出可能带版权或隐私问题。</li>
+</ul>
+<h2 id="六数据从哪来">六、数据从哪来</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>优点</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>线上成功轨迹</td>
+<td>真实分布</td>
+<td>含隐私、需脱敏</td>
+</tr>
+<tr>
+<td>线上失败样本</td>
+<td>信息量最高</td>
+<td>需要标注与归因</td>
+</tr>
+<tr>
+<td>人工构造</td>
+<td>可控、覆盖长尾</td>
+<td>成本高、可能不真实</td>
+</tr>
+<tr>
+<td>合成数据</td>
+<td>便宜、可扩量</td>
+<td>分布偏移、错误放大</td>
+</tr>
+<tr>
+<td>用户反馈（点赞/改稿）</td>
+<td>免费、贴近需求</td>
+<td>噪声大、有偏</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最好的数据是“被修正过的输出”</strong>：用户改了哪里，就是模型错在哪里。</p>
+<h2 id="七评测微调最大的坑">七、评测：微调最大的坑</h2>
+<p>微调让模型“更像训练数据”，评测必须能发现这件事的两面：</p>
+<ul>
+<li><strong>过拟合</strong>：训练集指标漂亮，holdout 崩。</li>
+<li><strong>分布漂移</strong>：真实流量变了，模型还停在旧分布。</li>
+<li><strong>能力回退</strong>：目标任务变好，通用能力变差。</li>
+<li><strong>污染</strong>：评测集混进了训练数据，数字虚高。</li>
+</ul>
+<p>最低要求：<strong>一个领域 holdout + 一个通用回归集 + 一条人工抽检</strong>。</p>
+<h2 id="八部署版本与多租户">八、部署：版本与多租户</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多租户定制</td>
+<td>LoRA 适配器按租户加载，基础模型共享</td>
+</tr>
+<tr>
+<td>版本管理</td>
+<td>模型、适配器、提示、评测集同版本号发布</td>
+</tr>
+<tr>
+<td>回滚</td>
+<td>保留上一版适配器与路由开关</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>适配器热加载，避免每租户一份权重</td>
+</tr>
+<tr>
+<td>灰度</td>
+<td>按租户或流量比例切换</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="九算一笔账">九、算一笔账</h2>
+<p>微调不一定省钱。粗略比较：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>方案 A：大模型 + 长提示 + 少样本
+  单次成本 = 输入 token × 单价（含示例）
+方案 B：小模型微调
+  单次成本 = 小模型 token × 更低单价
+  但固定成本 = 数据标注 + 训练 + 评测 + 托管 + 迭代
+</code></pre></div>
+<p>结论：<strong>日调用量足够大、任务足够窄、格式足够稳定</strong>时，微调/蒸馏才划得来。日调用几百次的产品，优化提示和检索的收益高得多。</p>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：可以先用微调解决，再回头补评测吗？</strong>
+不建议。没有评测，你无法判断微调是变好还是变差，也无法决定何时回滚。</p>
+<p><strong>Q：微调后还需要 RAG 吗？</strong>
+通常需要。微调改行为，RAG 供事实，两者解决不同问题。</p>
+<p><strong>Q：合成数据能占多大比例？</strong>
+先小比例混入并观察 holdout。全合成数据容易让学生模型学到老师的错误。</p>
+<p><strong>Q：开源模型私有化部署值不值？</strong>
+看数据合规与调用量。数据不能出境、调用量巨大、延迟敏感，这三条占一条就值得评估。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 先确认问题属于知识、格式还是分布？</li>
+<li>[ ] 有没有 holdout 与通用回归集？</li>
+<li>[ ] 训练数据是否脱敏、是否可追溯来源？</li>
+<li>[ ] 是否评估过灾难性遗忘？</li>
+<li>[ ] 是否有版本化与回滚方案？</li>
+<li>[ ] 蒸馏是否只用于窄任务，并保留拒答样本？</li>
+<li>[ ] 成本模型是否包含标注、训练、托管与迭代？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>挑一个你的失败案例，判断它属于“缺知识”还是“缺行为”，并说明理由。</li>
+<li>设计一个 200 条的 SFT 数据集，写清楚采样来源与去重规则。</li>
+<li>估算一次蒸馏的固定成本，与“继续用大模型”的年度成本对比。</li>
+</ol>
+<p>下一步：<a href="multimodal.html">多模态与实时交互</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="model.html"><span>上一篇</span><strong>模型层</strong></a><a class="next" href="multimodal.html"><span>下一篇</span><strong>多模态与实时交互</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

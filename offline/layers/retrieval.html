@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>检索层 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="context.html">上下文层</a>
+<a class="nav-item active" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>检索层</strong></div>
+        <article class="doc"><h1 id="检索层把召回做到可用">检索层：把召回做到可用</h1>
+<p>RAG 的效果上限由检索决定。模型再强，拿不到证据就只能编；证据拿回来了但排在第 12 位，模型大概率也用不上。</p>
+<p><a href="../evolution/rag.html">阶段 5：RAG</a> 讲的是“为什么要检索、两条流水线怎么走”；本章讲<strong>怎么把召回率做上去</strong>，以及怎么证明它真的上去了。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  D[&quot;数据源&quot;] --&gt; P[&quot;解析&quot;]
+  P --&gt; S[&quot;切分&quot;]
+  S --&gt; I[&quot;索引&lt;br/&gt;向量 + 关键词&quot;]
+  Q[&quot;问题&quot;] --&gt; R[&quot;查询改写&quot;]
+  R --&gt; A[&quot;召回&lt;br/&gt;top-50~100&quot;]
+  I --&gt; A
+  A --&gt; F[&quot;融合 / 去重&quot;]
+  F --&gt; RR[&quot;重排&quot;]
+  RR --&gt; AC[&quot;权限过滤&quot;]
+  AC --&gt; C[&quot;上下文&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 索引与查询是两条流水线，中间靠“候选集”连接；每一段都能独立评测</p>
+<p>本章另有 2 张图：图 1 切分策略，图 2 Agentic 检索。</p>
+<h2 id="一先把失败分清楚">一、先把失败分清楚</h2>
+<p>检索问题不是一种，而是三种，对应的手段完全不同：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>失败</th>
+<th>现象</th>
+<th>根因</th>
+<th>该动哪里</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>没召回到</td>
+<td>正确证据不在候选里</td>
+<td>切分、embedding、改写、索引缺失</td>
+<td>召回侧</td>
+</tr>
+<tr>
+<td>召回到但太靠后</td>
+<td>在 top-50 里，不在 top-5</td>
+<td>排序、融合、重排</td>
+<td>排序侧</td>
+</tr>
+<tr>
+<td>召回到但没用上</td>
+<td>证据进了上下文，答案仍然错</td>
+<td>上下文组织、提示、模型</td>
+<td>生成侧</td>
+</tr>
+</tbody>
+</table></div>
+<p>判断方法很简单：<strong>把正确答案的证据直接塞给模型，看它能不能答对。</strong></p>
+<ul>
+<li>能答对 → 问题在检索侧。</li>
+<li>还不能答对 → 问题在生成侧，别再调检索参数了。</li>
+</ul>
+<p>这一步能省掉大量“调 k、调阈值”的无效劳动。</p>
+<h2 id="二切分影响最大最容易被略过的一步">二、切分：影响最大，最容易被略过的一步</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart TB
+  DOC[&quot;文档&quot;] --&gt; A[&quot;按结构切&lt;br/&gt;标题 / 段落 / 表格&quot;]
+  A --&gt; B[&quot;按长度切&lt;br/&gt;300~600 字 + 10~15% 重叠&quot;]
+  B --&gt; C[&quot;补上下文&lt;br/&gt;标题路径 + 页码 + 前后句&quot;]
+  C --&gt; D[&quot;写入元数据&lt;br/&gt;doc_id / acl / updated_at&quot;]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 好的切分先尊重结构、再控制长度、最后补回被切掉的上下文</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>适合</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>固定窗口</td>
+<td>无结构长文</td>
+<td>切断句子、丢失标题</td>
+</tr>
+<tr>
+<td>按结构</td>
+<td>手册、规章、API 文档</td>
+<td>依赖解析质量</td>
+</tr>
+<tr>
+<td>语义切分</td>
+<td>长论述、访谈</td>
+<td>成本高、边界不稳定</td>
+</tr>
+<tr>
+<td>父子块</td>
+<td>需要精确定位又需要上下文</td>
+<td>实现复杂、存储翻倍</td>
+</tr>
+<tr>
+<td>句子窗口</td>
+<td>问答型语料</td>
+<td>长答案覆盖不全</td>
+</tr>
+</tbody>
+</table></div>
+<p>几条实用规则：</p>
+<ul>
+<li><strong>块要自包含</strong>：单独拿出来也能读懂。代词要还原，标题要带上。</li>
+<li><strong>表格不要切</strong>：整表作为一个块，或转成结构化记录。切碎的表格是幻觉高发区。</li>
+<li><strong>重叠不是越多越好</strong>：10~15% 足够，太多会让 top-k 全是重复内容。</li>
+<li><strong>元数据比正文更重要</strong>：没有 doc_id、章节路径、页码，后面既不能引用也不能过滤。</li>
+</ul>
+<h2 id="三embedding-与索引">三、Embedding 与索引</h2>
+<p>Embedding 选型看四件事，不要只看排行榜：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>要问的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>语言</td>
+<td>中文/多语言效果是否经过验证？</td>
+</tr>
+<tr>
+<td>领域</td>
+<td>法律、医疗、代码是否需要领域模型？</td>
+</tr>
+<tr>
+<td>维度与成本</td>
+<td>存储与检索延迟能否接受？</td>
+</tr>
+<tr>
+<td>可替换性</td>
+<td>换模型时是否需要全量重建？</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>换 embedding 模型 = 全量重建索引。</strong> 不同模型的向量空间不可比，混用会让相似度失去意义。切换时要双写、影子对比、再切读。</p>
+<p>索引参数同样有权衡：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>调大</th>
+<th>调小</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HNSW 的 M / ef</td>
+<td>召回高、内存大</td>
+<td>省内存、召回降</td>
+</tr>
+<tr>
+<td>IVF 的 nlist / nprobe</td>
+<td>精度高、延迟高</td>
+<td>快、可能漏</td>
+</tr>
+<tr>
+<td>候选数 top-k</td>
+<td>覆盖广、成本高</td>
+<td>便宜、易漏</td>
+</tr>
+</tbody>
+</table></div>
+<p>先用固定评测集量出“召回率 vs 延迟”曲线，再选点。拍脑袋设 k=3 是常见错误。</p>
+<h2 id="四混合检索向量不是万能">四、混合检索：向量不是万能</h2>
+<p>纯向量检索在两类查询上明显吃亏：</p>
+<ul>
+<li><strong>精确标识</strong>：错误码、订单号、函数名、产品型号。</li>
+<li><strong>专有名词</strong>：向量模型没见过的新词。</li>
+</ul>
+<p>BM25 恰好擅长这些。常见做法是两路召回后融合：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def rrf(rank_lists, k=60):
+    &quot;&quot;&quot;Reciprocal Rank Fusion：只用名次，不用分数，避免量纲问题。&quot;&quot;&quot;
+    scores = {}
+    for ranks in rank_lists:
+        for position, doc_id in enumerate(ranks, start=1):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + position)
+    return sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+</code></pre></div>
+<p>RRF 的优点是不需要校准两路分数的量纲，缺点是丢掉了“有多相关”的信息。如果两路分数都可靠，加权融合可能更好；不确定时先用 RRF。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RRF</td>
+<td>稳健、无需调权重</td>
+<td>精度略低</td>
+</tr>
+<tr>
+<td>加权分数融合</td>
+<td>精度高</td>
+<td>需要归一化与调参</td>
+</tr>
+<tr>
+<td>只用一个</td>
+<td>简单</td>
+<td>单一失败模式</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="五查询改写把用户的话变成检索的话">五、查询改写：把“用户的话”变成“检索的话”</h2>
+<p>多轮对话里，用户说“那它支持吗？”——直接拿去检索必然失败。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>手段</th>
+<th>解决什么</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>指代消解</td>
+<td>“它/这个/上面说的”</td>
+<td>需要对话历史</td>
+</tr>
+<tr>
+<td>多查询扩展</td>
+<td>表述差异、同义词</td>
+<td>召回量翻倍</td>
+</tr>
+<tr>
+<td>HyDE</td>
+<td>问题太短、与文档风格差异大</td>
+<td>多一次生成</td>
+</tr>
+<tr>
+<td>查询分解</td>
+<td>多跳、复合问题</td>
+<td>多次检索</td>
+</tr>
+<tr>
+<td>条件抽取</td>
+<td>“去年的”“北京的” → 元数据过滤</td>
+<td>抽取错误会误过滤</td>
+</tr>
+</tbody>
+</table></div>
+<p>改写的风险是<strong>漂移</strong>：改着改着就偏离了原问题。所以改写要有护栏：</p>
+<ul>
+<li>保留原始查询，作为兜底的一路召回。</li>
+<li>改写结果记录进 trace，便于事后归因。</li>
+<li>改动前后在同一评测集上对比 Recall@k。</li>
+</ul>
+<h2 id="六重排用延迟换精度">六、重排：用延迟换精度</h2>
+<p>两阶段是标准做法：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>召回（便宜、宽）: top-50 ~ top-100
+重排（贵、准）: 打分后取 top-5
+</code></pre></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>延迟</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>不重排</td>
+<td>最低</td>
+<td>候选少、质量稳定</td>
+</tr>
+<tr>
+<td>Cross-encoder 重排</td>
+<td>中</td>
+<td>精度要求高的问答</td>
+</tr>
+<tr>
+<td>LLM 重排</td>
+<td>高</td>
+<td>高价值、低并发</td>
+</tr>
+<tr>
+<td>规则重排（时效/来源）</td>
+<td>低</td>
+<td>需要业务偏好</td>
+</tr>
+</tbody>
+</table></div>
+<p>注：重排只能改善“排序”，救不了“没召回”。先看 Recall@50，再看重排后的 top-5 命中率。</p>
+<h2 id="七权限过滤越早越好">七、权限过滤：越早越好</h2>
+<p>权限必须在<strong>索引期写入元数据</strong>，在<strong>召回时过滤</strong>，而不是取回结果后再筛。</p>
+<p>原因很直接：先取 50 条再筛掉 45 条，你实际上只用了 5 条候选，召回率被静默腰斩。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>做法</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>索引带 ACL，查询时过滤</td>
+<td>正确</td>
+</tr>
+<tr>
+<td>检索后过滤</td>
+<td>候选不足、可能泄露引用</td>
+</tr>
+<tr>
+<td>只靠提示词“不要提别人的文档”</td>
+<td>必然泄露</td>
+</tr>
+</tbody>
+</table></div>
+<p>多租户场景还要注意缓存：语义缓存如果不带租户维度，就是跨租户泄露。</p>
+<h2 id="八新鲜度与增量索引">八、新鲜度与增量索引</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文档更新</td>
+<td>按 doc_id upsert，先删旧块再写新块</td>
+</tr>
+<tr>
+<td>文档删除</td>
+<td>墓碑标记 + 定期物理清理，同步删 embedding</td>
+</tr>
+<tr>
+<td>版本切换</td>
+<td>新索引影子对比，指标达标再切</td>
+</tr>
+<tr>
+<td>过期内容</td>
+<td>元数据带 updated_at，检索时降权或过滤</td>
+</tr>
+<tr>
+<td>索引延迟</td>
+<td>监控“最新文档到可检索”的时延</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>删除是最容易漏的。</strong> 文档删了但向量还在，用户能搜到已经不存在的内容——这既是体验问题，也是合规问题。</p>
+<h2 id="九agentic-rag什么时候让模型决定检索">九、Agentic RAG：什么时候让模型决定检索</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart LR
+  Q[&quot;问题&quot;] --&gt; D{&quot;需要检索吗？&quot;}
+  D --&gt;|否| A[&quot;直接回答&quot;]
+  D --&gt;|是| S[&quot;生成查询&quot;]
+  S --&gt; R[&quot;检索&quot;]
+  R --&gt; G{&quot;证据够吗？&quot;}
+  G --&gt;|够| A
+  G --&gt;|不够| S
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 把检索变成工具，模型自己决定查不查、查几次</p>
+<p>适合：</p>
+<ul>
+<li>问题难度差异大（有的完全不需要检索）。</li>
+<li>需要多跳、逐步收敛。</li>
+<li>检索成本高，希望按需触发。</li>
+</ul>
+<p>不适合：</p>
+<ul>
+<li>简单 FAQ（多一次模型调用纯属浪费）。</li>
+<li>延迟敏感（多轮检索会叠加）。</li>
+<li>需要确定性行为（什么时候查应该可预测）。</li>
+</ul>
+<p>必须设预算：<strong>最大检索轮数、最大候选数、总 token 上限</strong>。否则一个“证据不够”的判断会把循环拖死。</p>
+<h2 id="十评测先造数据再谈优化">十、评测：先造数据，再谈优化</h2>
+<p>没有评测集的检索优化，等于蒙眼调参。</p>
+<h3 id="1-造评测集">1. 造评测集</h3>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;query&quot;: &quot;退款多久到账&quot;,
+  &quot;expected_doc_ids&quot;: [&quot;kb-refund-03&quot;],
+  &quot;expected_spans&quot;: [&quot;3-5 个工作日&quot;],
+  &quot;type&quot;: &quot;faq&quot;
+}
+</code></pre></div>
+<p>来源优先级：真实用户问题 &gt; 客服工单 &gt; 人工构造。每条至少标注一个“正确证据”，多跳问题标多个。</p>
+<h3 id="2-指标">2. 指标</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>回答什么</th>
+<th>目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Recall@50</td>
+<td>候选里有没有正确证据</td>
+<td>&gt; 0.95</td>
+</tr>
+<tr>
+<td>Recall@5</td>
+<td>重排后是否命中</td>
+<td>按业务定</td>
+</tr>
+<tr>
+<td>MRR / nDCG</td>
+<td>正确证据排得多靠前</td>
+<td>越高越好</td>
+</tr>
+<tr>
+<td>引用支持率</td>
+<td>结论是否被引用支持</td>
+<td>&gt; 0.9</td>
+</tr>
+<tr>
+<td>答案正确率</td>
+<td>端到端效果</td>
+<td>按业务定</td>
+</tr>
+<tr>
+<td>P95 延迟 / 单次成本</td>
+<td>能不能上生产</td>
+<td>按 SLA</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="3-一个最小评测脚本">3. 一个最小评测脚本</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def recall_at_k(retriever, cases, k=5):
+    hit, total = 0, 0
+    for case in cases:
+        docs = {d.doc_id for d in retriever.search(case[&quot;query&quot;], k=k)}
+        if set(case[&quot;expected_doc_ids&quot;]) &amp; docs:
+            hit += 1
+        total += 1
+    return hit / total
+</code></pre></div>
+<p>先在 Recall@50 达标，再调重排。顺序反了，你会在一个本来就召不回的候选集上优化排序。</p>
+<h2 id="十一优化顺序症状-→-手段-→-验证">十一、优化顺序：症状 → 手段 → 验证</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>手段</th>
+<th>怎么验证</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>完全召不回</td>
+<td>索引是否包含该文档</td>
+<td>补数据、修解析</td>
+<td>Recall@50</td>
+</tr>
+<tr>
+<td>中文专有名词召回差</td>
+<td>是否只有向量</td>
+<td>加 BM25 混合</td>
+<td>Recall@50</td>
+</tr>
+<tr>
+<td>多轮指代失败</td>
+<td>查询是否独立</td>
+<td>指代消解改写</td>
+<td>该类子集 Recall</td>
+</tr>
+<tr>
+<td>结果太杂</td>
+<td>候选是否过大</td>
+<td>重排、元数据过滤</td>
+<td>Recall@5 / nDCG</td>
+</tr>
+<tr>
+<td>片段不完整</td>
+<td>块边界</td>
+<td>父子块、扩大窗口</td>
+<td>人工抽检</td>
+</tr>
+<tr>
+<td>表格数值错</td>
+<td>是否切碎表格</td>
+<td>整表或结构化</td>
+<td>数值准确率</td>
+</tr>
+<tr>
+<td>引用不支持结论</td>
+<td>引用是否来自检索</td>
+<td>逐条校验、限制引用来源</td>
+<td>支持率</td>
+</tr>
+<tr>
+<td>延迟高</td>
+<td>哪一段慢</td>
+<td>分层检索、缓存、降 k</td>
+<td>P95</td>
+</tr>
+<tr>
+<td>权限泄露</td>
+<td>过滤在哪一步</td>
+<td>ACL 下沉到索引</td>
+<td>泄露用例 = 0</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见问题速查">常见问题速查</h2>
+<p><strong>Q：块大小设多少？</strong>
+中文 300~600 字是常见起点，但要以评测集为准。答案需要跨段落的，用父子块而不是把块调得更大。</p>
+<p><strong>Q：top-k 设多少？</strong>
+召回阶段 50~100，重排后 3~5。只看 top-3 的召回率，你无法判断是排序问题还是召回问题。</p>
+<p><strong>Q：一定要重排吗？</strong>
+候选多、精度要求高时值得。候选本来就只有 10 条、来源可靠时，重排收益有限。</p>
+<p><strong>Q：多查询扩展会不会引入噪声？</strong>
+会，但融合后通常净收益为正。前提是有评测集能证明它没把 Recall@5 拉低。</p>
+<p><strong>Q：什么时候该上 Agentic RAG？</strong>
+当“是否需要检索”本身不确定、且简单查询占比高时。全部请求都走多轮检索，成本和延迟都会失控。</p>
+<h2 id="落地清单">落地清单</h2>
+<ul>
+<li>[ ] 有 query → evidence 的评测集，且覆盖多跳与指代？</li>
+<li>[ ] 切分尊重结构，表格未被切碎？</li>
+<li>[ ] 每个块带 doc_id、章节、页码、ACL、updated_at？</li>
+<li>[ ] 混合检索（向量 + 关键词）已启用，融合方式有依据？</li>
+<li>[ ] 查询改写有原始查询兜底？</li>
+<li>[ ] 召回与重排分两阶段，k 值由评测决定？</li>
+<li>[ ] ACL 在索引期写入，召回时过滤？</li>
+<li>[ ] 删除能同步清理向量？</li>
+<li>[ ] 索引切换有影子对比与回滚？</li>
+<li>[ ] Recall@50 / Recall@5 / 引用支持率在看板上？</li>
+</ul>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你的知识库造 50 条评测样本，量一次 Recall@5 和 Recall@50，看差距在哪。</li>
+<li>取一个“召回到了但答错”的 case，把正确证据直接塞给模型，判断是检索问题还是生成问题。</li>
+<li>加一路 BM25 召回，用 RRF 融合，对比融合前后的 Recall@5。</li>
+<li>找出一个被切碎的表格，改成整表索引，看数值类问题的准确率变化。</li>
+</ol>
+<p>下一步：<a href="tools.html">工具层</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="context.html"><span>上一篇</span><strong>上下文层</strong></a><a class="next" href="tools.html"><span>下一篇</span><strong>工具层</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

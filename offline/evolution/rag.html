@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阶段 5 · RAG · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item active" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>05 RAG 与知识层</strong></div>
+        <article class="doc"><h1 id="阶段-5rag-与知识层">阶段 5：RAG 与知识层</h1>
+<blockquote>
+<p>Agent 会调工具，但它仍然不知道公司内部的产品文档、昨天的价格、客户的合同。</p>
+</blockquote>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  Q[&quot;用户问题&quot;] --&gt; A[&quot;Agent&quot;]
+  A --&gt;|&quot;search_knowledge&quot;| R[&quot;RAG 服务&quot;]
+  R --&gt; A
+  A --&gt; L[&quot;LLM&quot;]
+  L --&gt; O[&quot;回答 + 引用&quot;]
+  R --&gt; T[&quot;Tool Gateway&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · RAG 不是“把文档塞进 prompt”，而是一个可被 Agent 调用的知识服务</p>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>索引</strong><p>连接数据源、解析、切分、embedding、建索引。</p></div>
+  <div class="flow-step"><b>2</b><strong>查询</strong><p>改写问题、混合检索、权限过滤、重排。</p></div>
+  <div class="flow-step"><b>3</b><strong>组装</strong><p>片段 + 来源 + 时间 + 冲突提示。</p></div>
+  <div class="flow-step"><b>4</b><strong>引用</strong><p>每个关键结论可追溯到来源。</p></div>
+</div>
+<p>本章另有 4 张图：图 1 索引流水线，图 2 查询流水线，图 3 管线式与 Agentic 的取舍，图 4 权限过滤。</p>
+<h2 id="两条流水线">两条流水线</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  S[&quot;数据源&quot;] --&gt; C[&quot;连接器&quot;]
+  C --&gt; P[&quot;解析 / OCR&quot;]
+  P --&gt; K[&quot;切分&quot;]
+  K --&gt; E[&quot;元数据 / ACL&quot;]
+  E --&gt; V[&quot;Embedding&quot;]
+  V --&gt; I[(索引)]
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 写入/索引流水线：元数据与 ACL 必须在这里就写入</p>
+<div class="mermaid">flowchart LR
+  Q[&quot;问题&quot;] --&gt; R[&quot;查询改写&quot;]
+  R --&gt; H[&quot;混合检索&quot;]
+  H --&gt; F[&quot;权限过滤&quot;]
+  F --&gt; RR[&quot;重排&quot;]
+  RR --&gt; C[&quot;上下文组装&quot;]
+  C --&gt; L[&quot;LLM&quot;]
+  L --&gt; A[&quot;回答 + 引用&quot;]
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 查询流水线：权限过滤必须在召回阶段，而不是让模型“别说”</p>
+<h2 id="管线式-rag-vs-agentic-rag">管线式 RAG vs Agentic RAG</h2>
+<p>见<strong>图 3</strong>：</p>
+<div class="mermaid">flowchart TB
+  subgraph P[&quot;管线式 RAG&quot;]
+    direction LR
+    Q1[&quot;问题&quot;] --&gt; R1[&quot;检索&quot;] --&gt; G1[&quot;生成&quot;]
+  end
+  subgraph A[&quot;Agentic RAG&quot;]
+    direction LR
+    Q2[&quot;问题&quot;] --&gt; A2[&quot;Agent&quot;]
+    A2 --&gt; R2[&quot;检索&quot;]
+    R2 --&gt; A2
+    A2 --&gt; G2[&quot;生成&quot;]
+  end
+</div>
+<p class="diagram-caption"><strong>图 3</strong> · 路径固定用管线；需要多跳、判断“查够了没有”用 Agentic RAG</p>
+<h2 id="权限感知最容易漏的一环">权限感知：最容易漏的一环</h2>
+<p>见<strong>图 4</strong>：</p>
+<div class="mermaid">flowchart LR
+  Q[&quot;查询&quot;] --&gt; F[&quot;tenant / user / ACL 过滤&quot;]
+  F --&gt; C[&quot;只召回有权访问的片段&quot;]
+  C --&gt; R[&quot;重排&quot;]
+  R --&gt; S[&quot;引用只展示可访问来源&quot;]
+  X[&quot;全量召回后再过滤&quot;] -.-&gt;|&quot;错误做法&quot;| C
+</div>
+<p class="diagram-caption"><strong>图 4</strong> · 权限过滤发生在召回阶段；索引里必须有可过滤的元数据</p>
+<p>ACL 要在索引期写入元数据，查询时过滤，而不是取回结果再筛。删除、留存与跨境的要求见<a href="../layers/privacy.html">隐私与数据治理</a>；召回质量怎么量化，见<a href="../layers/retrieval.html">检索层</a>。</p>
+<h2 id="它解决了什么又制造了什么">它解决了什么，又制造了什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>解决了</th>
+<th>同时制造了</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>知识过时</td>
+<td>切分破坏语义，答案跨段丢失</td>
+</tr>
+<tr>
+<td>私有数据不可见</td>
+<td>相似度 ≠ 相关性，top-k 全是噪声</td>
+</tr>
+<tr>
+<td>幻觉 / 无依据</td>
+<td>多跳问题单次检索不够</td>
+</tr>
+<tr>
+<td>无法追溯</td>
+<td>来源冲突、旧文档未下线</td>
+</tr>
+<tr>
+<td>上下文装不下</td>
+<td>检索内容注入、权限泄露</td>
+</tr>
+<tr>
+<td>权限差异</td>
+<td>索引/重排/长上下文成本高</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="优化矩阵">优化矩阵</h2>
+<blockquote>
+<p>这张表只给方向。切分、混合检索、重排参数与评测方法，见<a href="../layers/retrieval.html">检索层</a>。</p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>召回不到</td>
+<td>查询改写、混合检索、扩大候选、同义词</td>
+</tr>
+<tr>
+<td>召回太杂</td>
+<td>重排、元数据过滤、提高阈值</td>
+</tr>
+<tr>
+<td>片段不完整</td>
+<td>父文档/子片段、上下文扩展</td>
+</tr>
+<tr>
+<td>多跳</td>
+<td>查询分解、Agentic RAG、工具组合</td>
+</tr>
+<tr>
+<td>权限泄露</td>
+<td>ACL 元数据 + 召回时过滤</td>
+</tr>
+<tr>
+<td>时效</td>
+<td>增量索引、TTL、版本号</td>
+</tr>
+<tr>
+<td>引用不可信</td>
+<td>引用只来自检索结果，逐条校验</td>
+</tr>
+<tr>
+<td>成本高</td>
+<td>缓存、分层检索、结果复用</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="度量">度量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Recall@k / Precision@k</td>
+<td>正确证据在不在候选里、候选有多纯</td>
+</tr>
+<tr>
+<td>引用支持率</td>
+<td>结论是否被引用支持</td>
+</tr>
+<tr>
+<td>答案正确率</td>
+<td>端到端任务成功</td>
+</tr>
+<tr>
+<td>权限泄露</td>
+<td>应为 0</td>
+</tr>
+<tr>
+<td>索引新鲜度</td>
+<td>索引延迟、过期文档比例</td>
+</tr>
+<tr>
+<td>延迟 / 成本</td>
+<td>检索 + 重排 + 生成</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="阶段边界">阶段边界</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>够用</th>
+<th>进入下一阶段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>问题类型单一、路径固定</td>
+<td>请求类型差异大：FAQ/工单/Agent 混在一起</td>
+</tr>
+<tr>
+<td>所有请求都值得检索</td>
+<td>简单请求检索反而更慢更贵</td>
+</tr>
+<tr>
+<td>统一入口、统一策略</td>
+<td>需要按意图选择不同处理路径</td>
+</tr>
+</tbody>
+</table></div>
+<p>下一步：<a href="intent.html">阶段 6：意图识别与路由</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="tool-gateway.html"><span>上一篇</span><strong>04 工具网关</strong></a><a class="next" href="intent.html"><span>下一篇</span><strong>06 意图识别与路由</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

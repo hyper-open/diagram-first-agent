@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>核心循环 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item active" href="loop.html">核心循环</a>
+<a class="nav-item" href="architecture.html">七层职责模型</a>
+<a class="nav-item" href="evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>基础参考</span><span>/</span><strong>核心循环</strong></div>
+        <article class="doc"><h1 id="核心循环agent-的心跳">核心循环：Agent 的心跳</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  O[&quot;观察&quot;] --&gt; T[&quot;思考&quot;] --&gt; A[&quot;行动&quot;] --&gt; O
+  A --&gt; E[&quot;终止条件&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Agent 的心跳：观察—思考—行动—再观察，直到完成、预算耗尽或需要人工</p>
+<p>所有 Agent，不管包装成什么框架，内核都是一个<strong>带状态和终止条件的循环</strong>：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>state = 初始化(目标, 约束, 工具)
+while not done and budget_remaining:
+    context = 组装上下文(state, 记忆, 观察历史)
+    decision = LLM(context)                # 思考 / 决策
+    if decision 是最终答案:
+        return decision
+    result = 执行工具(decision.action)     # 行动
+    state = 更新(state, decision, result)  # 观察
+</code></pre></div>
+<p>看起来简单，但每一行都藏着工程问题：</p>
+<ul>
+<li><code>组装上下文</code>：放什么、放多少、按什么顺序？</li>
+<li><code>LLM</code>：如何保证输出可解析、可校验？</li>
+<li><code>执行工具</code>：失败、超时、副作用、权限怎么办？</li>
+<li><code>更新状态</code>：什么值得保留，什么必须丢弃？</li>
+<li><code>done</code>：谁来判断真的完成了？</li>
+</ul>
+<h2 id="一次循环的完整时序">一次循环的完整时序</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant U as 用户
+  participant O as 编排器
+  participant M as 模型
+  participant T as 工具/环境
+
+  U-&gt;&gt;O: 目标 + 约束
+  loop 直到完成 / 预算耗尽 / 需要人工
+    O-&gt;&gt;M: 组装上下文 + 工具定义
+    M--&gt;&gt;O: 工具调用 / 最终答案
+    alt 工具调用
+      O-&gt;&gt;O: 校验参数、权限、预算
+      O-&gt;&gt;T: 执行
+      T--&gt;&gt;O: 结果 / 错误 / 超时
+      O-&gt;&gt;O: 更新状态、追加观察
+    else 最终答案
+      O-&gt;&gt;O: 外部验证
+      O--&gt;&gt;U: 输出 + 证据
+    end
+  end
+</div>
+<p class="diagram-caption"><strong>图 1 · 一次循环的时序：校验、执行、更新观察，直到终止条件成立</strong></p>
+<p>关键点：<strong>模型只负责“决策”，不负责“执行”和“记账”</strong>。执行、预算、权限、状态更新必须由外部代码掌控。把控制权全部交给模型，是很多 Agent 失控的根源。</p>
+<h2 id="两种常见的决策协议">两种常见的决策协议</h2>
+<h3 id="1-文本协议react-风格">1. 文本协议（ReAct 风格）</h3>
+<p>模型输出带标记的文本：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>Thought: 我需要先确认失败测试的数量。
+Action: run_tests
+Action Input: {&quot;path&quot;: &quot;tests/&quot;}
+Observation: 3 failed, 12 passed
+Thought: 失败集中在 parser，先读测试。
+Action: read_file
+Action Input: {&quot;path&quot;: &quot;tests/test_parser.py&quot;}
+...
+Final Answer: ...
+</code></pre></div>
+<p>优点：不依赖模型原生工具调用能力，任何文本模型都能用；轨迹可读，便于调试。
+缺点：解析脆弱（格式漂移、多余文字、JSON 坏掉）；需要自己处理转义和多行动作；token 开销大。</p>
+<h3 id="2-原生工具调用function-calling-tool-use">2. 原生工具调用（Function Calling / Tool Use）</h3>
+<p>模型返回结构化的工具调用：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{
+  &quot;tool_calls&quot;: [
+    {
+      &quot;id&quot;: &quot;call_1&quot;,
+      &quot;name&quot;: &quot;run_tests&quot;,
+      &quot;arguments&quot;: &quot;{\&quot;path\&quot;:\&quot;tests/\&quot;}&quot;
+    }
+  ]
+}
+</code></pre></div>
+<p>优点：协议由模型/API 保证，解析稳定；支持并行调用；参数 schema 可约束。
+缺点：依赖模型能力；不同厂商格式有差异；错误处理仍要自己做；模型可能“编造”工具或参数。</p>
+<blockquote>
+<p>工程上优先用原生工具调用。文本协议只在模型不支持、或需要高度自定义推理格式时使用。两者可以混合：原生调用负责动作，文本字段负责计划/解释。</p>
+</blockquote>
+<h2 id="终止条件agent-最容易忽略的部分">终止条件：Agent 最容易忽略的部分</h2>
+<p>一个没有可靠终止条件的循环，本质上是一个<strong>会烧钱的死循环</strong>。至少要设置：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>条件</th>
+<th>说明</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>任务完成</td>
+<td>模型声明完成，且通过验证器</td>
+<td>验证通过</td>
+</tr>
+<tr>
+<td>最大步数</td>
+<td>防止无限循环</td>
+<td>10–50 步</td>
+</tr>
+<tr>
+<td>最大 token</td>
+<td>控制上下文与成本</td>
+<td>按任务预算</td>
+</tr>
+<tr>
+<td>最大墙钟时间</td>
+<td>防止工具卡死</td>
+<td>30s–10min</td>
+</tr>
+<tr>
+<td>最大工具调用次数</td>
+<td>防止重复试错</td>
+<td>按工具类型</td>
+</tr>
+<tr>
+<td>无进展检测</td>
+<td>连续多轮状态无变化</td>
+<td>2–3 轮</td>
+</tr>
+<tr>
+<td>人工介入</td>
+<td>高风险/不确定时暂停</td>
+<td>审批点</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class Budget:
+    def __init__(self, max_steps=20, max_tokens=100_000, max_seconds=300):
+        self.max_steps = max_steps
+        self.max_tokens = max_tokens
+        self.max_seconds = max_seconds
+        self.steps = 0
+        self.tokens = 0
+        self.started = time.monotonic()
+
+    def spend(self, tokens: int) -&gt; None:
+        self.steps += 1
+        self.tokens += tokens
+        if self.steps &gt; self.max_steps:
+            raise BudgetExceeded(&quot;step limit&quot;)
+        if self.tokens &gt; self.max_tokens:
+            raise BudgetExceeded(&quot;token limit&quot;)
+        if time.monotonic() - self.started &gt; self.max_seconds:
+            raise BudgetExceeded(&quot;time limit&quot;)
+</code></pre></div>
+<p>注意：<strong>预算耗尽不是异常，而是一种正常终止状态</strong>。应该把当前进展、未完成事项和下一步建议返回给用户，而不是直接抛 500。</p>
+<h2 id="状态循环真正的主体">状态：循环真正的主体</h2>
+<p>很多人把 Agent 的状态等同于 <code>messages</code> 列表。这在短任务里够用，在长任务里会迅速失控。更可靠的做法是分离：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class AgentState:
+    goal: str
+    constraints: list[str]
+    plan: list[str]                 # 可更新的计划
+    completed: list[str]            # 已完成事项
+    open_questions: list[str]
+    artifacts: dict[str, str]       # 文件/链接/结果
+    observations: list[Observation] # 最近的关键观察
+    budget: Budget
+    status: str                     # running / done / blocked / failed
+</code></pre></div>
+<ul>
+<li><code>messages</code> 是<strong>给模型看的视图</strong>，可以压缩、裁剪、重排。</li>
+<li><code>AgentState</code> 是<strong>系统的事实来源</strong>，不应该被模型随意改写。</li>
+<li>两者之间由上下文构建器做投影。</li>
+</ul>
+<blockquote>
+<p>经验法则：<strong>凡是后续决策要依赖的事实，都不要只存在于聊天记录里。</strong> 把它结构化，才能被验证、恢复和审计。</p>
+</blockquote>
+<h2 id="循环中的五类典型故障">循环中的五类典型故障</h2>
+<h3 id="1-原地打转">1. 原地打转</h3>
+<p>模型反复调用同一个工具、收到同样的错误、继续同样的尝试。</p>
+<p><strong>根因</strong>：错误信息没有提供新信息；没有“已尝试”记录；没有无进展检测。
+<strong>处方</strong>：错误信息里带“下一步建议”；在上下文中显式列出已尝试动作；连续 N 轮无进展就升级模型/换策略/问人。</p>
+<h3 id="2-过早宣布完成">2. 过早宣布完成</h3>
+<p>模型说“已完成”，但实际上测试没跑、文件没改、引用是编的。</p>
+<p><strong>根因</strong>：完成条件没有可验证的定义；模型自我评估过于乐观。
+<strong>处方</strong>：引入外部验证器（跑测试、schema 校验、引用核对）；要求“完成”必须附带证据；高风险任务强制人工确认。</p>
+<h3 id="3-上下文爆炸">3. 上下文爆炸</h3>
+<p>每一步都把完整工具结果塞进历史，几轮后超出窗口，或被截断丢失关键信息。</p>
+<p><strong>根因</strong>：没有观察压缩策略；工具返回巨大（日志、网页、文件）。
+<strong>处方</strong>：工具侧分页/截断；观察侧摘要；只保留与当前计划相关的片段；把大结果放到外部存储，上下文里放引用。</p>
+<h3 id="4-错误级联">4. 错误级联</h3>
+<p>第一步读错文件，后续所有推理都基于错误事实，越走越偏。</p>
+<p><strong>根因</strong>：没有验证关键假设；工具结果没有置信度/来源。
+<strong>处方</strong>：关键动作前做 cheap check；对事实性观察标注来源；定期让 verifier 检查“当前结论是否被证据支持”。</p>
+<h3 id="5-工具副作用不可逆">5. 工具副作用不可逆</h3>
+<p>Agent 误删文件、发错邮件、提交错误代码。</p>
+<p><strong>根因</strong>：读写权限没有分级；没有 dry-run；没有审批。
+<strong>处方</strong>：默认只读；写操作分级授权；高风险动作先 dry-run 再确认；沙箱与快照。</p>
+<h2 id="让循环更聪明的三个扩展">让循环更聪明的三个扩展</h2>
+<h3 id="计划执行分离">计划—执行分离</h3>
+<p>先让模型产出计划，再逐步执行；每完成一步更新计划。适合步骤多、依赖多的任务。代价是额外的 token 和“计划本身错了”的风险。</p>
+<h3 id="反思reflection">反思（Reflection）</h3>
+<p>执行后让模型（或独立 verifier）检查结果，发现问题则回到循环。适合有明确评价标准的任务（代码、数学、写作）。注意：<strong>自我反思容易确认偏误</strong>，独立验证器通常更有效。</p>
+<h3 id="并行与子任务">并行与子任务</h3>
+<p>把互不依赖的动作并行执行，或把子任务交给子 Agent。适合研究、多文件修改、批量处理。代价是协调、合并和上下文隔离问题。</p>
+<p>这些扩展不是越多越好。<strong>先把基础循环、预算、验证和追踪做对</strong>，再考虑加戏。</p>
+<h2 id="一个可运行的最小循环">一个可运行的最小循环</h2>
+<p>下面是 Mini Agent 的核心（完整实现见<a href="../practice/mini-agent.html">实战章节</a>）：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def run(agent, goal: str, max_steps: int = 12) -&gt; str:
+    state = AgentState(goal=goal)
+    for step in range(max_steps):
+        messages = build_context(state)          # 组装视图
+        decision = agent.llm.decide(messages, agent.tools.specs())
+
+        if decision.is_final:
+            if agent.verify(decision, state):    # 外部验证
+                return decision.content
+            state.observations.append(&quot;验证未通过，请修正&quot;)
+            continue
+
+        result = agent.tools.execute(           # 执行 + 错误规范化
+            decision.tool_name,
+            decision.arguments,
+        )
+        state.record(decision, result)          # 更新事实状态
+    return state.summarize_incomplete()
+</code></pre></div>
+<p>注意这段代码里，<strong>模型没有直接操作状态、没有直接执行工具、也没有权力绕过验证</strong>。这是刻意设计的。</p>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你的循环加上“连续两轮无进展就停止”的逻辑。什么算“有进展”？</li>
+<li>设计一个工具错误格式，要求同时包含：错误类型、可读信息、是否可重试、建议的下一步。</li>
+<li>思考：如果模型每轮都要求调用同一个工具，但参数略有不同，这算有进展吗？如何检测？</li>
+</ol>
+<p>下一步：<a href="architecture.html">分层架构</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="../evolution/platform.html"><span>上一篇</span><strong>08 平台化与治理</strong></a><a class="next" href="architecture.html"><span>下一篇</span><strong>七层职责模型</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

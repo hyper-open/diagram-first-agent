@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>上下文层 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="model.html">模型层</a>
+<a class="nav-item" href="model-adaptation.html">模型适配</a>
+<a class="nav-item" href="multimodal.html">多模态与实时交互</a>
+<a class="nav-item active" href="context.html">上下文层</a>
+<a class="nav-item" href="retrieval.html">检索层</a>
+<a class="nav-item" href="tools.html">工具层</a>
+<a class="nav-item" href="memory.html">记忆层</a>
+<a class="nav-item" href="orchestration.html">编排层</a>
+<a class="nav-item" href="runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="testing.html">测试与验证</a>
+<a class="nav-item" href="evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="release.html">版本与发布</a>
+<a class="nav-item" href="security.html">安全与权限</a>
+<a class="nav-item" href="content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>分层深入</span><span>/</span><strong>上下文层</strong></div>
+        <article class="doc"><h1 id="上下文层模型此刻知道什么">上下文层：模型“此刻知道什么”</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  S[&quot;状态&quot;] --&gt; B[&quot;Builder&quot;]
+  H[&quot;历史&quot;] --&gt; B
+  R[&quot;检索 / 记忆&quot;] --&gt; B
+  B --&gt; M[&quot;messages&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 上下文层不是保存历史，而是为当前决策组装有限的工作台</p>
+<p>模型每一步只能看到你给它的 token。它不知道文件系统里有什么、上一轮工具返回了什么、用户三天前说过什么——除非这些信息被<strong>组装进上下文</strong>。</p>
+<p>所以上下文层的核心任务不是“保存历史”，而是：</p>
+<blockquote>
+<p><strong>在有限的 token 预算内，为当前这一步决策提供最相关、最可靠、最不干扰的信息。</strong></p>
+</blockquote>
+<h2 id="一上下文的解剖">一、上下文的解剖</h2>
+<p>一个典型的 Agent 请求包含：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>┌─────────────────────────────────────────────┐
+│ 1. 系统/开发者指令（角色、边界、安全策略）      │
+│ 2. 工具定义（名称、描述、schema）              │
+│ 3. 任务与成功标准                              │
+│ 4. 约束与偏好（必须/禁止/格式）                 │
+│ 5. 当前状态（计划、进度、未决问题）             │
+│ 6. 检索到的证据（文档、网页、代码片段）          │
+│ 7. 最近的观察（工具结果、错误、用户反馈）        │
+│ 8. 少量示例（可选）                             │
+│ 9. 输出格式要求                                 │
+└─────────────────────────────────────────────┘
+</code></pre></div>
+<p>不是每一项都要放。<strong>每多放一段，就多一份 token 成本、一份干扰、一份被注入的风险。</strong></p>
+<h3 id="上下文-≠-记忆-≠-状态">上下文 ≠ 记忆 ≠ 状态</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>是什么</th>
+<th>存在哪</th>
+<th>谁负责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文</td>
+<td>本轮给模型看的视图</td>
+<td>请求里</td>
+<td>上下文构建器</td>
+</tr>
+<tr>
+<td>状态</td>
+<td>任务的事实（计划、进度、预算）</td>
+<td>数据库/内存</td>
+<td>编排器</td>
+</tr>
+<tr>
+<td>记忆</td>
+<td>跨任务保留的信息</td>
+<td>外部存储</td>
+<td>记忆系统</td>
+</tr>
+<tr>
+<td>历史</td>
+<td>发生过的完整轨迹</td>
+<td>日志/事件流</td>
+<td>可观测性</td>
+</tr>
+</tbody>
+</table></div>
+<p>把它们混成一个 <code>messages</code> 列表，是长任务失控的常见起点。</p>
+<h2 id="二预算先分配再填充">二、预算：先分配，再填充</h2>
+<p>假设模型窗口 128K，不代表你应该用满。实际预算要考虑：</p>
+<ul>
+<li>输出预留（尤其推理模型的 thinking token）。</li>
+<li>工具定义的开销。</li>
+<li>安全边际（不同 tokenizer 估算有误差）。</li>
+<li>成本与延迟目标。</li>
+</ul>
+<p>一个可用的分配：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>区块</th>
+<th>预算占比</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统指令 + 安全策略</td>
+<td>5–10%</td>
+<td>稳定，可缓存</td>
+</tr>
+<tr>
+<td>工具定义</td>
+<td>5–15%</td>
+<td>工具多时显著，需精简</td>
+</tr>
+<tr>
+<td>任务 + 约束</td>
+<td>5%</td>
+<td>必须保留，不能被压缩掉</td>
+</tr>
+<tr>
+<td>状态 + 计划</td>
+<td>10%</td>
+<td>结构化，短而关键</td>
+</tr>
+<tr>
+<td>证据/检索</td>
+<td>30–40%</td>
+<td>按相关性动态分配</td>
+</tr>
+<tr>
+<td>最近观察</td>
+<td>20–30%</td>
+<td>越近越重要，但要去重</td>
+</tr>
+<tr>
+<td>输出预留</td>
+<td>10–20%</td>
+<td>不能省</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>预算不是固定比例，而是<strong>优先级</strong>：任务、约束、当前错误 &gt; 最近观察 &gt; 证据 &gt; 远历史 &gt; 示例。</p>
+</blockquote>
+<h3 id="一个常见的反模式">一个常见的反模式</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 反模式：无脑追加
+messages.append({&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: ...})
+messages.append({&quot;role&quot;: &quot;tool&quot;, &quot;content&quot;: huge_result})
+</code></pre></div>
+<p>问题：</p>
+<ul>
+<li>每步 input token 线性增长。</li>
+<li>旧错误和已解决的问题仍然占着位置。</li>
+<li>工具返回的巨大日志把关键信息挤到中间。</li>
+<li>缓存前缀被不断破坏。</li>
+</ul>
+<p>正确做法是<strong>每轮重新构建视图</strong>，而不是只追加。</p>
+<h2 id="三组装流水线">三、组装流水线</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  A[收集候选] --&gt; B[过滤/去重]
+  B --&gt; C[排序/打分]
+  C --&gt; D[压缩/摘要]
+  D --&gt; E[格式化]
+  E --&gt; F[预算裁剪]
+  F --&gt; G[校验关键项]
+  G --&gt; H[messages]
+</div>
+<p class="diagram-caption"><strong>图 1 · 组装流水线：先收集再裁剪，最后校验关键项没有被丢掉</strong></p>
+<h3 id="1-收集候选">1. 收集候选</h3>
+<p>来源：任务、状态、最近 N 步观察、检索结果、记忆、工具列表、用户新消息。</p>
+<h3 id="2-过滤与去重">2. 过滤与去重</h3>
+<ul>
+<li>删除已解决的错误、重复的工具结果。</li>
+<li>合并同一文件的多次读取（保留最新 + 变更摘要）。</li>
+<li>丢弃与当前子目标无关的历史分支。</li>
+</ul>
+<h3 id="3-排序与打分">3. 排序与打分</h3>
+<p>排序不是“越新越好”。一个实用打分：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>score = 相关性(当前子目标)
+      + 时效性(越近越高)
+      + 重要性(约束/错误/用户指令)
+      - 冗余度(与已选内容重复)
+      - 风险(不可信来源)
+</code></pre></div>
+<p><strong>约束和用户明确指令应该获得最高优先级</strong>，不能被“相关性”挤掉。</p>
+<h3 id="4-压缩">4. 压缩</h3>
+<p>常见手段：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>手段</th>
+<th>适用</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>截断</td>
+<td>日志、长输出</td>
+<td>丢掉关键尾部/错误</td>
+</tr>
+<tr>
+<td>摘要</td>
+<td>长对话、研究资料</td>
+<td>摘要失真、丢约束</td>
+</tr>
+<tr>
+<td>结构化</td>
+<td>状态、计划、文件变更</td>
+<td>需要维护 schema</td>
+</tr>
+<tr>
+<td>引用化</td>
+<td>大文档、代码库</td>
+<td>模型可能不点开引用</td>
+</tr>
+<tr>
+<td>分层</td>
+<td>多级摘要 + 原始片段</td>
+<td>实现复杂</td>
+</tr>
+</tbody>
+</table></div>
+<p>压缩的第一原则：<strong>不要压缩“必须精确”的内容</strong>。数字、路径、API 名、用户原话、错误码，尽量保留原文。</p>
+<h3 id="5-格式化">5. 格式化</h3>
+<p>用清晰的标签分隔区块，比一整段自然语言更稳：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>&lt;task&gt;...&lt;/task&gt;
+&lt;constraints&gt;...&lt;/constraints&gt;
+&lt;current_state&gt;...&lt;/current_state&gt;
+&lt;evidence source=&quot;...&quot;&gt;...&lt;/evidence&gt;
+&lt;last_observation&gt;...&lt;/last_observation&gt;
+</code></pre></div>
+<p>标签不是魔法，但能降低模型把“证据”当成“指令”的概率，也方便你在日志里定位。</p>
+<h3 id="6-预算裁剪">6. 预算裁剪</h3>
+<p>按优先级从低到高删，直到满足预算。删的时候要记录“删了什么”，否则调试时不知道模型为什么“失忆”。</p>
+<h3 id="7-校验关键项">7. 校验关键项</h3>
+<p>发送前检查：</p>
+<ul>
+<li>任务目标还在吗？</li>
+<li>硬约束还在吗？</li>
+<li>当前错误/待办还在吗？</li>
+<li>工具 schema 与实现一致吗？</li>
+<li>有没有明显的注入内容？</li>
+</ul>
+<h2 id="四顺序中间的信息容易被忽略">四、顺序：中间的信息容易被忽略</h2>
+<p>长上下文模型存在“中间遗忘”现象：放在开头和结尾的信息更容易被利用，中间的信息召回率较低。</p>
+<p>实用策略：</p>
+<ul>
+<li><strong>关键约束放开头和结尾各一次</strong>（不是简单重复，而是呼应）。</li>
+<li>当前任务/问题放在靠近结尾的位置。</li>
+<li>证据按“结论 → 关键片段 → 来源”组织，而不是堆原始文本。</li>
+<li>不要用大量无关内容“填充”上下文。</li>
+</ul>
+<div class="code-block"><div class="code-lang">text</div><pre><code>[系统指令：边界与安全]
+[任务：修复 parser 测试]
+[约束：不要改公共 API；不要新增依赖]
+...
+[证据：失败测试 + 相关实现]
+[当前状态：已定位到 tokenizer.py:42]
+[下一步要求：只输出一个工具调用]
+</code></pre></div>
+<h2 id="五上下文腐烂多不等于好">五、上下文腐烂：多不等于好</h2>
+<p>“上下文腐烂”（context rot）指：随着上下文变长、噪声变多，模型的有效推理能力下降。表现包括：</p>
+<ul>
+<li>忽略前面的指令。</li>
+<li>被无关片段带偏。</li>
+<li>重复已经排除的方案。</li>
+<li>对过时信息信以为真。</li>
+</ul>
+<p>对策不是“再加一段提示”，而是<strong>减少上下文</strong>：</p>
+<ul>
+<li>只保留与当前子目标相关的观察。</li>
+<li>把已完成步骤折叠成简短摘要。</li>
+<li>把大结果放到外部，上下文只放引用和关键摘录。</li>
+<li>用子 Agent 隔离无关上下文（每个子 Agent 只看自己那块）。</li>
+</ul>
+<blockquote>
+<p>上下文工程的核心不是“塞进去”，而是“<strong>敢删</strong>”。删得对，比加得多更难。</p>
+</blockquote>
+<h2 id="六检索不是把所有片段都拼上">六、检索：不是把所有片段都拼上</h2>
+<p>RAG 常见错误是 <code>top_k=10</code> 直接拼接。更好的做法：</p>
+<ol>
+<li><strong>查询构造</strong>：用当前子目标 + 关键实体构造查询，而不是拿整段对话去搜。</li>
+<li><strong>混合检索</strong>：向量 + 关键词（BM25）+ 元数据过滤。</li>
+<li><strong>重排</strong>：用 cross-encoder 或 LLM 对候选重排，取少量高相关片段。</li>
+<li><strong>上下文扩展</strong>：命中片段前后各取一段，避免语义断裂。</li>
+<li><strong>引用标注</strong>：每个片段带来源、时间、可信度。</li>
+<li><strong>冲突处理</strong>：多个来源冲突时，显式呈现冲突，而不是让模型猜。</li>
+</ol>
+<h3 id="检索结果的格式">检索结果的格式</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>&lt;evidence id=&quot;E1&quot; source=&quot;docs/api.md&quot; updated=&quot;2025-03-01&quot;&gt;
+退款需在购买后 7 天内申请，且商品未使用。
+&lt;/evidence&gt;
+&lt;evidence id=&quot;E2&quot; source=&quot;faq.md&quot; updated=&quot;2024-11-12&quot;&gt;
+退款期限为 14 天。
+&lt;/evidence&gt;
+&lt;conflict&gt;E1 与 E2 的期限不一致，E1 更新。请优先使用 E1，并在回答中说明依据。&lt;/conflict&gt;
+</code></pre></div>
+<p>显式冲突比“模型自己选一个”更可靠。</p>
+<h2 id="七缓存友好的布局">七、缓存友好的布局</h2>
+<p>Prompt caching 通常按<strong>前缀匹配</strong>。因此布局应稳定：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>[稳定] 系统指令 + 安全策略 + 工具定义 + 长期示例
+[较稳定] 项目背景 + 术语表
+[变化] 当前任务 + 状态 + 观察 + 检索结果
+</code></pre></div>
+<p>注意：</p>
+<ul>
+<li>不要把时间戳、随机 ID 放在前缀开头。</li>
+<li>工具定义顺序固定，别每次重排。</li>
+<li>变化内容放后面，最大化缓存命中。</li>
+<li>缓存命中率要作为指标监控。</li>
+</ul>
+<h2 id="八多-agent-的上下文隔离">八、多 Agent 的上下文隔离</h2>
+<p>多 Agent 的一个核心价值是<strong>隔离上下文</strong>：每个子 Agent 只看自己的任务和相关资料，避免被全局噪声干扰。</p>
+<p>但隔离也带来问题：</p>
+<ul>
+<li>子 Agent 不知道全局约束，可能做出冲突决策。</li>
+<li>返回结果时丢失关键上下文，父 Agent 无法判断可信度。</li>
+<li>重复读取同一资料，成本上升。</li>
+</ul>
+<p>实用做法：</p>
+<ul>
+<li>给子 Agent 一份<strong>最小任务包</strong>：目标、约束、可用工具、期望输出格式。</li>
+<li>返回结构化结果：结论、证据、置信度、未决问题、消耗。</li>
+<li>父 Agent 只合并结论和证据，不合并全部轨迹。</li>
+</ul>
+<h2 id="九一个可用的-contextbuilder">九、一个可用的 ContextBuilder</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class ContextBuilder:
+    def __init__(self, tokenizer, max_tokens=32_000, reserve_output=4_000):
+        self.tokenizer = tokenizer
+        self.max_tokens = max_tokens
+        self.reserve_output = reserve_output
+
+    def build(self, state, tools, evidence, recent_observations):
+        sections = [
+            Section(&quot;system&quot;, SYSTEM_PROMPT, priority=100, stable=True),
+            Section(&quot;tools&quot;, render_tools(tools), priority=90, stable=True),
+            Section(&quot;task&quot;, state.goal, priority=100),
+            Section(&quot;constraints&quot;, render_constraints(state), priority=100),
+            Section(&quot;state&quot;, render_state(state), priority=80),
+            Section(&quot;evidence&quot;, render_evidence(evidence), priority=60),
+            Section(&quot;observations&quot;, render_observations(recent_observations), priority=70),
+            Section(&quot;output&quot;, OUTPUT_FORMAT, priority=90),
+        ]
+        budget = self.max_tokens - self.reserve_output
+        selected = fit_budget(sections, budget)
+        assert_required_present(selected, [&quot;task&quot;, &quot;constraints&quot;])
+        return render_messages(selected)
+</code></pre></div>
+<p><code>fit_budget</code> 的关键不是“按顺序截断”，而是：</p>
+<ol>
+<li>先放必选项（task、constraints、output）。</li>
+<li>再放高优先级状态和最近观察。</li>
+<li>剩余预算按分数放证据。</li>
+<li>对可压缩项做摘要，而不是硬截断。</li>
+<li>记录被丢弃的 section 及原因。</li>
+</ol>
+<h2 id="十度量上下文质量">十、度量上下文质量</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>怎么测</th>
+<th>目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文 token 分布</td>
+<td>按 section 统计</td>
+<td>证据/观察不挤占约束</td>
+</tr>
+<tr>
+<td>关键信息保留率</td>
+<td>人工标注关键事实，检查是否在上下文</td>
+<td>100% 必选项</td>
+</tr>
+<tr>
+<td>压缩比</td>
+<td>原始 token / 压缩后 token</td>
+<td>按任务定，别牺牲正确率</td>
+</tr>
+<tr>
+<td>缓存命中率</td>
+<td>cached_tokens / input_tokens</td>
+<td>稳定前缀越长越高</td>
+</tr>
+<tr>
+<td>干扰测试</td>
+<td>加入无关文档，看成功率变化</td>
+<td>下降越小越好</td>
+</tr>
+<tr>
+<td>检索引用准确率</td>
+<td>引用是否真的支持结论</td>
+<td>高</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="常见问题速查">常见问题速查</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>先查什么</th>
+<th>可能修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型忘记约束</td>
+<td>约束是否被压缩/挤掉</td>
+<td>约束置顶+结尾呼应，设为必选</td>
+</tr>
+<tr>
+<td>越到后面越笨</td>
+<td>上下文是否膨胀</td>
+<td>压缩、折叠、子 Agent 隔离</td>
+</tr>
+<tr>
+<td>回答引用错误</td>
+<td>证据是否标来源</td>
+<td>引用 ID + 校验</td>
+</tr>
+<tr>
+<td>成本随步数暴涨</td>
+<td>是否全量追加</td>
+<td>每轮重建视图 + 预算</td>
+</tr>
+<tr>
+<td>缓存命中低</td>
+<td>前缀是否稳定</td>
+<td>固定顺序、去掉时间戳</td>
+</tr>
+<tr>
+<td>检索没用</td>
+<td>查询/切分/重排</td>
+<td>改查询构造，加混合检索与重排</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="练习">练习</h2>
+<ol>
+<li>给你当前的 Agent 请求做一次“section 审计”：每段占多少 token，哪些可以删？</li>
+<li>设计一个“关键信息保留率”测试：列出 10 条必须保留的事实，压缩后逐条检查。</li>
+<li>把历史全量拼接改成“状态 + 最近观察 + 证据”，比较 token 与成功率。</li>
+</ol>
+<p>下一步：<a href="retrieval.html">检索层</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="multimodal.html"><span>上一篇</span><strong>多模态与实时交互</strong></a><a class="next" href="retrieval.html"><span>下一篇</span><strong>检索层</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

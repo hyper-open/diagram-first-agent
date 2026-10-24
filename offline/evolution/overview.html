@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>架构总览 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item active" href="overview.html">00 架构总览</a>
+<a class="nav-item" href="react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>架构演进主线</span><span>/</span><strong>00 架构总览</strong></div>
+        <article class="doc"><h1 id="架构总览从一次调用到-agent-平台">架构总览：从一次调用到 Agent 平台</h1>
+<h2 id="一图看懂">一图看懂</h2>
+<p>如果你只记一张图，记这张：</p>
+<div class="mermaid">flowchart TB
+  A[&quot;接入层&lt;br/&gt;API GW · 身份 · 租户 · 限流&quot;]
+  B[&quot;编排层&lt;br/&gt;意图 · Runtime · 多 Agent&quot;]
+  C[&quot;能力层&lt;br/&gt;Model GW · Tool GW · RAG&quot;]
+  D[&quot;执行层&lt;br/&gt;沙箱 · 浏览器 · 代码执行&quot;]
+  E[&quot;数据层&lt;br/&gt;状态 · 向量 · 账本 · 审计&quot;]
+  F[&quot;治理面&lt;br/&gt;观测 · 评测 · 策略 · 配额&quot;]
+
+  A --&gt; B --&gt; C --&gt; D
+  C --&gt; E
+  F -.-&gt; B
+  F -.-&gt; C
+  F -.-&gt; D
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Agent 平台的六层结构：请求自上而下，治理面横向支撑</p>
+<div class="diagram-legend">
+  <span><i class="brand"></i> 请求 / 动作流</span>
+  <span><i class="dashed"></i> 配置 / 反馈</span>
+</div>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>接入层</strong><p>谁在调用：身份、租户、限流、WAF。</p></div>
+  <div class="flow-step"><b>2</b><strong>编排层</strong><p>走哪条路径：意图路由、Agent 循环、工作流、多 Agent。</p></div>
+  <div class="flow-step"><b>3</b><strong>能力层</strong><p>需要什么：模型、工具、RAG、记忆。</p></div>
+  <div class="flow-step"><b>4</b><strong>执行层</strong><p>副作用在哪：沙箱、浏览器、代码、桌面。</p></div>
+  <div class="flow-step"><b>5</b><strong>数据层</strong><p>留下了什么：状态、向量、账本、审计。</p></div>
+  <div class="flow-step"><b>6</b><strong>治理面</strong><p>怎么管：观测、评测、策略、配额、发布。</p></div>
+</div>
+<div class="custom-block tip"><p class="custom-block-title">六层 vs 七层，别混着数</p>
+<p>开篇那张图是<strong>平台组件视角</strong>的六层：接入、编排、能力、执行、数据，加上横向的治理面。</p>
+<p><a href="../foundations/architecture.html">分层架构</a> 是<strong>职责视角</strong>的七层：L1 基础设施到 L7 应用与交互。两者不是同一套切法——一个回答“系统由哪些部件组成”，一个回答“某个功能该放在哪、出问题先查哪”。逐个换算见<a href="../foundations/architecture.html">分层架构末尾的换算表</a>。</p>
+</div>
+<p>这不是让你第一天就建这么多东西。它是一张<strong>演进地图</strong>：每个阶段只增加当前真正需要的组件，等新问题出现，再进入下一级。</p>
+<p>本章另有 2 张图：图 1 控制面与数据面，图 2 八级演进。</p>
+<h2 id="一先分清两个平面">一、先分清两个平面</h2>
+<p>Agent 平台最容易犯的错，是把“请求怎么走”和“系统怎么管”混在一起。</p>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  CP[&quot;控制面&lt;br/&gt;目录 · 路由 · 策略 · 配额&quot;] -.-&gt;|&quot;配置下发&quot;| DP[&quot;数据面&lt;br/&gt;接入 → 意图 → Agent → 模型/工具 → 沙箱&quot;]
+  DP -.-&gt;|&quot;用量 / 追踪&quot;| CP
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 控制面负责“规则”，数据面负责“执行”；两者通过配置与用量事件连接</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>平面</th>
+<th>是什么</th>
+<th>典型组件</th>
+<th>变化频率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据面</td>
+<td>一次请求实际经过的路径</td>
+<td>API 接入、Agent 循环、模型调用、工具调用、沙箱执行</td>
+<td>高（每请求）</td>
+</tr>
+<tr>
+<td>控制面</td>
+<td>管理数据面怎么走</td>
+<td>模型目录、路由规则、工具注册、策略、配额、版本、发布</td>
+<td>低（配置/发布）</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">text</div><pre><code>数据面：用户 → 接入 → 意图 → Agent → 模型/工具/RAG → 沙箱 → 输出
+控制面：模型目录 / 路由规则 / 工具注册 / 策略 / 配额 / 评测 / 发布
+</code></pre></div>
+<p>为什么必须分开？</p>
+<ul>
+<li>改一条路由规则，不应该重新部署 Agent。</li>
+<li>加一个工具，不应该改所有 Agent 的代码。</li>
+<li>调一次配额，不应该影响正在运行的任务。</li>
+<li>出一次事故，应该能只回滚模型/提示/工具中的某一个。</li>
+</ul>
+<p><strong>控制面是平台的“方向盘”，数据面是“发动机”。</strong> 很多“Agent 平台”最后变成一堆硬编码，就是因为没有控制面。</p>
+<h2 id="二为什么会出现-gateway">二、为什么会出现 Gateway</h2>
+<p>当系统只有 1 个 Agent、1 个模型、3 个本地工具时，直接调用最简单。但当规模变成：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>N 个 Agent × M 个模型 × K 个工具 × T 个租户
+</code></pre></div>
+<p>直接连接会变成组合爆炸：</p>
+<ul>
+<li>每个 Agent 都要处理多家模型的鉴权、重试、限流、计费。</li>
+<li>每个工具都要在每个 Agent 里重复接一遍。</li>
+<li>密钥散落在各个服务。</li>
+<li>无法统一审计“谁在什么时候调了什么”。</li>
+<li>换模型/换工具要改所有调用方。</li>
+</ul>
+<p>Gateway 的本质是<strong>把横切关注点集中到一个边界</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>网关</th>
+<th>连接什么</th>
+<th>主要职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API Gateway</td>
+<td>客户端 → 平台</td>
+<td>认证、租户、限流、路由、TLS、WAF</td>
+</tr>
+<tr>
+<td>Model Gateway</td>
+<td>Agent → 模型供应商</td>
+<td>统一协议、路由、回退、配额、计费、缓存、观测</td>
+</tr>
+<tr>
+<td>Tool Gateway</td>
+<td>Agent → 工具/执行环境</td>
+<td>注册、鉴权、权限、限流、审计、结果规范化、沙箱路由</td>
+</tr>
+</tbody>
+</table></div>
+<p>注意：<strong>API Gateway 不等于 Agent Gateway，Model Gateway 也不等于 Tool Gateway。</strong> 它们解决的是不同边界上的问题，后文会逐级展开。</p>
+<h2 id="三八级演进每一级只解决一个新矛盾">三、八级演进：每一级只解决一个新矛盾</h2>
+<p>见<strong>图 2</strong>：</p>
+<div class="mermaid">flowchart TB
+  S0[&quot;00 架构总览&quot;] --&gt; S1[&quot;01 ReAct&lt;br/&gt;循环 + 本地工具&quot;]
+  S1 --&gt; S2[&quot;02 工具调用&lt;br/&gt;Schema + Registry&quot;]
+  S2 --&gt; S3[&quot;03 模型网关&lt;br/&gt;路由 + 回退 + 配额&quot;]
+  S3 --&gt; S4[&quot;04 工具网关&lt;br/&gt;鉴权 + 审计 + 沙箱&quot;]
+  S4 --&gt; S5[&quot;05 RAG&lt;br/&gt;知识 + 引用&quot;]
+  S5 --&gt; S6[&quot;06 意图识别&lt;br/&gt;选对路径&quot;]
+  S6 --&gt; S7[&quot;07 多 Agent&lt;br/&gt;并行 + 隔离&quot;]
+  S7 --&gt; S8[&quot;08 平台化&lt;br/&gt;计费 + 安全 + 治理&quot;]
+</div>
+<p class="diagram-caption"><strong>图 2</strong> · 八级演进：每一级都在上一级的边界上补一个能力</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>架构形态</th>
+<th>新增组件</th>
+<th>解决什么</th>
+<th>引入什么新问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>一次 LLM 调用</td>
+<td>Prompt</td>
+<td>用模型直接回答</td>
+<td>无反馈、不会用外部世界</td>
+</tr>
+<tr>
+<td>1</td>
+<td>ReAct 循环</td>
+<td>循环 + 本地工具</td>
+<td>多步推理、grounding</td>
+<td>解析脆弱、循环失控、无预算</td>
+</tr>
+<tr>
+<td>2</td>
+<td>工具调用</td>
+<td>Tool Registry + Schema</td>
+<td>稳定解析、参数校验</td>
+<td>工具选择、权限、工具爆炸</td>
+</tr>
+<tr>
+<td>3</td>
+<td>多模型接入</td>
+<td>Model Gateway + Router</td>
+<td>统一接入、路由、回退、成本</td>
+<td>网关延迟、路由错误、计费口径</td>
+</tr>
+<tr>
+<td>4</td>
+<td>多工具/多团队</td>
+<td>Tool Gateway</td>
+<td>统一鉴权、限流、审计、协议适配</td>
+<td>越权、注入、长任务、幂等</td>
+</tr>
+<tr>
+<td>5</td>
+<td>私有知识</td>
+<td>RAG / 知识层</td>
+<td>时效、私有数据、引用</td>
+<td>召回噪声、权限过滤、注入</td>
+</tr>
+<tr>
+<td>6</td>
+<td>多任务类型</td>
+<td>意图识别 / 任务路由</td>
+<td>选对处理路径、降本提速</td>
+<td>误分类、歧义、分布漂移</td>
+</tr>
+<tr>
+<td>7</td>
+<td>复杂任务</td>
+<td>多 Agent</td>
+<td>并行、隔离、专长、评审</td>
+<td>通信损耗、错误传播、责任不清</td>
+</tr>
+<tr>
+<td>8</td>
+<td>多租户/商业化</td>
+<td>计费、安全、评测、治理</td>
+<td>可运营、可审计、可规模化</td>
+<td>复杂度、合规、成本归因</td>
+</tr>
+</tbody>
+</table></div>
+<p>一条重要规律：<strong>复杂度守恒</strong>。ReAct 把复杂度从“写死流程”转移到“循环控制”；Function Calling 把复杂度从“解析文本”转移到“工具设计”；Gateway 把复杂度从“每个 Agent 重复实现”转移到“平台组件”。每一级都不是免费午餐。</p>
+<h2 id="四三种成熟度不要跳级">四、三种成熟度，不要跳级</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>成熟度</th>
+<th>典型形态</th>
+<th>适合</th>
+<th>不该有的东西</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 原型</td>
+<td>单进程、本地工具、脚本化循环</td>
+<td>验证想法、内部 demo</td>
+<td>复杂网关、计费、多 Agent</td>
+</tr>
+<tr>
+<td>L2 团队</td>
+<td>模型/工具网关、基础观测、简单配额</td>
+<td>多团队共用、生产早期</td>
+<td>过度治理、复杂控制面</td>
+</tr>
+<tr>
+<td>L3 平台</td>
+<td>控制面、计费、安全、评测、多租户</td>
+<td>对外产品、规模化</td>
+<td>没有基线的“平台化”</td>
+</tr>
+</tbody>
+</table></div>
+<p>判断是否该升级，不看“别人有没有”，而看<strong>当前架构是否已经被某一类问题反复卡住</strong>：</p>
+<ul>
+<li>每次接新模型都要改 N 个服务 → 该有 Model Gateway。</li>
+<li>每个团队都在自己管工具密钥 → 该有 Tool Gateway。</li>
+<li>无法回答“这个月谁花了多少钱” → 该有计量与计费。</li>
+<li>同一类问题反复答错、无法回归 → 该有评测与追踪。</li>
+<li>请求类型差异巨大、Agent 经常选错工具 → 该有意图路由。</li>
+</ul>
+<h2 id="五这本主线怎么读">五、这本主线怎么读</h2>
+<p>每一章都按同一个结构展开：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>上一阶段长什么样
+  → 新需求/新矛盾
+  → 新增组件与职责
+  → 架构图与一次请求的时序
+  → 解决了什么
+  → 又制造了什么
+  → 优化手段与度量
+  → 什么时候进入下一阶段
+</code></pre></div>
+<p>建议顺序：</p>
+<ol>
+<li><a href="react.html">阶段 1：ReAct</a>：最小可用 Agent。</li>
+<li><a href="tool-calling.html">阶段 2：工具调用</a>：把动作协议标准化。</li>
+<li><a href="model-gateway.html">阶段 3：模型网关与路由</a>：多模型、成本与可靠性。</li>
+<li><a href="tool-gateway.html">阶段 4：工具网关</a>：多工具、权限与审计。</li>
+<li><a href="rag.html">阶段 5：RAG</a>：私有知识与引用。</li>
+<li><a href="intent.html">阶段 6：意图识别</a>：选对路径，而不是所有事都上 Agent。</li>
+<li><a href="multi-agent.html">阶段 7：多 Agent</a>：并行、隔离与专长。</li>
+<li><a href="platform.html">阶段 8：平台化</a>：计费、安全、评测与治理。</li>
+</ol>
+<p>如果你更关心“每一层的职责和技术”，可以配合<a href="../foundations/architecture.html">七层职责模型</a>阅读；如果你更关心“技术为什么这样演进”，可以配合<a href="../foundations/evolution.html">技术演进史</a>。</p>
+<h2 id="六横切能力不占一层但贯穿多层">六、横切能力：不占一层，但贯穿多层</h2>
+<p>演进主线讲的是“加了什么组件”，但有三类能力从来不是某一级的产物，而是从第一天就该存在、随规模变强的：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>横切能力</th>
+<th>最小形态</th>
+<th>成熟形态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>安全与权限</td>
+<td>工具白名单</td>
+<td>策略引擎 + 能力令牌 + 审批</td>
+</tr>
+<tr>
+<td>内容、隐私与合规</td>
+<td>关键词拦截</td>
+<td>分级审核 + 流式拦截 + 数据分级 + 标识留痕</td>
+</tr>
+<tr>
+<td>可观测与发布</td>
+<td>打日志</td>
+<td>trace + 评测集 + 灰度回滚</td>
+</tr>
+</tbody>
+</table></div>
+<p>它们容易被推迟，因为“现在还能跑”。但推迟的代价是<strong>事后补不回来</strong>：没有 trace 就补不出历史，没有版本就回滚不了，没有审核就删不掉已发出去的内容。</p>
+<p>下一步：<a href="react.html">阶段 1：ReAct</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="../start/what-is-agent.html"><span>上一篇</span><strong>什么是 Agent</strong></a><a class="next" href="react.html"><span>下一篇</span><strong>01 ReAct，最小可用 Agent</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

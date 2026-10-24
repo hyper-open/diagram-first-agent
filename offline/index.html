@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 学习手册 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="stylesheet" href="assets/offline.css">
+</head>
+<body class="home">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="index.html">首页</a><a href="evolution/overview.html">架构主线</a><a href="layers/model.html">分层深入</a><a href="practice/mini-agent.html">实战</a><a href="advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="start/roadmap.html">学习路线</a>
+<a class="nav-item" href="start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="foundations/loop.html">核心循环</a>
+<a class="nav-item" href="foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="layers/model.html">模型层</a>
+<a class="nav-item" href="layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="layers/context.html">上下文层</a>
+<a class="nav-item" href="layers/retrieval.html">检索层</a>
+<a class="nav-item" href="layers/tools.html">工具层</a>
+<a class="nav-item" href="layers/memory.html">记忆层</a>
+<a class="nav-item" href="layers/orchestration.html">编排层</a>
+<a class="nav-item" href="layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="layers/testing.html">测试与验证</a>
+<a class="nav-item" href="layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="layers/release.html">版本与发布</a>
+<a class="nav-item" href="layers/security.html">安全与权限</a>
+<a class="nav-item" href="layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="appendix/glossary.html">术语表</a>
+<a class="nav-item" href="appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        
+        <article class="doc"><section class="home-hero">
+  <div>
+    <p class="eyebrow">Agent 学习手册 · 离线版</p>
+    <h1>从 ReAct 到平台</h1>
+    <p class="tagline">先建立架构分层总览，再沿八级演进逐层加组件。每篇先给主架构图，再用读图步骤、时序图和问题矩阵展开。</p>
+    <div class="home-actions">
+      <a class="btn btn-primary" href="evolution/overview.html">从架构总览开始</a>
+      <a class="btn btn-ghost" href="evolution/react.html">直接看 ReAct</a>
+    </div>
+  </div>
+  <img class="home-logo" src="assets/logo.svg" alt="Agent 学习手册">
+</section><div class="hero-note">
+  <strong>这不是“组件清单”，而是一条演化路径。</strong>
+  每个阶段都只增加当前真正需要的组件；等新问题出现，再进入下一级。
+</div>
+<h2 id="怎么读先图后文">怎么读：先图后文</h2>
+<div class="flow-steps">
+  <div class="flow-step"><b>1</b><strong>看主图</strong><p>先看清这一级有哪些组件、请求怎么流动。</p></div>
+  <div class="flow-step"><b>2</b><strong>读图注</strong><p>用编号步骤把图上的箭头翻译成一句话。</p></div>
+  <div class="flow-step"><b>3</b><strong>看时序</strong><p>理解一次请求在组件之间如何往返。</p></div>
+  <div class="flow-step"><b>4</b><strong>再看文字</strong><p>只读问题、取舍和优化，代码收在折叠区。</p></div>
+</div>
+<h2 id="八级演进每一级只解决一个新矛盾">八级演进：每一级只解决一个新矛盾</h2>
+<div class="stage-grid">
+  <a class="stage-card" href="evolution/overview.html">
+    <span class="stage-num">00 · OVERVIEW</span>
+    <h3>架构总览</h3>
+    <p>六层架构、控制面/数据面、三类网关的分工，以及一张八级演进表。</p>
+  </a>
+  <a class="stage-card" href="evolution/react.html">
+    <span class="stage-num">01 · REACT</span>
+    <h3>ReAct，最小可用 Agent</h3>
+    <p>LLM + 本地工具 + 循环。理解“观察—思考—行动”为什么是 Agent 的心跳。</p>
+  </a>
+  <a class="stage-card" href="evolution/tool-calling.html">
+    <span class="stage-num">02 · TOOL CALLING</span>
+    <h3>工具调用与注册</h3>
+    <p>用 JSON Schema 和 Tool Registry 替代脆弱的文本解析，建立错误契约。</p>
+  </a>
+  <a class="stage-card" href="evolution/model-gateway.html">
+    <span class="stage-num">03 · MODEL GATEWAY</span>
+    <h3>模型网关与路由</h3>
+    <p>多模型接入、路由、回退、配额与成本：把模型访问收拢成一个内部服务。</p>
+  </a>
+  <a class="stage-card" href="evolution/tool-gateway.html">
+    <span class="stage-num">04 · TOOL GATEWAY</span>
+    <h3>工具网关</h3>
+    <p>跨团队工具的鉴权、限流、凭证托管、审计与协议适配，防止 Agent 变成超级账号。</p>
+  </a>
+  <a class="stage-card" href="evolution/rag.html">
+    <span class="stage-num">05 · RAG</span>
+    <h3>RAG 与知识层</h3>
+    <p>索引/查询两条流水线、权限感知检索、Agentic RAG，以及引用与冲突处理。</p>
+  </a>
+  <a class="stage-card" href="evolution/intent.html">
+    <span class="stage-num">06 · INTENT</span>
+    <h3>意图识别与路由</h3>
+    <p>FAQ、工作流、RAG、Agent、人工各走其路；用置信度和兜底控制误路由。</p>
+  </a>
+  <a class="stage-card" href="evolution/multi-agent.html">
+    <span class="stage-num">07 · MULTI-AGENT</span>
+    <h3>多 Agent 协作</h3>
+    <p>主管/工人、分层、辩论；交接契约、共享状态，以及什么时候不该用。</p>
+  </a>
+  <a class="stage-card" href="evolution/platform.html">
+    <span class="stage-num">08 · PLATFORM</span>
+    <h3>平台化与治理</h3>
+    <p>计费流水线、安全边界、评测与可观测、控制面，以及最小可用平台清单。</p>
+  </a>
+</div>
+<h2 id="先看总览agent-平台的六层组件视角">先看总览：Agent 平台的六层（组件视角）</h2>
+<div class="layer-stack">
+  <div class="layer-row"><span class="layer-index">L6</span><strong>接入层</strong><span>API Gateway、身份、租户、限流、WAF</span></div>
+  <div class="layer-row"><span class="layer-index">L5</span><strong>编排层</strong><span>意图路由、Agent Runtime、工作流、多 Agent、终止与预算</span></div>
+  <div class="layer-row"><span class="layer-index">L4</span><strong>能力层</strong><span>Model Gateway、Tool Gateway、RAG、Memory</span></div>
+  <div class="layer-row"><span class="layer-index">L3</span><strong>执行层</strong><span>沙箱、浏览器、代码解释器、Computer Use</span></div>
+  <div class="layer-row"><span class="layer-index">L2</span><strong>数据层</strong><span>状态、向量库、对象存储、计费账本、审计</span></div>
+  <div class="layer-row"><span class="layer-index">L1</span><strong>治理面</strong><span>可观测、评测、策略、配额、版本与发布</span></div>
+</div>
+<blockquote>
+<p>数据面负责“把这次请求做完”，控制面负责“所有请求按什么规则做”。平台化的核心，是把散落的规则收拢到控制面。</p>
+</blockquote>
+<p>这六层是<strong>组件视角</strong>。想知道某个功能该由谁负责、出问题先查哪一层，看<a href="foundations/architecture.html">分层架构</a>的<strong>七层职责模型</strong>——两套编号的对应关系在那一页末尾有换算表。</p>
+<h2 id="这本书怎么读">这本书怎么读</h2>
+<div class="arch-grid">
+  <div class="arch-card">
+    <h3>第一次接触 Agent</h3>
+    <p>按「架构总览 → ReAct → 工具调用 → Mini Agent Lab 1–2」走，先跑通一个能调用工具的最小循环。</p>
+  </div>
+  <div class="arch-card">
+    <h3>已经在做系统</h3>
+    <p>重点看「模型网关 → 工具网关 → 平台化」，把鉴权、配额、计费、回退和审计补齐。</p>
+  </div>
+  <div class="arch-card">
+    <h3>在做产品/平台</h3>
+    <p>从「RAG → 意图识别 → 多 Agent → 平台化」切入，同时读评测与安全，先立指标和护栏。</p>
+  </div>
+</div>
+<h2 id="你会得到什么">你会得到什么</h2>
+<ul>
+<li>一条能解释“为什么系统长成今天这样”的架构演进主线。</li>
+<li>每级架构的组件边界、请求时序、故障模式与优化手段。</li>
+<li>对网关、路由、RAG、意图识别、多 Agent、计费与安全的工程判断。</li>
+<li>一个不依赖框架的 Mini Agent 实现，以及可运行的评测 harness。</li>
+</ul>
+<p>准备好了？从 <a href="evolution/overview.html">架构总览</a> 开始。</p>
+</article>
+        
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="assets/mermaid.min.js"></script>
+  <script src="assets/offline.js"></script>
+</body>
+</html>
