@@ -7,6 +7,8 @@ export default withMermaid(
     lang: 'zh-CN',
     title: 'Agent 学习手册',
     description: '从 ReAct 到 Agent 平台：架构分层、演进、网关、RAG、多 Agent、计费、内容安全与合规。',
+    // GitHub Pages 项目站点部署在 /<repo>/ 子路径下
+    base: '/diagram-first-agent/',
     cleanUrls: true,
     lastUpdated: true,
     head: [
