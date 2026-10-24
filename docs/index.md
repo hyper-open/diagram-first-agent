@@ -56,48 +56,49 @@ features:
 
 ## 八级演进：每一级只解决一个新矛盾
 
+<!-- 卡片链接必须用相对路径（不带前导 /）：VitePress 会加 base，离线构建会改写成 .html -->
 <div class="stage-grid">
-  <a class="stage-card" href="/evolution/overview">
+  <a class="stage-card" href="evolution/overview">
     <span class="stage-num">00 · OVERVIEW</span>
     <h3>架构总览</h3>
     <p>六层架构、控制面/数据面、三类网关的分工，以及一张八级演进表。</p>
   </a>
-  <a class="stage-card" href="/evolution/react">
+  <a class="stage-card" href="evolution/react">
     <span class="stage-num">01 · REACT</span>
     <h3>ReAct，最小可用 Agent</h3>
     <p>LLM + 本地工具 + 循环。理解“观察—思考—行动”为什么是 Agent 的心跳。</p>
   </a>
-  <a class="stage-card" href="/evolution/tool-calling">
+  <a class="stage-card" href="evolution/tool-calling">
     <span class="stage-num">02 · TOOL CALLING</span>
     <h3>工具调用与注册</h3>
     <p>用 JSON Schema 和 Tool Registry 替代脆弱的文本解析，建立错误契约。</p>
   </a>
-  <a class="stage-card" href="/evolution/model-gateway">
+  <a class="stage-card" href="evolution/model-gateway">
     <span class="stage-num">03 · MODEL GATEWAY</span>
     <h3>模型网关与路由</h3>
     <p>多模型接入、路由、回退、配额与成本：把模型访问收拢成一个内部服务。</p>
   </a>
-  <a class="stage-card" href="/evolution/tool-gateway">
+  <a class="stage-card" href="evolution/tool-gateway">
     <span class="stage-num">04 · TOOL GATEWAY</span>
     <h3>工具网关</h3>
     <p>跨团队工具的鉴权、限流、凭证托管、审计与协议适配，防止 Agent 变成超级账号。</p>
   </a>
-  <a class="stage-card" href="/evolution/rag">
+  <a class="stage-card" href="evolution/rag">
     <span class="stage-num">05 · RAG</span>
     <h3>RAG 与知识层</h3>
     <p>索引/查询两条流水线、权限感知检索、Agentic RAG，以及引用与冲突处理。</p>
   </a>
-  <a class="stage-card" href="/evolution/intent">
+  <a class="stage-card" href="evolution/intent">
     <span class="stage-num">06 · INTENT</span>
     <h3>意图识别与路由</h3>
     <p>FAQ、工作流、RAG、Agent、人工各走其路；用置信度和兜底控制误路由。</p>
   </a>
-  <a class="stage-card" href="/evolution/multi-agent">
+  <a class="stage-card" href="evolution/multi-agent">
     <span class="stage-num">07 · MULTI-AGENT</span>
     <h3>多 Agent 协作</h3>
     <p>主管/工人、分层、辩论；交接契约、共享状态，以及什么时候不该用。</p>
   </a>
-  <a class="stage-card" href="/evolution/platform">
+  <a class="stage-card" href="evolution/platform">
     <span class="stage-num">08 · PLATFORM</span>
     <h3>平台化与治理</h3>
     <p>计费流水线、安全边界、评测与可观测、控制面，以及最小可用平台清单。</p>

@@ -61,7 +61,9 @@ function rewriteHref(href, fromFile) {
 }
 
 function rewriteRawLinks(html, fromFile) {
-  return html.replace(/\b(href|src)="(\/(?!\/)[^"]*)"/g, (match, attr, value) => {
+  // 原始 HTML 里的链接：绝对路径（/foo）与相对路径（foo）都要改写；外链、锚点、data: 等原样保留
+  return html.replace(/\b(href|src)="([^"]*)"/g, (match, attr, value) => {
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value)) return match;
     return `${attr}="${rewriteHref(value, fromFile)}"`;
   });
 }
