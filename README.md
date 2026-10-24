@@ -2,6 +2,8 @@
 
 > **diagram-first-agent** · 从 ReAct 到 Agent 平台：架构分层、演进、网关、RAG、多 Agent、计费、内容安全与合规。
 
+**在线阅读：** <https://hyper-open.github.io/diagram-first-agent/>
+
 这不是又一份“Prompt 技巧合集”，也不是一张平铺的组件清单。它先给一张**架构分层总览**，再沿八级演进逐级加组件：
 
 ```text
@@ -59,9 +61,13 @@ pnpm build:offline
 
 ### 1. 读文档站
 
+线上版：<https://hyper-open.github.io/diagram-first-agent/>（push 到 `main` 自动部署）。
+
+本地启动：
+
 ```bash
 pnpm install
-pnpm docs:dev       # http://localhost:5173
+pnpm docs:dev       # http://localhost:5173/diagram-first-agent/
 ```
 
 构建静态站点：
