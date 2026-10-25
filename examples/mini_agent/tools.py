@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import ast
-import json
 import operator
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 from .types import ToolCall, ToolResult
 
