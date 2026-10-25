@@ -183,6 +183,10 @@ Agent 的评测比普通模型难，因为：
 
 ## 七、一个最小评测框架
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)、[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ```python
 @dataclass
 class Case:
@@ -288,10 +292,36 @@ safety        越权/注入/泄露
 | 改进无法归因 | 一次改多个变量 | 单变量实验、A/B |
 | judge 分数虚高 | 偏差/ rubric 模糊 | 人工校准、成对比较 |
 
+## 来源
+
+- Chen et al., **Evaluating Large Language Models Trained on Code**（2021）——`pass@k` 的原始定义与统计口径。[链接](https://arxiv.org/abs/2107.03374)
+- Jimenez et al., **SWE-bench**（2023）——真实仓库任务的评测协议。[链接](https://arxiv.org/abs/2310.06770)
+- Mialon et al., **GAIA**（2023）——通用助手任务基准及其评分方式。[链接](https://arxiv.org/abs/2311.12983)
+- Zheng et al., **Judging LLM-as-a-Judge with MT-Bench**（2023）——评审者偏差的来源。[链接](https://arxiv.org/abs/2306.05685)
+- OpenTelemetry, **GenAI 语义约定**——trace 字段标准。[链接](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
+
+完整清单见[推荐来源](/appendix/sources#评测与可观测性)。
+
 ## 练习
 
 1. 为你的 Agent 写 20 条评测用例，覆盖正常、边界、对抗三类。
 2. 给一个失败任务补全 trace，指出最早出错的那一步。
 3. 计算你的 `pass@1` 和 `pass^3`，比较差距。
+
+::: details 参考答案与自检
+**1. 20 条评测用例（正常 / 边界 / 对抗）**
+要点：三类的数量不必相等，但**每一条都要有可判定的通过条件**（断言、数值比对或 rubric）。边界类要覆盖“信息不足”“权限不足”“多意图”；对抗类要覆盖间接注入与越权诱导。
+参考 implementation：`examples/mini_agent/eval.py` 的 case 结构与 `run_eval()`。
+自检：如果 20 条里有超过一半是“正常问答”，你的评测发现不了真实问题——本章的失败分类会告诉你，线上失败大多在边界与对抗。
+
+**2. 给失败任务补 trace，找最早出错的一步**
+要点：从后往前看会很自然会找到“最终输出错”，但**最早出错的一步**通常在中间：通常是“第一次检索没命中”或“某次工具返回被误读”。判据是：从这一步开始，后续所有步骤都在错误前提下推理。
+自检：如果结论是“模型能力不行”，而 trace 显示第 2 步的工具调用就选了错的工具，那就没找对。
+
+**3. 计算 `pass@1` 与 `pass^3`**
+要点：`pass@1` = 首次运行通过率；`pass^3` = 同一用例三次都通过的比例。两者差距越大，说明**“经常对但不稳定”**。
+参考：`examples/mini_agent/eval.py` 直接输出这两个指标。
+自检：如果只跑一次就报 `pass@1`，方差未测——本章第四节“别被 2% 的波动骗了”说的就是这个。
+:::
 
 下一步：[版本与发布](/layers/release)。

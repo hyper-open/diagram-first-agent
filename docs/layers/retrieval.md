@@ -294,6 +294,10 @@ def recall_at_k(retriever, cases, k=5):
 
 ## 落地清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 有 query → evidence 的评测集，且覆盖多跳与指代？
 - [ ] 切分尊重结构，表格未被切碎？
 - [ ] 每个块带 doc_id、章节、页码、ACL、updated_at？
@@ -305,11 +309,40 @@ def recall_at_k(retriever, cases, k=5):
 - [ ] 索引切换有影子对比与回滚？
 - [ ] Recall@50 / Recall@5 / 引用支持率在看板上？
 
+## 来源
+
+- Cormack et al., **Reciprocal Rank Fusion**（2009）——书中 RRF 与 `k=60` 的原始出处。[链接](https://dl.acm.org/doi/10.1145/1571941.1572114)
+- Robertson & Zaragoza, **The Probabilistic Relevance Framework: BM25 and Beyond**（2009）——稀疏检索基线。[链接](https://dl.acm.org/doi/10.1561/1500000019)
+- Malkov & Yashunin, **Efficient and Robust ANN Search Using HNSW Graphs**（2016）——索引参数 M / ef 的语义。[链接](https://arxiv.org/abs/1603.09320)
+- Nogueira & Cho, **Passage Re-ranking with BERT**（2019）——重排的经典做法。[链接](https://arxiv.org/abs/1901.04085)
+- Lewis et al., **RAG**（2020）——为什么“召回决定上限”。[链接](https://arxiv.org/abs/2005.11401)
+
+完整清单见[推荐来源](/appendix/sources#检索层)。
+
 ## 练习
 
 1. 给你的知识库造 50 条评测样本，量一次 Recall@5 和 Recall@50，看差距在哪。
 2. 取一个“召回到了但答错”的 case，把正确证据直接塞给模型，判断是检索问题还是生成问题。
 3. 加一路 BM25 召回，用 RRF 融合，对比融合前后的 Recall@5。
 4. 找出一个被切碎的表格，改成整表索引，看数值类问题的准确率变化。
+
+::: details 参考答案与自检
+**1. 50 条样本量 Recall@5 与 Recall@50**
+要点：两个数的差距说明“排序问题”还是“召回问题”。Recall@50 依然低 → 切分/embedding/改写有问题；Recall@50 高而 @5 低 → 重排或融合有问题（本章第一节的三分类）。
+参考：本章第十节给了 `recall_at_k()` 的最小实现。
+自检：如果样本全是“能从标题直接命中”的简单问题，两个指标都会很高，测不出问题——样本要包含精确标识（订单号、错误码）和多跳问题。
+
+**2. 把正确证据直接塞给模型**
+要点：塞进去能答对 → 检索/排序问题；塞进去仍答错 → 生成侧问题（上下文组织、提示、模型）。这是本章第一节给的**唯一判据**。
+自检：不做这个对照就直接调 `k` 和阈值，是本末倒置。
+
+**3. 加一路 BM25 + RRF**
+要点：融合前后的 Recall@5 要有对比数字；同时要观察延迟变化（多一路召回 = 多一次查询 + 融合开销）。
+参考实现：本章第四节的 `rrf()`；自检：如果两路结果的分数直接相加，不通过——向量分数与 BM25 分数不可比，必须用排名融合。
+
+**4. 被切碎的表格改成整表索引**
+要点：先造一组“数值类问题”（求和、比较、条件筛选），再改索引方式，比较准确率与 token 成本（整表索引会变大）。
+自检：只看了“是否能查到”，没看“答案里的数字对不对”，不通过——表格问题的高发错误是数值幻觉。
+:::
 
 下一步：[工具层](/layers/tools)。

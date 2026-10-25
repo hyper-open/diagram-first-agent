@@ -168,6 +168,10 @@ pin 具体版本；无法 pin 的，用每日评测集做“漂移检测”，�
 
 ## 发布清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`release_record.json`](../../examples/templates/release_record.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 版本号覆盖代码/提示/模型/工具/策略/索引？
 - [ ] 提示模板可 diff、可评审、可 pin？
 - [ ] 变更已分级，高风险变更有人确认？
@@ -178,10 +182,34 @@ pin 具体版本；无法 pin 的，用每日评测集做“漂移检测”，�
 - [ ] schema 变更向前兼容，回滚不丢数据？
 - [ ] 变更记录包含验证结果与回滚方式？
 
+## 来源
+
+- Fowler, **CanaryRelease / BlueGreenDeployment**——灰度与蓝绿的模式定义。[链接](https://martinfowler.com/bliki/CanaryRelease.html)
+- Google, **SRE Workbook：Canarying Releases**——护栏指标与自动回滚的工程做法。[链接](https://sre.google/workbook/canarying-releases/)
+- OpenFeature, **Feature Flag 规范**——把“秒级开关”标准化的协议。[链接](https://openfeature.dev/specification/)
+- LaunchDarkly, **Targeting 与稳定分桶**——为什么按租户哈希分桶比随机分桶好。[链接](https://launchdarkly.com/blog/a-complete-guide-to-feature-flag-targeting/)
+
+完整清单见[推荐来源](/appendix/sources#版本与发布)。
+
 ## 练习
 
 1. 列出你系统的七类版本，看哪几类现在没有版本号。
 2. 为一次“更换模型”设计发布路径：影子多久、灰度多大、看哪些指标。
 3. 写一条回滚演练脚本：从告警到恢复，每一步谁执行、多久。
+
+::: details 参考答案与自检
+**1. 七类版本**
+要点：代码 / 提示 / 模型 / 工具（schema）/ 策略 / 索引 / 评测集。缺任何一个，“回滚”都只能回一半。
+自检：如果评测集没有版本号，你无法说明“这次指标下降是因为系统变差，还是因为题变难了”。
+
+**2. 更换模型的发布路径**
+要点：写清四个数字——影子流量持续时间、灰度比例阶梯（如 1% → 5% → 25% → 100%）、每档停留条件、护栏阈值（本章给了成功率 -3%、P95 +30%、成本 +20% 的参考值）。
+参考：本章第六节的护栏指标表。
+自检：如果没写“什么情况下自动回滚”，只有“观察一下”，不通过。
+
+**3. 回滚演练脚本**
+要点：按“告警 → 判定 → 执行 → 验证 → 记录”写出每步的**执行人与时限**（秒/分钟），并注明哪一步不能自动化（如数据层回滚）。
+自检：如果脚本里没有“验证回滚后旧版本还能读到新写入的数据”这一步，演练等于走过场——本章第七节的 schema 向前兼容就是为它服务的。
+:::
 
 下一步：[安全与权限](/layers/security)。

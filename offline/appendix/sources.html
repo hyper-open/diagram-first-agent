@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>推荐来源 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="glossary.html">术语表</a>
+<a class="nav-item active" href="sources.html">推荐来源</a>
+<a class="nav-item" href="reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>附录</span><span>/</span><strong>推荐来源</strong></div>
+        <article class="doc"><h1 id="推荐来源每章引用的原始材料">推荐来源：每章引用的原始材料</h1>
+<p>这份附录把全书 38 章的<strong>主要断言</strong>对应到原始来源：论文、协议规范、官方文档。每章正文只带 3–5 个最关键的链接，完整清单集中在这里。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart LR
+  C[&quot;章节断言&lt;br/&gt;为什么会这样&quot;] --&gt; P[&quot;论文&lt;br/&gt;机制与实验&quot;]
+  C --&gt; S[&quot;规范 / 文档&lt;br/&gt;协议与参数&quot;]
+  C --&gt; I[&quot;工程复盘&lt;br/&gt;事故与取舍&quot;]
+  P --&gt; V[&quot;可核对的结论&quot;]
+  S --&gt; V
+  I --&gt; V
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 三类来源各有分工：论文解释机制，规范锁定事实，复盘给出代价</p>
+<div class="custom-block tip"><p class="custom-block-title">怎么用这份清单</p>
+<ul>
+<li>读某一章时，先看正文的「来源」小节（3–5 个），它覆盖该章最重要的断言。</li>
+<li>想深入时，回到这里看该章的完整来源。</li>
+<li>链接失效或版本变更时，请提 <a href="https://github.com/hyper-open/diagram-first-agent/issues" target="_blank" rel="noopener">Issue</a>——这类反馈对后来人最有价值（线上版与离线版都能打开）。</li>
+</ul>
+</div>
+<div class="custom-block warning"><p class="custom-block-title">关于时效性</p>
+<p>模型、价格、上下文窗口、协议版本都在变化。本书只对<strong>机制</strong>做断言；凡是具体数字和参数，请以来源页面上的最新版本为准。</p>
+</div>
+<h2 id="开始">开始</h2>
+<h3 id="学习路线startroadmap"><a href="../start/roadmap.html">学习路线</a></h3>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents</strong>（2024）——workflow 与 agent 的分界、五种编排模式。
+<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a></li>
+<li>OpenAI, <strong>A Practical Guide to Building Agents</strong>——组成部分与适用性判断。
+<a href="https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf" target="_blank" rel="noopener">cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf</a></li>
+<li>Schick et al., <strong>Toolformer</strong>（2023）——模型自学何时调工具。
+<a href="https://arxiv.org/abs/2302.04761" target="_blank" rel="noopener">arxiv.org/abs/2302.04761</a></li>
+<li>Lilian Weng, <strong>LLM Powered Autonomous Agents</strong>（2023）——规划、记忆、工具的第一张全景图。
+<a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank" rel="noopener">lilianweng.github.io/posts/2023-06-23-agent</a></li>
+</ul>
+<h3 id="什么是-agentstartwhat-is-agent"><a href="../start/what-is-agent.html">什么是 Agent</a></h3>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents</strong>——workflow 与 agent 的分界。
+<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a></li>
+<li>OpenAI, <strong>A Practical Guide to Building Agents</strong>——Agent 的组成部分与适用性判断。
+<a href="https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf" target="_blank" rel="noopener">cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf</a></li>
+<li>Schick et al., <strong>Toolformer</strong>（2023）。
+<a href="https://arxiv.org/abs/2302.04761" target="_blank" rel="noopener">arxiv.org/abs/2302.04761</a></li>
+<li>Lilian Weng, <strong>LLM Powered Autonomous Agents</strong>（2023）。
+<a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank" rel="noopener">lilianweng.github.io/posts/2023-06-23-agent</a></li>
+</ul>
+<h2 id="架构演进主线">架构演进主线</h2>
+<h3 id="00-架构总览evolutionoverview"><a href="../evolution/overview.html">00 架构总览</a></h3>
+<ul>
+<li>Google Cloud, <strong>API Gateway 模式</strong>——接入层与后端服务的边界。
+<a href="https://cloud.google.com/api-gateway/docs/architecture-overview" target="_blank" rel="noopener">cloud.google.com/api-gateway/docs/architecture-overview</a></li>
+<li>AWS, <strong>Well-Architected Framework：Operational Excellence Pillar</strong>——控制面/数据面与运维边界。
+<a href="https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html" target="_blank" rel="noopener">docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar</a></li>
+<li>HumanLayer, <strong>12-Factor Agents</strong>——把 Agent 当成软件系统的十二条原则。
+<a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">github.com/humanlayer/12-factor-agents</a></li>
+<li>Raisch et al., <strong>Agentic AI Needs a Systems Theory</strong>（2025）——多组件系统的复杂度守恒。
+<a href="https://arxiv.org/abs/2503.00237" target="_blank" rel="noopener">arxiv.org/abs/2503.00237</a></li>
+</ul>
+<h3 id="01-reactevolutionreact"><a href="../evolution/react.html">01 ReAct</a></h3>
+<ul>
+<li>Yao et al., <strong>ReAct: Synergizing Reasoning and Acting in Language Models</strong>（2022）——原始论文，含解析失败的实验记录。
+<a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">arxiv.org/abs/2210.03629</a></li>
+<li>Wei et al., <strong>Chain-of-Thought Prompting</strong>（2022）——ReAct 的推理前身。
+<a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener">arxiv.org/abs/2201.11903</a></li>
+<li>Shinn et al., <strong>Reflexion</strong>（2023）——用语言化反思改进行为。
+<a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">arxiv.org/abs/2303.11366</a></li>
+</ul>
+<h3 id="02-工具调用与注册evolutiontool-calling"><a href="../evolution/tool-calling.html">02 工具调用与注册</a></h3>
+<ul>
+<li>OpenAI, <strong>Function Calling 文档</strong>——<code>tool_calls</code> 结构与并行调用的官方定义。
+<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener">platform.openai.com/docs/guides/function-calling</a></li>
+<li>Anthropic, <strong>Tool use 文档</strong>——<code>tool_use</code> / <code>tool_result</code> 块与错误回传方式。
+<a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview" target="_blank" rel="noopener">docs.anthropic.com/en/docs/build-with-claude/tool-use</a></li>
+<li>JSON Schema, <strong>Specification（Draft 2020-12）</strong>——工具参数声明的语义来源。
+<a href="https://json-schema.org/specification" target="_blank" rel="noopener">json-schema.org/specification</a></li>
+<li>Patil et al., <strong>Gorilla</strong>（2023）——函数调用准确率与参数幻觉的实测。
+<a href="https://arxiv.org/abs/2305.15334" target="_blank" rel="noopener">arxiv.org/abs/2305.15334</a></li>
+</ul>
+<h3 id="03-模型网关与路由evolutionmodel-gateway"><a href="../evolution/model-gateway.html">03 模型网关与路由</a></h3>
+<ul>
+<li>LiteLLM, <strong>Router 文档</strong>——多模型路由、回退、重试与预算的工程参考实现。
+<a href="https://docs.litellm.ai/docs/routing" target="_blank" rel="noopener">docs.litellm.ai/docs/routing</a></li>
+<li>OpenRouter, <strong>Provider Routing</strong>——跨供应商路由的现实做法与顺序定义。
+<a href="https://openrouter.ai/docs/provider-routing" target="_blank" rel="noopener">openrouter.ai/docs/provider-routing</a></li>
+<li>OpenTelemetry, <strong>Semantic Conventions for GenAI</strong>——模型调用要记录哪些字段。
+<a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">opentelemetry.io/docs/specs/semconv/gen-ai</a></li>
+<li>Chen et al., <strong>FrugalGPT</strong>（2023）——级联路由的成本/质量权衡。
+<a href="https://arxiv.org/abs/2305.05176" target="_blank" rel="noopener">arxiv.org/abs/2305.05176</a></li>
+</ul>
+<h3 id="04-工具网关evolutiontool-gateway"><a href="../evolution/tool-gateway.html">04 工具网关</a></h3>
+<ul>
+<li>OWASP, <strong>Top 10 for LLM Applications：LLM06 Excessive Agency</strong>——为什么“给 Agent 超级账号”是危险的。
+<a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">genai.owasp.org/llm-top-10</a></li>
+<li>OWASP, <strong>ASVS v5：Access Control</strong>——鉴权的验证要求。
+<a href="https://owasp.org/www-project-application-security-verification-standard/" target="_blank" rel="noopener">owasp.org/www-project-application-security-verification-standard</a></li>
+<li>IETF, <strong>RFC 8693 OAuth 2.0 Token Exchange</strong>——代表用户获取短期、限权凭证。
+<a href="https://datatracker.ietf.org/doc/html/rfc8693" target="_blank" rel="noopener">datatracker.ietf.org/doc/html/rfc8693</a></li>
+<li>IETF, <strong>RFC 8707 Resource Indicators</strong>——为什么 token 必须绑定目标资源。
+<a href="https://datatracker.ietf.org/doc/html/rfc8707" target="_blank" rel="noopener">datatracker.ietf.org/doc/html/rfc8707</a></li>
+</ul>
+<h3 id="05-ragevolutionrag"><a href="../evolution/rag.html">05 RAG</a></h3>
+<ul>
+<li>Lewis et al., <strong>Retrieval-Augmented Generation</strong>（2020）——原始论文。
+<a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">arxiv.org/abs/2005.11401</a></li>
+<li>Gao et al., <strong>Retrieval-Augmented Generation for Large Language Models: A Survey</strong>（2023）——管线式/高级/Agentic 三阶段。
+<a href="https://arxiv.org/abs/2312.10997" target="_blank" rel="noopener">arxiv.org/abs/2312.10997</a></li>
+<li>Asai et al., <strong>Self-RAG</strong>（2023）——让模型自己决定何时检索。
+<a href="https://arxiv.org/abs/2310.11511" target="_blank" rel="noopener">arxiv.org/abs/2310.11511</a></li>
+<li>Trivedi et al., <strong>IRCoT</strong>（2022）——检索与推理交替的多跳做法。
+<a href="https://arxiv.org/abs/2212.10509" target="_blank" rel="noopener">arxiv.org/abs/2212.10509</a></li>
+</ul>
+<h3 id="06-意图识别与路由evolutionintent"><a href="../evolution/intent.html">06 意图识别与路由</a></h3>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents：Routing</strong>——最简单的路由器与兜底设计。
+<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a></li>
+<li>Botpress, <strong>Intent 与实体文档</strong>——意图体系的分层设计与训练数据。
+<a href="https://botpress.com/docs" target="_blank" rel="noopener">botpress.com/docs</a></li>
+<li>Casanueva et al., <strong>Intent Detection 综述（IntentGPT，2024）</strong>——小样本/开放意图分类。
+<a href="https://arxiv.org/abs/2410.01651" target="_blank" rel="noopener">arxiv.org/abs/2410.01651</a></li>
+<li>AWS, <strong>Well-Architected：Reliability Pillar</strong>——降级与兜底的设计原则。
+<a href="https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html" target="_blank" rel="noopener">docs.aws.amazon.com/wellarchitected/latest/reliability-pillar</a></li>
+</ul>
+<h3 id="07-多-agentevolutionmulti-agent"><a href="../evolution/multi-agent.html">07 多 Agent</a></h3>
+<ul>
+<li>Wu et al., <strong>AutoGen</strong>（2023）——可对话的多 Agent 编排框架。
+<a href="https://arxiv.org/abs/2308.08155" target="_blank" rel="noopener">arxiv.org/abs/2308.08155</a></li>
+<li>Hong et al., <strong>MetaGPT</strong>（2023）——SOP 式分工。
+<a href="https://arxiv.org/abs/2308.00352" target="_blank" rel="noopener">arxiv.org/abs/2308.00352</a></li>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——MAST 失败分类法，多 Agent 失败的系统实证。
+<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">arxiv.org/abs/2503.13657</a></li>
+<li>A2A Project, <strong>Agent2Agent Protocol 规范</strong>——跨系统委派与发现。
+<a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">a2a-protocol.org</a></li>
+</ul>
+<h3 id="08-平台化与治理evolutionplatform"><a href="../evolution/platform.html">08 平台化与治理</a></h3>
+<ul>
+<li>OpenTelemetry, <strong>GenAI 语义约定</strong>——trace 字段的标准来源。
+<a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">opentelemetry.io/docs/specs/semconv/gen-ai</a></li>
+<li>Cloudflare, <strong>Workers AI Pricing 与 usage 口径</strong>——token 计量与缓存计价的现实差异。
+<a href="https://developers.cloudflare.com/workers-ai/platform/pricing/" target="_blank" rel="noopener">developers.cloudflare.com/workers-ai/platform/pricing</a></li>
+<li>AWS, <strong>Well-Architected：Cost Optimization</strong>——成本归因与配额。
+<a href="https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html" target="_blank" rel="noopener">docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar</a></li>
+<li>NIST, <strong>AI RMF 1.0</strong>——风险治理框架，平台控制面的对照物。
+<a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">nist.gov/itl/ai-risk-management-framework</a></li>
+</ul>
+<h2 id="基础参考">基础参考</h2>
+<h3 id="核心循环foundationsloop"><a href="../foundations/loop.html">核心循环</a></h3>
+<ul>
+<li>Yao et al., <strong>ReAct</strong>（2022）——循环的原始形态。
+<a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">arxiv.org/abs/2210.03629</a></li>
+<li>Yao et al., <strong>Tree of Thoughts</strong>（2023）——搜索式扩展的对照。
+<a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">arxiv.org/abs/2305.10601</a></li>
+<li>Zhou et al., <strong>WebArena</strong>（2023）——长循环任务的实测失败模式。
+<a href="https://arxiv.org/abs/2307.13854" target="_blank" rel="noopener">arxiv.org/abs/2307.13854</a></li>
+<li>Anthropic, <strong>Building Effective Agents</strong>——循环与工作流的取舍。
+<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a></li>
+</ul>
+<h3 id="七层职责模型foundationsarchitecture"><a href="../foundations/architecture.html">七层职责模型</a></h3>
+<ul>
+<li>Clean Architecture（Robert C. Martin）——依赖方向与层间契约的思想来源。
+<a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank" rel="noopener">blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html</a></li>
+<li>C4 Model（Simon Brown）——分层描述系统的工程惯例。
+<a href="https://c4model.com/" target="_blank" rel="noopener">c4model.com</a></li>
+<li>OpenTelemetry, <strong>Architecture</strong>——横切能力（观测）如何不占业务层。
+<a href="https://opentelemetry.io/docs/specs/otel/overview/" target="_blank" rel="noopener">opentelemetry.io/docs/specs/otel/overview</a></li>
+<li>HumanLayer, <strong>12-Factor Agents</strong>——职责切分的十二条对照。
+<a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">github.com/humanlayer/12-factor-agents</a></li>
+</ul>
+<h3 id="技术演进史foundationsevolution"><a href="../foundations/evolution.html">技术演进史</a></h3>
+<ul>
+<li>Wei et al., <strong>Chain-of-Thought</strong>（2022）。
+<a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener">arxiv.org/abs/2201.11903</a></li>
+<li>Yao et al., <strong>ReAct</strong>（2022）。
+<a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">arxiv.org/abs/2210.03629</a></li>
+<li>Schick et al., <strong>Toolformer</strong>（2023）。
+<a href="https://arxiv.org/abs/2302.04761" target="_blank" rel="noopener">arxiv.org/abs/2302.04761</a></li>
+<li>Anthropic, <strong>Model Context Protocol 规范</strong>（2024 年末）。
+<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">modelcontextprotocol.io</a></li>
+<li>Wang et al., <strong>Voyager</strong>（2023）——技能库与自动课程的代表。
+<a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">arxiv.org/abs/2305.16291</a></li>
+</ul>
+<h2 id="分层深入">分层深入</h2>
+<h3 id="模型层layersmodel"><a href="../layers/model.html">模型层</a></h3>
+<ul>
+<li>OpenAI, <strong>Chat Completions / Responses API 参数说明</strong>——<code>temperature</code>、<code>top_p</code>、<code>max_tokens</code> 的官方语义。
+<a href="https://platform.openai.com/docs/api-reference/chat" target="_blank" rel="noopener">platform.openai.com/docs/api-reference</a></li>
+<li>Anthropic, <strong>Prompt Caching 文档</strong>——缓存命中与计价的官方口径。
+<a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener">docs.anthropic.com/en/docs/build-with-claude/prompt-caching</a></li>
+<li>Wei et al., <strong>Chain-of-Thought</strong>（2022）；Wang et al., <strong>Self-Consistency</strong>（2022）——<code>temperature</code> 与采样的取舍依据。
+<a href="https://arxiv.org/abs/2203.11171" target="_blank" rel="noopener">arxiv.org/abs/2203.11171</a></li>
+<li>Great Expectations / Pydantic, <strong>结构化输出校验</strong>——服务端校验的工程做法。
+<a href="https://docs.pydantic.dev/latest/concepts/models/" target="_blank" rel="noopener">docs.pydantic.dev/latest/concepts/models</a></li>
+</ul>
+<h3 id="模型适配layersmodel-adaptation"><a href="../layers/model-adaptation.html">模型适配</a></h3>
+<ul>
+<li>Hu et al., <strong>LoRA</strong>（2021）——低秩适配器，多租户方案的基础。
+<a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">arxiv.org/abs/2106.09685</a></li>
+<li>Ouyang et al., <strong>InstructGPT / RLHF</strong>（2022）——偏好优化的起点。
+<a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">arxiv.org/abs/2203.02155</a></li>
+<li>Rafailov et al., <strong>DPO</strong>（2023）——比 RLHF 更可落地的偏好优化。
+<a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">arxiv.org/abs/2305.18290</a></li>
+<li>Hinton et al., <strong>Distilling the Knowledge in a Neural Network</strong>（2015）——蒸馏的原始思路。
+<a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">arxiv.org/abs/1503.02531</a></li>
+</ul>
+<h3 id="多模态与实时交互layersmultimodal"><a href="../layers/multimodal.html">多模态与实时交互</a></h3>
+<ul>
+<li>OpenAI, <strong>Vision 文档</strong>——图片 token 的计算方式与尺寸上限。
+<a href="https://platform.openai.com/docs/guides/vision" target="_blank" rel="noopener">platform.openai.com/docs/guides/vision</a></li>
+<li>Anthropic, <strong>Vision 文档</strong>——分辨率与 tile 的计费口径。
+<a href="https://docs.anthropic.com/en/docs/build-with-claude/vision" target="_blank" rel="noopener">docs.anthropic.com/en/docs/build-with-claude/vision</a></li>
+<li>Li et al., <strong>DocBank / LayoutLMv3</strong>（2022）——版面分析为何决定文档问答上限。
+<a href="https://arxiv.org/abs/2204.08387" target="_blank" rel="noopener">arxiv.org/abs/2204.08387</a></li>
+<li>Ruan et al., <strong>TOAST / OSWorld</strong>（2024）——Computer Use 的可复现评测环境。
+<a href="https://arxiv.org/abs/2404.07972" target="_blank" rel="noopener">arxiv.org/abs/2404.07972</a></li>
+</ul>
+<h3 id="上下文层layerscontext"><a href="../layers/context.html">上下文层</a></h3>
+<ul>
+<li>Liu et al., <strong>Lost in the Middle</strong>（2023）——位置效应，支撑“中间信息容易被忽略”。
+<a href="https://arxiv.org/abs/2307.03172" target="_blank" rel="noopener">arxiv.org/abs/2307.03172</a></li>
+<li>Anthropic, <strong>Prompt Caching</strong>——cache-friendly 布局的官方建议。
+<a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener">docs.anthropic.com/en/docs/build-with-claude/prompt-caching</a></li>
+<li>Packer et al., <strong>MemGPT</strong>（2023）——分层记忆与上下文管理的代表。
+<a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener">arxiv.org/abs/2310.08560</a></li>
+<li>Shi et al., <strong>LLMLingua</strong>（2023）——提示压缩与保留率评估。
+<a href="https://arxiv.org/abs/2310.05736" target="_blank" rel="noopener">arxiv.org/abs/2310.05736</a></li>
+</ul>
+<h3 id="检索层layersretrieval"><a href="../layers/retrieval.html">检索层</a></h3>
+<ul>
+<li>Robertson &amp; Zaragoza, <strong>BM25（Probabilistic Relevance Framework）</strong>——稀疏检索的基线。
+<a href="https://dl.acm.org/doi/10.1561/1500000019" target="_blank" rel="noopener">dl.acm.org/doi/10.1561/1500000019</a></li>
+<li>Cormack et al., <strong>Reciprocal Rank Fusion</strong>（2009）——RRF 的原始出处，书中 <code>k=60</code> 的来历。
+<a href="https://dl.acm.org/doi/10.1145/1571941.1572114" target="_blank" rel="noopener">dl.acm.org/doi/10.1145/1571941.1572114</a></li>
+<li>Malkov &amp; Yashunin, <strong>HNSW</strong>（2016）——摘要索引参数 M 与 ef 的语义。
+<a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener">arxiv.org/abs/1603.09320</a></li>
+<li>Nogueira &amp; Cho, <strong>Passage Re-ranking with BERT</strong>（2019）——重排的经典做法。
+<a href="https://arxiv.org/abs/1901.04085" target="_blank" rel="noopener">arxiv.org/abs/1901.04085</a></li>
+</ul>
+<h3 id="工具层layerstools"><a href="../layers/tools.html">工具层</a></h3>
+<ul>
+<li>Anthropic, <strong>Writing effective tools for agents</strong>——工具描述与粒度的官方建议。
+<a href="https://www.anthropic.com/engineering/writing-tools-for-agents" target="_blank" rel="noopener">anthropic.com/engineering/writing-tools-for-agents</a></li>
+<li>Anthropic, <strong>Model Context Protocol 规范</strong>——MCP 的传输、能力协商与资源暴露。
+<a href="https://modelcontextprotocol.io/specification/2025-06-18" target="_blank" rel="noopener">modelcontextprotocol.io/specification</a></li>
+<li>OpenAPI Initiative, <strong>OpenAPI Specification 3.1</strong>——工具 schema 的另一种描述来源。
+<a href="https://spec.openapis.org/oas/v3.1.0" target="_blank" rel="noopener">spec.openapis.org/oas/v3.1.0</a></li>
+<li>OWASP, <strong>Top 10 for LLM Applications：LLM01 Prompt Injection</strong>——间接注入为何绕过工具校验。
+<a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">genai.owasp.org/llmrisk/llm01-prompt-injection</a></li>
+</ul>
+<h3 id="记忆层layersmemory"><a href="../layers/memory.html">记忆层</a></h3>
+<ul>
+<li>Park et al., <strong>Generative Agents</strong>（2023）——记忆流、检索打分、反思与规划。
+<a href="https://arxiv.org/abs/2304.03442" target="_blank" rel="noopener">arxiv.org/abs/2304.03442</a></li>
+<li>Packer et al., <strong>MemGPT</strong>（2023）——把上下文当内存的分层管理。
+<a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener">arxiv.org/abs/2310.08560</a></li>
+<li>Zheng et al., <strong>MemBench</strong>（2025）——记忆系统的系统评测。
+<a href="https://arxiv.org/abs/2506.21605" target="_blank" rel="noopener">arxiv.org/abs/2506.21605</a></li>
+</ul>
+<h3 id="编排层layersorchestration"><a href="../layers/orchestration.html">编排层</a></h3>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents</strong>——五种编排模式的原始描述。
+<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a></li>
+<li>LangGraph, <strong>Concepts：State、Nodes、Edges、Checkpointing</strong>——图编排的对照实现。
+<a href="https://langchain-ai.github.io/langgraph/concepts/low_level/" target="_blank" rel="noopener">langchain-ai.github.io/langgraph/concepts</a></li>
+<li>Temporal, <strong>Workflow：确定性重放与活动</strong>——持久执行的工程范式。
+<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">docs.temporal.io/workflows</a></li>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——多 Agent 失败分类。
+<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">arxiv.org/abs/2503.13657</a></li>
+</ul>
+<h3 id="运行时与沙箱layersruntime"><a href="../layers/runtime.html">运行时与沙箱</a></h3>
+<ul>
+<li>gVisor, <strong>Architecture</strong>——用户态内核的隔离边界。
+<a href="https://gvisor.dev/docs/architecture_guide/" target="_blank" rel="noopener">gvisor.dev/docs/architecture_guide</a></li>
+<li>Firecracker, <strong>Design</strong>——微虚拟机的启动开销与隔离强度。
+<a href="https://firecracker-microvm.github.io/" target="_blank" rel="noopener">firecracker-microvm.github.io</a></li>
+<li>OCI, <strong>Runtime Specification</strong>——容器隔离的实际配置项。
+<a href="https://github.com/opencontainers/runtime-spec/blob/main/config.md" target="_blank" rel="noopener">github.com/opencontainers/runtime-spec</a></li>
+<li>NIST, <strong>SP 800-190 Application Container Security Guide</strong>——容器安全的检查项。
+<a href="https://csrc.nist.gov/pubs/sp/800/190/final" target="_blank" rel="noopener">csrc.nist.gov/pubs/sp/800/190/final</a></li>
+</ul>
+<h3 id="测试与验证layerstesting"><a href="../layers/testing.html">测试与验证</a></h3>
+<ul>
+<li>Google, <strong>Testing on the Toilet：Flaky Tests</strong>——flaky 要修不要重跑。
+<a href="https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html" target="_blank" rel="noopener">testing.googleblog.com</a></li>
+<li>Hamel, <strong>Property-Based Testing with Hypothesis</strong>——用性质替代样例。
+<a href="https://hypothesis.readthedocs.io/en/latest/" target="_blank" rel="noopener">hypothesis.readthedocs.io</a></li>
+<li>pact-foundation, <strong>Consumer-Driven Contract Testing</strong>——契约测试的工程实践。
+<a href="https://docs.pact.io/" target="_blank" rel="noopener">docs.pact.io</a></li>
+<li>pytest, <strong>pytest 参数化与 fixture</strong>——本书 Mini Agent 测试所用机制。
+<a href="https://docs.pytest.org/en/stable/" target="_blank" rel="noopener">docs.pytest.org/en/stable</a></li>
+</ul>
+<h3 id="评测与可观测性layersevaluation"><a href="../layers/evaluation.html">评测与可观测性</a></h3>
+<ul>
+<li>Chen et al., <strong>HumanEval / pass@k</strong>（2021）——<code>pass@k</code> 的定义与统计口径。
+<a href="https://arxiv.org/abs/2107.03374" target="_blank" rel="noopener">arxiv.org/abs/2107.03374</a></li>
+<li>Jimenez et al., <strong>SWE-bench</strong>（2023）——真实仓库级任务评测。
+<a href="https://arxiv.org/abs/2310.06770" target="_blank" rel="noopener">arxiv.org/abs/2310.06770</a></li>
+<li>Mialon et al., <strong>GAIA</strong>（2023）——通用助手任务基准。
+<a href="https://arxiv.org/abs/2311.12983" target="_blank" rel="noopener">arxiv.org/abs/2311.12983</a></li>
+<li>OpenTelemetry, <strong>GenAI 语义约定</strong>——trace 字段。
+<a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">opentelemetry.io/docs/specs/semconv/gen-ai</a></li>
+</ul>
+<h3 id="版本与发布layersrelease"><a href="../layers/release.html">版本与发布</a></h3>
+<ul>
+<li>Martin Fowler, <strong>BlueGreenDeployment 与 CanaryRelease</strong>——灰度发布的模式定义。
+<a href="https://martinfowler.com/bliki/CanaryRelease.html" target="_blank" rel="noopener">martinfowler.com/bliki/CanaryRelease.html</a></li>
+<li>Google, <strong>SRE Workbook：Canarying Releases</strong>——护栏指标与自动回滚。
+<a href="https://sre.google/workbook/canarying-releases/" target="_blank" rel="noopener">sre.google/workbook/canarying-releases</a></li>
+<li>OpenFeature, <strong>Feature Flag 规范</strong>——开关的标准化，支撑秒级回滚。
+<a href="https://openfeature.dev/specification/" target="_blank" rel="noopener">openfeature.dev/specification</a></li>
+<li>LaunchDarkly, <strong>Progressive Rollout 实践</strong>——分桶与稳定哈希。
+<a href="https://launchdarkly.com/blog/a-complete-guide-to-feature-flag-targeting/" target="_blank" rel="noopener">launchdarkly.com/blog</a></li>
+</ul>
+<h3 id="安全与权限layerssecurity"><a href="../layers/security.html">安全与权限</a></h3>
+<ul>
+<li>OWASP, <strong>Top 10 for LLM Applications</strong>——注入、过分代理、数据外泄等风险条目。
+<a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">genai.owasp.org/llm-top-10</a></li>
+<li>Greshake et al., <strong>Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</strong>（2023）——间接注入的原始实证。
+<a href="https://arxiv.org/abs/2302.12173" target="_blank" rel="noopener">arxiv.org/abs/2302.12173</a></li>
+<li>Simon Willison, <strong>The lethal trifecta for AI agents</strong>——私有数据 + 不可信内容 + 外发通道。
+<a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/" target="_blank" rel="noopener">simonwillison.net/2025/Jun/16/the-lethal-trifecta</a></li>
+<li>NIST, <strong>AI 600-1 Generative AI Profile</strong>——生成式 AI 的风险与缓解措施目录。
+<a href="https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf" target="_blank" rel="noopener">nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf</a></li>
+</ul>
+<h3 id="内容安全与审核layerscontent-safety"><a href="../layers/content-safety.html">内容安全与审核</a></h3>
+<ul>
+<li>OpenAI, <strong>Moderation 文档</strong>——审核接口的类目与阈值语义。
+<a href="https://platform.openai.com/docs/guides/moderation" target="_blank" rel="noopener">platform.openai.com/docs/guides/moderation</a></li>
+<li>OpenAI, <strong>Moderation 免费开放公告</strong>——审核成本为何可以前置到每次调用。
+<a href="https://openai.com/index/new-embedding-models-and-api-updates/" target="_blank" rel="noopener">openai.com/index/new-embedding-models-and-api-updates</a></li>
+<li>Google, <strong>Perspective API</strong>——伤害评分与阈值的实践。
+<a href="https://perspectiveapi.com/" target="_blank" rel="noopener">perspectiveapi.com</a></li>
+<li>国家互联网信息办公室,《<strong>生成式人工智能服务管理暂行办法</strong>》——内容标识与责任要求（境内业务）。
+<a href="https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm" target="_blank" rel="noopener">cac.gov.cn</a></li>
+</ul>
+<h3 id="隐私与数据治理layersprivacy"><a href="../layers/privacy.html">隐私与数据治理</a></h3>
+<ul>
+<li>Microsoft, <strong>Presidio</strong>——PII 识别与脱敏的开源实现。
+<a href="https://microsoft.github.io/presidio/" target="_blank" rel="noopener">microsoft.github.io/presidio</a></li>
+<li>NIST, <strong>Privacy Framework 1.0</strong>——识别、治理、保护、通信、保护中数据处理。
+<a href="https://www.nist.gov/privacy-framework" target="_blank" rel="noopener">nist.gov/privacy-framework</a></li>
+<li>ICO, <strong>Right to erasure 指南</strong>——删除义务的边界与例外。
+<a href="https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-erasure/" target="_blank" rel="noopener">ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-erasure</a></li>
+<li>全国人大常委会,《<strong>个人信息保护法</strong>》——境内业务的处理规则。
+<a href="http://www.npc.gov.cn/npc/c2/c30834/202108/t20210820_313088.html" target="_blank" rel="noopener">npc.gov.cn</a></li>
+</ul>
+<h3 id="合规与法律layerscompliance"><a href="../layers/compliance.html">合规与法律</a></h3>
+<ul>
+<li>国家互联网信息办公室,《<strong>互联网信息服务深度合成管理规定</strong>》——深度合成标识义务。
+<a href="https://www.cac.gov.cn/2022-12/11/c_1672221949354811.htm" target="_blank" rel="noopener">cac.gov.cn</a></li>
+<li>国家互联网信息办公室,《<strong>生成式人工智能服务管理暂行办法</strong>》——备案、训练数据来源与内容责任。
+<a href="https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm" target="_blank" rel="noopener">cac.gov.cn</a></li>
+<li>国家互联网信息办公室等,《<strong>人工智能生成合成内容标识办法</strong>》——显式与隐式标识的落地要求。
+<a href="https://www.cac.gov.cn/2025-03/14/c_1743654684782215.htm" target="_blank" rel="noopener">cac.gov.cn</a></li>
+<li>全国人大常委会,《<strong>网络安全法</strong>》——日志留存与等级保护的上位依据。
+<a href="http://www.npc.gov.cn/npc/c30834/201611/270b43e8b35e4f7ea98502b6f0e26f8a.shtml" target="_blank" rel="noopener">npc.gov.cn</a></li>
+</ul>
+<h2 id="动手">动手</h2>
+<h3 id="从零实现-mini-agentpracticemini-agent"><a href="../practice/mini-agent.html">从零实现 Mini Agent</a></h3>
+<ul>
+<li>CPython, <strong><code>ast</code> 模块文档</strong>——书中计算器为何用 AST 白名单而不是 <code>eval</code>。
+<a href="https://docs.python.org/3/library/ast.html" target="_blank" rel="noopener">docs.python.org/3/library/ast.html</a></li>
+<li>CPython, <strong><code>subprocess</code> 文档</strong>（超时与进程组）——沙箱执行器的取舍依据。
+<a href="https://docs.python.org/3/library/subprocess.html" target="_blank" rel="noopener">docs.python.org/3/library/subprocess.html</a></li>
+<li>OpenAI, <strong>Function Calling</strong>——<code>--live</code> 模式所用协议。
+<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener">platform.openai.com/docs/guides/function-calling</a></li>
+<li>OpenAI, <strong>tiktoken</strong>——token 计数的参考实现。
+<a href="https://github.com/openai/tiktoken" target="_blank" rel="noopener">github.com/openai/tiktoken</a></li>
+</ul>
+<h3 id="真实案例拆解practicecases"><a href="../practice/cases.html">真实案例拆解</a></h3>
+<ul>
+<li>Jimenez et al., <strong>SWE-bench</strong>（2023）——Coding Agent 的评测协议。
+<a href="https://arxiv.org/abs/2310.06770" target="_blank" rel="noopener">arxiv.org/abs/2310.06770</a></li>
+<li>Yang et al., <strong>SWE-agent</strong>（2024）——Agent-Computer Interface 的设计取舍。
+<a href="https://arxiv.org/abs/2405.15793" target="_blank" rel="noopener">arxiv.org/abs/2405.15793</a></li>
+<li>OpenAI, <strong>Deep Research 系统卡</strong>——研究型 Agent 的流程与失败模式。
+<a href="https://openai.com/index/deep-research/" target="_blank" rel="noopener">openai.com/index/deep-research</a></li>
+<li>Ruan et al., <strong>OSWorld</strong>（2024）——Computer Use 的可复现评测。
+<a href="https://arxiv.org/abs/2404.07972" target="_blank" rel="noopener">arxiv.org/abs/2404.07972</a></li>
+</ul>
+<h3 id="部署形态practicedeployment"><a href="../practice/deployment.html">部署形态</a></h3>
+<ul>
+<li>Docker, <strong>Dockerfile reference</strong>——<code>HEALTHCHECK</code>、<code>USER</code>、多阶段构建。
+<a href="https://docs.docker.com/reference/dockerfile/" target="_blank" rel="noopener">docs.docker.com/reference/dockerfile</a></li>
+<li>The Twelve-Factor App, <strong>Config</strong>——配置来自环境。
+<a href="https://12factor.net/config" target="_blank" rel="noopener">12factor.net/config</a></li>
+<li>Kubernetes, <strong>Liveness / Readiness / Startup Probes</strong>——探针语义。
+<a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/" target="_blank" rel="noopener">kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes</a></li>
+<li>OWASP, <strong>Docker Security Cheat Sheet</strong>——容器安全基线。
+<a href="https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html" target="_blank" rel="noopener">cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html</a></li>
+</ul>
+<h3 id="交互与信任设计practiceux"><a href="../practice/ux.html">交互与信任设计</a></h3>
+<ul>
+<li>Nielsen Norman Group, <strong>Response Times: The 3 Important Limits</strong>——0.1s / 1s / 10s 三个阈值。
+<a href="https://www.nngroup.com/articles/response-times-3-important-limits/" target="_blank" rel="noopener">nngroup.com/articles/response-times-3-important-limits</a></li>
+<li>Google PAIR, <strong>People + AI Guidebook</strong>——人机协作中的可控与可解释。
+<a href="https://pair.withgoogle.com/guidebook/" target="_blank" rel="noopener">pair.withgoogle.com/guidebook</a></li>
+<li>Microsoft HAX, <strong>Guidelines for Human-AI Interaction</strong>——18 条交互准则。
+<a href="https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/" target="_blank" rel="noopener">microsoft.com/en-us/haxtoolkit/ai-guidelines</a></li>
+<li>Amershi et al., <strong>Guidelines for Human-AI Interaction</strong>（CHI 2019）——上述准则的论文版。
+<a href="https://dl.acm.org/doi/10.1145/3290605.3300233" target="_blank" rel="noopener">dl.acm.org/doi/10.1145/3290605.3300233</a></li>
+</ul>
+<h2 id="进阶">进阶</h2>
+<h3 id="优化手册advancedoptimization"><a href="../advanced/optimization.html">优化手册</a></h3>
+<ul>
+<li>Sculley et al., <strong>Hidden Technical Debt in Machine Learning Systems</strong>（NeurIPS 2015）——为什么先测量再优化。
+<a href="https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems.pdf" target="_blank" rel="noopener">papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems</a></li>
+<li>Google, <strong>Site Reliability Engineering：Monitoring Distributed Systems</strong>——P95 与告警阈值。
+<a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener">sre.google/sre-book/monitoring-distributed-systems</a></li>
+<li>Zheng et al., <strong>Judging LLM-as-a-Judge with MT-Bench</strong>（2023）——评审者的偏差。
+<a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">arxiv.org/abs/2306.05685</a></li>
+<li>Yao et al., <strong>Tree of Thoughts</strong>（2023）——采样与投票的收益边界。
+<a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">arxiv.org/abs/2305.10601</a></li>
+</ul>
+<h3 id="长任务与可靠执行advanceddurability"><a href="../advanced/durability.html">长任务与可靠执行</a></h3>
+<ul>
+<li>Temporal, <strong>Workflow：确定性重放</strong>——事件日志 + 重放的工程范式。
+<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">docs.temporal.io/workflows</a></li>
+<li>Apache Kafka, <strong>Exactly-Once 语义与幂等生产者</strong>——幂等键的 broker 侧实现。
+<a href="https://kafka.apache.org/documentation/#semantics" target="_blank" rel="noopener">kafka.apache.org/documentation/#semantics</a></li>
+<li>AWS, <strong>Exponential Backoff and Jitter</strong>——重试抖动为什么必要。
+<a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/" target="_blank" rel="noopener">aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter</a></li>
+<li>Saga 模式（Garcia-Molina &amp; Salem, 1987）——补偿事务的原始论文。
+<a href="https://dl.acm.org/doi/10.1145/38713.38742" target="_blank" rel="noopener">dl.acm.org/doi/10.1145/38713.38742</a></li>
+</ul>
+<h3 id="框架对照与迁移advancedframeworks"><a href="../advanced/frameworks.html">框架对照与迁移</a></h3>
+<ul>
+<li>OpenAI, <strong>Agents SDK</strong>——Agent、Handoff、Guardrail、Tracing 的基元定义。
+<a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">openai.github.io/openai-agents-python</a></li>
+<li>LangChain, <strong>LangGraph Persistence / Checkpointers</strong>——状态持久化与恢复。
+<a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">docs.langchain.com/oss/python/langgraph/persistence</a></li>
+<li>Temporal, <strong>Workflows</strong>——确定性重放。
+<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">docs.temporal.io/workflows</a></li>
+<li>Anthropic, <strong>MCP</strong>——跨框架工具协议。
+<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">modelcontextprotocol.io</a></li>
+<li>HumanLayer, <strong>12-Factor Agents</strong>——框架无关的工程原则。
+<a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">github.com/humanlayer/12-factor-agents</a></li>
+</ul>
+<h3 id="前沿与趋势advancedfrontier"><a href="../advanced/frontier.html">前沿与趋势</a></h3>
+<ul>
+<li>Anthropic, <strong>Model Context Protocol</strong>——协议与生态方向。
+<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">modelcontextprotocol.io</a></li>
+<li>A2A Project, <strong>Agent2Agent Protocol</strong>——Agent 间协作的标准化尝试。
+<a href="https://a2a-protocol.org/" target="_blank" rel="noopener">a2a-protocol.org</a></li>
+<li>DeepSeek-AI, <strong>DeepSeek-R1</strong>（2025）——可验证奖励的推理训练。
+<a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">arxiv.org/abs/2501.12948</a></li>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——仍然没有答案的问题。
+<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">arxiv.org/abs/2503.13657</a></li>
+</ul>
+<h2 id="附录">附录</h2>
+<h3 id="术语表appendixglossary"><a href="glossary.html">术语表</a></h3>
+<ul>
+<li>Anthropic, <strong>Glossary（Agent 相关术语）</strong>。
+<a href="https://docs.anthropic.com/en/docs/build-with-claude/glossary" target="_blank" rel="noopener">docs.anthropic.com/en/docs/build-with-claude/glossary</a></li>
+<li>OpenAI, <strong>Prompt Engineering Guide：术语</strong>。
+<a href="https://platform.openai.com/docs/guides/prompt-engineering" target="_blank" rel="noopener">platform.openai.com/docs/guides/prompt-engineering</a></li>
+<li>Lilian Weng, <strong>LLM Powered Autonomous Agents</strong>——规划/记忆/工具三分法的术语来源。
+<a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank" rel="noopener">lilianweng.github.io/posts/2023-06-23-agent</a></li>
+</ul>
+<h3 id="延伸阅读appendixreading"><a href="reading.html">延伸阅读</a></h3>
+<p>分主题的书单与论文索引，见<a href="reading.html">延伸阅读</a>（已整理 39 条外部资源，按“先读哪篇”排序）。</p>
+</article>
+        <nav class="pager"><a class="prev" href="glossary.html"><span>上一篇</span><strong>术语表</strong></a><a class="next" href="reading.html"><span>下一篇</span><strong>延伸阅读</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

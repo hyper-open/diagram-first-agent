@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -116,6 +121,9 @@
 </table></div>
 <p>多数产品只做了“情景记忆的原始日志 + 向量检索”，缺少语义提炼和程序记忆，所以看起来“记得”，但不好用。</p>
 <h2 id="二记忆系统的五个组件">二、记忆系统的五个组件</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <h3 id="1-写入从全存到精选">1. 写入：从“全存”到“精选”</h3>
 <p>不要存原始对话。原始对话噪声大、重复多、检索效果差。写入前做抽取：</p>
 <div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
@@ -400,12 +408,31 @@ class MemoryItem:
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Park et al., <strong>Generative Agents</strong>（2023）——记忆流、检索打分（相关性/新近性/重要性）、反思与规划，本章打分公式的来源。<a href="https://arxiv.org/abs/2304.03442" target="_blank" rel="noopener">链接</a></li>
+<li>Packer et al., <strong>MemGPT</strong>（2023）——分层记忆与上下文管理。<a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener">链接</a></li>
+<li>Zheng et al., <strong>MemBench</strong>（2025）——记忆系统的系统化评测。<a href="https://arxiv.org/abs/2506.21605" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E8%AE%B0%E5%BF%86%E5%B1%82">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>设计一张 <code>MemoryItem</code> 表，包含来源、置信度、租户、过期时间、替代关系。</li>
 <li>为你的 Agent 写“写入规则”：哪些信息自动写、哪些需确认、哪些禁止写。</li>
 <li>构造一个记忆冲突场景（用户先说要 A，后说要 B），验证系统是否用新值且能解释。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. MemoryItem 表设计</strong>
+要点：除正文里的字段（<code>content / source / confidence / tenant / created_at / expires_at / supersedes</code>）外，还要有<strong>写入者</strong>与<strong>访问控制</strong>——否则无法区分“用户说的”“模型推测的”“系统注入的”。
+参考实现见 <code>examples/mini_agent/memory.py</code> 的 <code>MemoryItem</code>。
+自检：缺少 <code>source</code> 时，记忆污染无法追责（本章第三节）。</p>
+<p><strong>2. 写入规则</strong>
+要点：自动写 = 用户明确表达且稳定的偏好/事实；需确认 = 涉及身份、金额、权限；禁止写 = 密钥、他人信息、模型推测的结论。
+自检：规则要能落到判断条件上（如 <code>confidence &lt; 0.8 或 source == &quot;model_inferred&quot; → 不写</code>），只写三条口号不算完成。</p>
+<p><strong>3. 记忆冲突：先说 A 后说 B</strong>
+要点：正确行为是<strong>新值生效 + 旧值标记 superseded（不物理删除）+ 能解释“你在 X 时间说过 A，后来改成了 B”</strong>。
+自检：如果实现是“直接覆盖”，无法回答“为什么现在是 B”；如果实现是“两条都保留且都进上下文”，模型会自相矛盾。两种都不通过。</p>
+</details>
 <p>下一步：<a href="orchestration.html">编排层</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="tools.html"><span>上一篇</span><strong>工具层</strong></a><a class="next" href="orchestration.html"><span>下一篇</span><strong>编排层</strong></a></nav>

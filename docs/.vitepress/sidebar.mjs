@@ -55,6 +55,9 @@ export const sidebar = [
     text: '动手',
     items: [
       { text: '从零实现 Mini Agent', link: '/practice/mini-agent' },
+      { text: 'v2：加 RAG、路由与记忆治理', link: '/practice/mini-agent-v2' },
+      { text: 'v3：工具网关、计费与持久化', link: '/practice/mini-agent-v3' },
+      { text: '部署形态：从能跑到能上线', link: '/practice/deployment' },
       { text: '真实案例拆解', link: '/practice/cases' },
       { text: '交互与信任设计', link: '/practice/ux' }
     ]
@@ -64,6 +67,7 @@ export const sidebar = [
     items: [
       { text: '优化手册', link: '/advanced/optimization' },
       { text: '长任务与可靠执行', link: '/advanced/durability' },
+      { text: '框架对照与迁移', link: '/advanced/frameworks' },
       { text: '前沿与趋势', link: '/advanced/frontier' }
     ]
   },
@@ -71,6 +75,7 @@ export const sidebar = [
     text: '附录',
     items: [
       { text: '术语表', link: '/appendix/glossary' },
+      { text: '推荐来源', link: '/appendix/sources' },
       { text: '延伸阅读', link: '/appendix/reading' }
     ]
   }

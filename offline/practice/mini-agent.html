@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item active" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="cases.html">真实案例拆解</a>
 <a class="nav-item" href="ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -212,6 +217,9 @@ assert result.status == &quot;success&quot;
 <p><code>MiniAgent._recall()</code> 在每轮开始时按目标检索，<code>_build_messages()</code> 把结果放进 <code>&lt;memory&gt;</code> 区块。演示 5 用一个断言检查记忆是否真的进了上下文。</p>
 <p><strong>练习</strong>：给 <code>SimpleMemory</code> 加“同一实体新值覆盖旧值”的逻辑，并保留 <code>supersedes</code> 字段。</p>
 <h2 id="lab-4预算停滞与部分结果">Lab 4：预算、停滞与部分结果</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/mini_agent_config.json"><code>mini_agent_config.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <h3 id="预算">预算</h3>
 <div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
 class Budget:
@@ -362,9 +370,31 @@ result = agent.run(&quot;登记联系人&quot;)
 <li>[ ] 如果要把这个 Agent 放到生产，最先补哪三件事？</li>
 <li>[ ] 内容审核的四个卡点分别在循环的哪一步？为什么工具返回只能 block？</li>
 </ul>
-<p>下一步：<a href="cases.html">真实案例拆解</a>。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>CPython, <strong><code>ast</code> 模块</strong>——书中计算器为何用 AST 白名单而不是 <code>eval</code>。<a href="https://docs.python.org/3/library/ast.html" target="_blank" rel="noopener">链接</a></li>
+<li>CPython, <strong><code>subprocess</code> 模块</strong>——超时、进程组与 <code>kill</code> 语义，是“线程超时不能强杀”这一取舍的依据。<a href="https://docs.python.org/3/library/subprocess.html" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>Function Calling 指南</strong>——<code>--live</code> 模式所用的协议。<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>tiktoken</strong>——token 计数的参考实现，用于理解“usage 缺失时的估算”为何只是近似。<a href="https://github.com/openai/tiktoken" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0-mini-agent">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p>本章的 8 个 Lab 每个都带「练习」，答案就是<strong>代码改动的结果</strong>，判定标准如下：</p>
+<ul>
+<li><strong>Lab 1</strong>：<code>max_steps=1</code> 时 <code>status == &quot;partial&quot;</code> 且 <code>output</code> 含已完成部分；不是 <code>error</code>、不抛异常。</li>
+<li><strong>Lab 2</strong>：越界路径返回 <code>invalid_argument</code> + <code>hint</code>；把工具 schema 里加一个必填字段后，旧测试应当<strong>失败</strong>（说明校验真的生效）。</li>
+<li><strong>Lab 3</strong>：记忆注入后上下文里能看到来源与时效；把记忆的 <code>expires_at</code> 设为过去时间，注入应当消失。</li>
+<li><strong>Lab 4</strong>：预算耗尽与停滞两种退出都要有；两者的 <code>status</code> 不同（<code>partial</code> vs <code>stalled</code>），输出都要包含“建议下一步”。</li>
+<li><strong>Lab 5</strong>：<code>python3 -m examples.mini_agent.eval</code> 能打印 <code>pass@1 / pass^k</code>；把某个 case 的期望改错，指标应当下降——<strong>全绿且改错也不掉分，说明评测没接上</strong>。</li>
+<li><strong>Lab 6</strong>：<code>--trace</code> 输出的每一步都有耗时、token 与决策类型；能据此回答“哪一步最贵”。</li>
+<li><strong>Lab 7</strong>：<code>--live</code> 在缺少 key 时给出清晰报错，而不是堆栈。</li>
+<li><strong>Lab 8</strong>：审核的四个卡点都能从 <code>--demo</code> 里观察到（输入拦截、工具返回、输出打码、流式断流）。</li>
+</ul>
+<p><strong>“七个可以继续做的扩展”的自检</strong>：每做一个扩展，都要能回答“它在文档的哪一章有对应描述”——做不到，说明你扩展的是代码而不是理解。</p>
+</details>
+<p>下一步：<a href="mini-agent-v2.html">Mini Agent v2</a>（加 RAG、意图路由与记忆治理），或先看<a href="cases.html">真实案例拆解</a>。</p>
 </article>
-        <nav class="pager"><a class="prev" href="../layers/compliance.html"><span>上一篇</span><strong>合规与法律</strong></a><a class="next" href="cases.html"><span>下一篇</span><strong>真实案例拆解</strong></a></nav>
+        <nav class="pager"><a class="prev" href="../layers/compliance.html"><span>上一篇</span><strong>合规与法律</strong></a><a class="next" href="mini-agent-v2.html"><span>下一篇</span><strong>v2：加 RAG、路由与记忆治理</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
       </div>
     </main>

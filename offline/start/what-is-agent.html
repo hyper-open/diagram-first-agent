@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -275,12 +280,32 @@
 </tbody>
 </table></div>
 <p>后文讨论架构时，这套分类比“聊天机器人/智能体”更有解释力。</p>
+<h2 id="来源">来源</h2>
+<p>本章关于 workflow / agent 分界、组件划分与适用性判断的表述，主要依据：</p>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents</strong>——workflow 与 agent 的分界、五种编排模式，以及“什么时候不该用 agent”的原始论证。<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>A Practical Guide to Building Agents</strong>——Agent 的组成部分（模型、工具、指令）与适用性判断。<a href="https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf" target="_blank" rel="noopener">链接</a></li>
+<li>Schick et al., <strong>Toolformer</strong>（2023）——“模型自学何时调用工具”，支撑“工具 × 选择正确率”的说法。<a href="https://arxiv.org/abs/2302.04761" target="_blank" rel="noopener">链接</a></li>
+<li>Lilian Weng, <strong>LLM Powered Autonomous Agents</strong>——规划、记忆、工具的三分法，本章“五个组成部分”的来源之一。<a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E4%BB%80%E4%B9%88%E6%98%AF-agent">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>选一个你常用的“AI 功能”，判断它是 Workflow 还是 Agent，依据是控制流由谁决定。</li>
 <li>为“修复失败测试”写出至少 5 个可能的动作，以及每个动作失败时 Agent 应该观察到什么。</li>
 <li>找一个“看起来像 Agent，其实不该用 Agent”的场景，说明用工作流如何实现。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. Workflow 还是 Agent？</strong>
+要点：只看一个问题——控制流由谁决定。回答里要能指出“下一步”是在代码里写死（分支判断、固定链路），还是由模型根据观察临时决定；混合体要分开说（外层固定、节点内自主）。
+自检：如果回答里出现“因为用了大模型”“因为能多轮对话”这类依据，说明还没抓住判据。</p>
+<p><strong>2. 修失败测试的 5 个动作</strong>
+要点：动作要覆盖“观察”和“修改”两类，且每个动作都要写出<strong>失败时模型能看到什么</strong>。例如 <code>pytest -q</code> 失败 → 应返回失败用例名、断言差异、堆栈摘要；读文件失败 → 返回 <code>invalid_argument</code> 与路径提示，而不是 <code>500</code>；修改代码后回归失败 → 返回新失败用例与上一轮对比。
+自检：如果某个动作失败后模型只拿到“Error”，说明动作设计不合格——这属于<a href="../layers/tools.html">工具层</a>的错误契约问题。</p>
+<p><strong>3. “像 Agent 但该用工作流”的场景</strong>
+要点：答案要给出<strong>可枚举的步骤</strong>（所以不需要模型决定控制流），并说明用工作流后省掉了什么（更便宜、更稳、可测试、无需授权）。
+自检：说不出“步骤怎么枚举”，只说了“工作流更简单”，属于结论正确但论证缺失。</p>
+</details>
 <p>下一步：<a href="../evolution/overview.html">架构总览</a>；如果你想先看最小实现，也可以直接读<a href="../foundations/loop.html">核心循环</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="roadmap.html"><span>上一篇</span><strong>学习路线</strong></a><a class="next" href="../evolution/overview.html"><span>下一篇</span><strong>00 架构总览</strong></a></nav>

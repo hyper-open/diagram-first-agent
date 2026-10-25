@@ -1,0 +1,28 @@
+{
+  "$comment": "Mini Agent 的预算与审核参数。对应《从零实现 Mini Agent》Lab 4 与 Lab 8，并映射到 examples/mini_agent 的 Budget / Guard。",
+  "budget": {
+    "max_steps": 8,
+    "max_tool_calls": 12,
+    "max_tokens": 40000,
+    "max_wall_clock_s": 120
+  },
+  "stall_detection": {
+    "enabled": true,
+    "same_call_threshold": 3,
+    "normalize_arguments": true
+  },
+  "guard": {
+    "stage_actions": {
+      "input": { "pii": "allow", "self_harm": "review", "secret": "block" },
+      "tool_result": { "injection": "block", "secret": "block" },
+      "output": { "pii": "rewrite", "secret": "block" },
+      "memory_write": { "pii": "rewrite", "secret": "block" }
+    },
+    "streaming": { "hold_back_chars": 24, "flush_on_end": true },
+    "refusal_message": "抱歉，这个请求涉及平台不允许提供的内容，我无法协助。你可以换一种方式描述目标，或联系人工支持。"
+  },
+  "verifier": {
+    "type": "external",
+    "note": "不要用模型自评；示例见 examples/mini_agent/agent.py 的 verifier 参数"
+  }
+}

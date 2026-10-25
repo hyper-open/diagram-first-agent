@@ -205,6 +205,10 @@ score = (0.65 × 词项重叠 + 0.20 × 重要性 + 0.15 × 时效性) × 置信
 
 ## Lab 4：预算、停滞与部分结果
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`mini_agent_config.json`](../../examples/templates/mini_agent_config.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ### 预算
 
 ```python
@@ -363,4 +367,28 @@ result = agent.run("登记联系人")
 - [ ] 如果要把这个 Agent 放到生产，最先补哪三件事？
 - [ ] 内容审核的四个卡点分别在循环的哪一步？为什么工具返回只能 block？
 
-下一步：[真实案例拆解](/practice/cases)。
+## 来源
+
+- CPython, **`ast` 模块**——书中计算器为何用 AST 白名单而不是 `eval`。[链接](https://docs.python.org/3/library/ast.html)
+- CPython, **`subprocess` 模块**——超时、进程组与 `kill` 语义，是“线程超时不能强杀”这一取舍的依据。[链接](https://docs.python.org/3/library/subprocess.html)
+- OpenAI, **Function Calling 指南**——`--live` 模式所用的协议。[链接](https://platform.openai.com/docs/guides/function-calling)
+- OpenAI, **tiktoken**——token 计数的参考实现，用于理解“usage 缺失时的估算”为何只是近似。[链接](https://github.com/openai/tiktoken)
+
+完整清单见[推荐来源](/appendix/sources#从零实现-mini-agent)。
+
+::: details 参考答案与自检
+本章的 8 个 Lab 每个都带「练习」，答案就是**代码改动的结果**，判定标准如下：
+
+- **Lab 1**：`max_steps=1` 时 `status == "partial"` 且 `output` 含已完成部分；不是 `error`、不抛异常。
+- **Lab 2**：越界路径返回 `invalid_argument` + `hint`；把工具 schema 里加一个必填字段后，旧测试应当**失败**（说明校验真的生效）。
+- **Lab 3**：记忆注入后上下文里能看到来源与时效；把记忆的 `expires_at` 设为过去时间，注入应当消失。
+- **Lab 4**：预算耗尽与停滞两种退出都要有；两者的 `status` 不同（`partial` vs `stalled`），输出都要包含“建议下一步”。
+- **Lab 5**：`python3 -m examples.mini_agent.eval` 能打印 `pass@1 / pass^k`；把某个 case 的期望改错，指标应当下降——**全绿且改错也不掉分，说明评测没接上**。
+- **Lab 6**：`--trace` 输出的每一步都有耗时、token 与决策类型；能据此回答“哪一步最贵”。
+- **Lab 7**：`--live` 在缺少 key 时给出清晰报错，而不是堆栈。
+- **Lab 8**：审核的四个卡点都能从 `--demo` 里观察到（输入拦截、工具返回、输出打码、流式断流）。
+
+**“七个可以继续做的扩展”的自检**：每做一个扩展，都要能回答“它在文档的哪一章有对应描述”——做不到，说明你扩展的是代码而不是理解。
+:::
+
+下一步：[Mini Agent v2](/practice/mini-agent-v2)（加 RAG、意图路由与记忆治理），或先看[真实案例拆解](/practice/cases)。

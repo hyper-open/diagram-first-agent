@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -165,6 +170,9 @@
 </tbody>
 </table></div>
 <h2 id="优化矩阵">优化矩阵</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <blockquote>
 <p>这张表只给方向。切分、混合检索、重排参数与评测方法，见<a href="../layers/retrieval.html">检索层</a>。</p>
 </blockquote>
@@ -268,6 +276,25 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Lewis et al., <strong>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</strong>（2020）——原始论文。<a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">链接</a></li>
+<li>Gao et al., <strong>RAG for Large Language Models: A Survey</strong>（2023）——管线式 / 高级 / Agentic 三阶段，本章的分类依据。<a href="https://arxiv.org/abs/2312.10997" target="_blank" rel="noopener">链接</a></li>
+<li>Asai et al., <strong>Self-RAG</strong>（2023）——让模型自己判断“要不要检索、检索结果够不够”。<a href="https://arxiv.org/abs/2310.11511" target="_blank" rel="noopener">链接</a></li>
+<li>Trivedi et al., <strong>IRCoT</strong>（2022）——多跳问题为何需要检索与推理交替。<a href="https://arxiv.org/abs/2212.10509" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#05-rag">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 写一张索引元数据表</strong>
+要点：至少包含 <code>doc_id / tenant / acl / source / updated_at / section_path / page</code>。缺 <code>acl</code> 就无法在召回阶段过滤，缺 <code>section_path</code> 就无法给出可信引用。
+自检：如果表里只有“内容 + 向量”，你的 RAG 只能做演示。</p>
+<p><strong>2. 五条路由（FAQ / 查单 / RAG / Agent / 人工）</strong>
+要点：每条都要写出<strong>低置信兜底</strong>，且兜底不能是“再来一次”。例如 FAQ 低置信 → RAG；RAG 无命中 → Agent；Agent 涉及不可逆动作 → 人工。
+参考设计见<a href="intent.html">意图识别</a>的置信度分叉；自检：五条路径里若没有“人工”，说明高风险出口缺失。</p>
+<p><strong>3. “无权限但语义相关”的检索用例</strong>
+要点：测试要断言<strong>召回结果不含该文档</strong>（而不是“回答里不出现”）。后者仍然泄露了存在性。
+自检：过滤发生在召回之后（如重排后再删）属于未通过——见<a href="../layers/retrieval.html">检索层</a>第七节“权限过滤：越早越好”。</p>
+</details>
 <p>下一步：<a href="intent.html">阶段 6：意图识别与路由</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="tool-gateway.html"><span>上一篇</span><strong>04 工具网关</strong></a><a class="next" href="intent.html"><span>下一篇</span><strong>06 意图识别与路由</strong></a></nav>

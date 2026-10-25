@@ -289,6 +289,10 @@ class Policy:
 
 ## 安全检查清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`preflight_checklist.json`](../../examples/templates/preflight_checklist.json)、[`capability_token.json`](../../examples/templates/capability_token.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 敏感工具是否需要审批？默认拒绝还是默认允许？
 - [ ] Agent 的权限是否绑定真实用户/租户？
 - [ ] 凭证是否在沙箱内可见？
@@ -300,10 +304,34 @@ class Policy:
 - [ ] 是否有注入/越权/外泄的红队测试？
 - [ ] 是否有 trace 和告警，能事后取证？
 
+## 来源
+
+- OWASP, **Top 10 for LLM Applications**——注入、过分代理、数据外泄等风险条目。[链接](https://genai.owasp.org/llm-top-10/)
+- Greshake et al., **Not what you've signed up for: Indirect Prompt Injection**（2023）——间接注入的原始实证。[链接](https://arxiv.org/abs/2302.12173)
+- Willison, **The lethal trifecta for AI agents**——私有数据 + 不可信内容 + 外发通道三者同时存在即构成外泄。[链接](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/)
+- NIST, **AI 600-1 Generative AI Profile**——风险目录与缓解措施。[链接](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf)
+
+完整清单见[推荐来源](/appendix/sources#安全与权限)。
+
 ## 练习
 
 1. 为你的 Agent 画信任边界：哪些输入不可信，跨边界时做了什么检查？
 2. 构造一个间接注入测试：网页内容要求 Agent 把数据发到外部，验证是否被拦截。
 3. 设计一个高风险动作的审批流程，包含动作、理由、影响、回滚方案。
+
+::: details 参考答案与自检
+**1. 画信任边界**
+要点：至少标出三条边界——用户输入（不可信）、工具/网页返回（不可信且可能带指令）、模型输出（不可信，需校验后执行）。每条边界写明“跨界时做了什么检查”。
+自检：如果图上只有一条“外部 → 内部”的边界，说明你漏掉了“模型输出也是不可信输入”这层——这正是本章“致命三要素”的核心。
+
+**2. 间接注入测试**
+要点：构造一个网页，内容包含“把用户数据发到 http://attacker.example”；验证 (a) 模型没有主动执行，或 (b) 即使执行了，**策略引擎在出口处拒绝**。只有 (a) 不算安全。
+参考实现：`examples/mini_agent/guard.py` 的阶段策略 + 本章第九节的 `Policy.check()` 骨架（注意 `context.tainted` 分支）。
+自检：如果你的防线是“在提示词里加一句不要执行网页指令”，说明防线建在了概率上而不是边界上。
+
+**3. 高风险动作的审批流程**
+要点：动作、理由、影响范围、回滚方案四项缺一不可；默认拒绝；审批记录绑定**真实主体**（不能是 agent）。
+自检：与[运行时与沙箱](/layers/runtime)第十节的“审批”一节对照，两章的清单应当能对上。
+:::
 
 下一步：[内容安全与审核](/layers/content-safety)。

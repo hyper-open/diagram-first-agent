@@ -1,0 +1,33 @@
+{
+  "$comment": "一次发布的记录。对应《版本与发布》第八节「变更审计」的六件事——缺第 5、6 条就不算完成。",
+  "release_id": "rel_2026_10_24_01",
+  "changed_by": "alice",
+  "approved_by": "bob",
+  "changed_at": "2026-10-24T15:00:00+08:00",
+  "change_class": "medium",
+  "diff": {
+    "prompt": { "version_from": "p-231", "version_to": "p-232" },
+    "model": { "from": "gpt-4.1-mini", "to": "gpt-4.1" },
+    "tools": [],
+    "policy": [],
+    "index": []
+  },
+  "why": { "issue": "GH-118", "reason": "复杂退款对话工具选择错误率偏高" },
+  "impact": { "tenants": ["acme", "globex"], "traffic_percent": 5 },
+  "verification": {
+    "smoke": { "passed": true, "cases": 100 },
+    "core_suite": { "before": 0.91, "after": 0.93, "significant": "p<0.05" },
+    "shadow": { "duration_h": 24, "write_ops_disabled": true }
+  },
+  "rollback": {
+    "switch": "flag:model-upgrade-2026-10",
+    "previous_version": "rel_2026_10_21_02",
+    "data_rollback_needed": false,
+    "drilled_at": "2026-09-30"
+  },
+  "fields_note": {
+    "必填": ["changed_by", "approved_by", "diff", "why", "verification", "rollback"],
+    "为什么": "没有 verification 就无法判断这次变更是好是坏；没有 rollback 就无法在事故中止血",
+    "change_class": ["low（文案/提示微调，自动门禁）", "medium（模型/工具），high（策略/权限/数据）"]
+  }
+}

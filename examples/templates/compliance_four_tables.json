@@ -1,0 +1,60 @@
+{
+  "$comment": "上线前的四张表。对应《合规与法律》第七节。没有这四张表，合规检查只能靠回忆。",
+  "assets": {
+    "description": "处理哪些数据、存在哪、谁能访问",
+    "owner": "数据/安全",
+    "entries": [
+      {
+        "data_id": "ds_order",
+        "pii": true,
+        "stores": ["pg://orders", "vec://kb_prod", "s3://audit-logs"],
+        "retention_days": 180,
+        "access": ["support-agent(service)", "ops-team"],
+        "region": "cn-north"
+      }
+    ]
+  },
+  "models": {
+    "description": "用了哪些模型/供应商、部署在哪、数据是否回流",
+    "owner": "平台",
+    "entries": [
+      {
+        "model": "gpt-4.1-mini",
+        "provider": "openai",
+        "region": "us",
+        "training_on_data": "contractually excluded",
+        "retention_days": 30,
+        "evidence": "DPA-2026-014 + 账户级 zero-retention 配置截图"
+      }
+    ]
+  },
+  "scenarios": {
+    "description": "每个场景的能力边界、拒答范围、人工兜底",
+    "owner": "产品",
+    "entries": [
+      {
+        "scenario": "售后咨询",
+        "allowed": ["查订单", "解释政策", "创建工单"],
+        "forbidden": ["直接退款", "修改收货地址", "查询他人订单"],
+        "refusal_policy": "policy/refund-v3",
+        "human_fallback": "低置信 / 金额 > 2000 / 用户要求"
+      }
+    ]
+  },
+  "changes": {
+    "description": "每次改模型/prompt/策略的时间、影响、审批人",
+    "owner": "研发",
+    "entries": [
+      {
+        "at": "2026-10-24T15:00:00+08:00",
+        "what": "model 4.1-mini → 4.1（5% 灰度）",
+        "impact": "退款场景工具选择",
+        "approved_by": "bob",
+        "release_id": "rel_2026_10_24_01"
+      }
+    ]
+  },
+  "fields_note": {
+    "自检": "四张表里最常填不出来的是 models（数据是否回流）与 changes（留痕）。这两张填不出来，合规检查就是凭记忆。"
+  }
+}

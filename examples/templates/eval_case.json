@@ -1,0 +1,28 @@
+{
+  "$comment": "评测集的一条样本。对应《评测与可观测性》第二节「先有金标准」与《检索层》第十节的召回评测。",
+  "case_id": "faq-refund-window-01",
+  "category": "boundary",
+  "goal": "我们的订单是 30 天前买的，还能退吗？",
+  "setup": {
+    "tenant_id": "acme",
+    "user_id": "user_88",
+    "fixtures": ["order://A1024（30 天前，未拆封）", "kb://policy/refund-v3"]
+  },
+  "expect": {
+    "status": "success",
+    "tools_allowed": ["order.lookup", "kb.search"],
+    "tools_forbidden": ["order.refund"],
+    "final_contains": ["30 天", "未拆封"],
+    "final_not_contains": ["已为你退款"],
+    "max_steps": 6,
+    "max_cost_usd": 0.02
+  },
+  "citations_required": true,
+  "grader": "rule",
+  "notes": "policy/refund-v3 规定 7 天无理由 + 未拆封可议；正确行为是解释政策并要求人工确认，而不是直接退款。",
+  "fields_note": {
+    "category": ["normal", "boundary", "adversarial"],
+    "grader": ["rule（断言）", "llm_judge（rubric）", "human（抽检）"],
+    "为什么": "tools_forbidden 是断言的重点——它测的是行为边界，不是答案文本"
+  }
+}

@@ -81,6 +81,10 @@ flowchart LR
 
 ## 第一轮工程化：不换架构，先补护栏
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`mini_agent_config.json`](../../examples/templates/mini_agent_config.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 | 护栏 | 解决的问题 |
 | --- | --- |
 | 最大步数 | 防无限循环 |
@@ -119,5 +123,27 @@ def react_loop(goal, tools, llm, max_steps=8):
 | 任务分钟级、失败可重来 | 需要私有知识、引用、权限过滤 |
 
 下一阶段先解决最痛的一个：**动作协议**。
+
+## 来源
+
+- Yao et al., **ReAct: Synergizing Reasoning and Acting in Language Models**（2022）——原始论文。论文的提示模板与解析逻辑正是本章“文本协议脆弱”的来源。[链接](https://arxiv.org/abs/2210.03629)
+- Wei et al., **Chain-of-Thought Prompting**（2022）——ReAct 的推理前身，“把计算放进生成过程”。[链接](https://arxiv.org/abs/2201.11903)
+- Shinn et al., **Reflexion**（2023）——语言化反思，是“停滞检测 + 外部验证”的思想来源。[链接](https://arxiv.org/abs/2303.11366)
+- Zhou et al., **WebArena**（2023）——长循环任务在真实环境中的失败率，支撑“没有护栏的循环会失控”。[链接](https://arxiv.org/abs/2307.13854)
+
+完整清单见[推荐来源](/appendix/sources#01-react)。
+
+::: details 参考答案与自检
+本章正文的「练习」以 TIP 形式出现在「第一轮工程化」表格之后：
+
+**1. 把 `max_steps` 改成 1，观察 `status` 和 `output`**
+要点：`status` 应为 `partial`（预算耗尽不等于失败），`output` 应包含已完成的部分与失败原因，而不是空字符串或抛异常。
+参考实现见 `examples/mini_agent/agent.py` 的 `_partial_output()`：它把“已执行步数 / 最近观察 / 建议下一步”写进输出。
+自检：如果你拿到的是 `error` 或异常，说明循环把“资源耗尽”当成了“程序错误”——见[优化手册](/advanced/optimization)。
+
+**2. 改成 3，观察停滞检测何时触发**
+要点：同一个工具、同一组参数连续出现第 3 次时触发（阈值可配），而不是等到步数耗尽。参数“略有不同但语义相同”（如 `1+1` 与 `1 + 1`）能否识别，取决于你是否对参数做了规范化。
+自检：能说清“停滞是启发式，`max_steps` 是硬兜底，两者不能互相替代”即达标。
+:::
 
 下一步：[阶段 2：工具调用与注册](/evolution/tool-calling)。

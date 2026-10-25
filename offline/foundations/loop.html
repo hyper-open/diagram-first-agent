@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -284,12 +289,33 @@ class AgentState:
     return state.summarize_incomplete()
 </code></pre></div>
 <p>注意这段代码里，<strong>模型没有直接操作状态、没有直接执行工具、也没有权力绕过验证</strong>。这是刻意设计的。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Yao et al., <strong>ReAct</strong>（2022）——循环的原始形态与文本协议。<a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">链接</a></li>
+<li>Yao et al., <strong>Tree of Thoughts</strong>（2023）——把循环扩展成搜索时的对照物，说明“循环 + 选择”的代价。<a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">链接</a></li>
+<li>Zhou et al., <strong>WebArena</strong>（2023）——长循环在真实环境中的失败分布。<a href="https://arxiv.org/abs/2307.13854" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Building Effective Agents</strong>——循环与固定工作流的取舍边界。<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>给你的循环加上“连续两轮无进展就停止”的逻辑。什么算“有进展”？</li>
 <li>设计一个工具错误格式，要求同时包含：错误类型、可读信息、是否可重试、建议的下一步。</li>
 <li>思考：如果模型每轮都要求调用同一个工具，但参数略有不同，这算有进展吗？如何检测？</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 加“连续两轮无进展就停止”，什么算“有进展”</strong>
+要点：进展不是“调用了工具”，而是<strong>状态发生了可观测的变化</strong>——新观察到的事实、新增或更新的产物、被消除的待办项。可以给状态算一个指纹（如 <code>hash(artifacts) + len(open_questions)</code>），指纹不变就是无进展。
+参考实现见 <code>examples/mini_agent/agent.py</code> 的 <code>_check_stall()</code>：它用“相同工具 + 相同参数”的重复度做代理，属于简化版。
+自检：如果你的“有进展”定义为“模型没有报错”，那模型换着花样失败时你永远不会停。</p>
+<p><strong>2. 工具错误格式</strong>
+要点：<code>type / message / retryable / hint / field</code>。<code>hint</code> 是给模型看的修正建议，<code>retryable</code> 决定循环要不要重试，<code>field</code> 让模型定位到具体参数。
+可直接对照 <code>examples/mini_agent/tools.py</code> 的 <code>ToolResult</code> 与本章第七节的 JSON 示例。
+自检：缺少 <code>retryable</code> 时，模型只能靠猜要不要重试——这是“原地打转”的头号成因。</p>
+<p><strong>3. 每轮都调同一工具、参数略有不同，算进展吗</strong>
+要点：<strong>不算</strong>，但现有的精确匹配检测会漏掉它。两级处理：先把参数规范化（去空格、统一数字与路径写法、排序 key）再比较；仍不同但“语义等价”的（如 <code>&quot;a.py&quot;</code> 与 <code>&quot;./a.py&quot;</code>）应视为重复。
+自检：能说出“精确匹配是低误杀的启发式，规范化是提高召回的手段，两者叠加才实用”即达标。</p>
+</details>
 <p>下一步：<a href="architecture.html">分层架构</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="../evolution/platform.html"><span>上一篇</span><strong>08 平台化与治理</strong></a><a class="next" href="architecture.html"><span>下一篇</span><strong>七层职责模型</strong></a></nav>

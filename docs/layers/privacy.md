@@ -158,6 +158,10 @@ flowchart LR
 
 ## 落地清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`compliance_four_tables.json`](../../examples/templates/compliance_four_tables.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 有数据分级表，且与代码里的字段标注对应？
 - [ ] 上下文、日志、记忆、工具参数四个泄漏面都覆盖了吗？
 - [ ] 日志默认脱敏，原文加密短留并有访问审计？
@@ -167,10 +171,34 @@ flowchart LR
 - [ ] 供应商的数据使用与留存已写进合同？
 - [ ] 跨境数据流有明确的技术边界？
 
+## 来源
+
+- Microsoft, **Presidio**——PII 识别与脱敏的开源实现，本章“脱敏的时机与层次”的对照物。[链接](https://microsoft.github.io/presidio/)
+- NIST, **Privacy Framework 1.0**——识别、治理、保护、通信、保护中数据处理五类功能。[链接](https://www.nist.gov/privacy-framework)
+- ICO, **Right to erasure 指南**——删除义务的边界与例外。[链接](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-erasure/)
+- 全国人大常委会,《**个人信息保护法**》——境内业务的处理规则。[链接](http://www.npc.gov.cn/npc/c2/c30834/202108/t20210820_313088.html)
+
+完整清单见[推荐来源](/appendix/sources#隐私与数据治理)。
+
 ## 练习
 
 1. 列出你的 Agent 一次请求会经过的所有存储，标注哪些含个人信息。
 2. 设计一个删除流程：从用户点击“删除”到所有副本清理完成，中间有哪些步骤？
 3. 检查一次 trace：如果这份 trace 被公开，会泄露什么？
+
+::: details 参考答案与自检
+**1. 列出一次请求经过的所有存储**
+要点：业务库 / 会话历史 / 长期记忆 / 向量索引 / trace 与日志 / 缓存 / 备份 / 第三方供应商。每一处标注“是否含个人信息”与“谁有删除权限”。
+自检：如果你只列了数据库和日志，漏掉向量索引与语义缓存——那正是“删了文档但还能被检索到”的成因（本章第九节）。
+
+**2. 删除流程**
+要点：从“用户点击删除”到“所有副本清理完成”，中间要包含：定位（数据地图）→ 隔离（先不可读）→ 删除（主库、索引、记忆、缓存）→ 异步清理（日志与备份按保留策略到期）→ 第三方通知 → 回执与验证。
+自检：如果没有“验证”这一步（抽样确认确实检索不到），删除流程无法证明完成。
+
+**3. 如果这份 trace 被公开会泄露什么**
+要点：至少检查——消息原文里的个人信息、工具参数里的密钥或身份证号、系统提示里暴露的内部规则、`tenant_id` 与用户 ID 的关联。
+参考：本章第五节“日志与 trace：最大的默认泄漏源”。
+自检：如果答案是“不会泄露，因为是我们内部人看的”，这正是最常见的错误前提。
+:::
 
 下一步：[合规与法律](/layers/compliance)。

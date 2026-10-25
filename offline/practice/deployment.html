@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>部署形态：从能跑到能上线 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item active" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>部署形态：从能跑到能上线</strong></div>
+        <article class="doc"><h1 id="部署形态从「能跑」到「能上线」">部署形态：从「能跑」到「能上线」</h1>
+<h2 id="为什么这一步单独成一章">为什么这一步单独成一章</h2>
+<p>v1–v3 都是<strong>在你自己机器上跑起来</strong>。真正部署时会多出一整类问题，而且它们不在代码逻辑里：</p>
+<ul>
+<li>配置从哪来？写错一个端口号会发生什么？</li>
+<li>健康检查该查什么——进程活着，还是真的能服务？</li>
+<li>生产环境里怎么保证“这个实例不许写”？</li>
+<li>密钥放哪，怎么确认它没被日志和 <code>/health</code> 漏出去？</li>
+<li>镜像里该放什么、不该放什么？</li>
+</ul>
+<p>这一章用<strong>零第三方依赖</strong>的方式回答它们：不引 FastAPI，不引 gunicorn，只用标准库。代价是 HTTP 层只是教学级（单进程、无 TLS、无连接池），收益是<strong>每一个决策都在一个文件里看得见</strong>。</p>
+<div class="mermaid">flowchart LR
+  ENV[&quot;环境变量&quot;] --&gt; CFG[&quot;Settings&lt;br/&gt;启动即校验&quot;]
+  CFG --&gt; APP[&quot;Service&lt;br/&gt;组装 v2 + v3&quot;]
+  APP --&gt; HTTP[&quot;App&lt;br/&gt;租户 → 只读 → 管道&quot;]
+  HTTP --&gt; M[(&quot;账本 / 审计&quot;)]
+  CFG --&gt;|&quot;非法&quot;| EXIT[&quot;exit 2&lt;br/&gt;打印变量名&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 配置决定组装方式；配错就在启动时退出，而不是在第一个请求时出问题是</p>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code># 1. 本地直接起（不需要任何依赖）
+MINI_AGENT_PORT=8000 TENANT_LIMITS=&quot;acme:5,globex:2&quot; \
+  python3 -m examples.mini_agent_v3.app
+
+# 2. 探活
+curl -s http://127.0.0.1:8000/health
+
+# 3. 发一个请求
+curl -s -X POST http://127.0.0.1:8000/v1/answer \
+  -H 'Content-Type: application/json' \
+  -d '{&quot;text&quot;:&quot;订单 A1024 到哪了&quot;,&quot;tenant&quot;:&quot;acme&quot;,&quot;user_id&quot;:&quot;user:88&quot;}'
+
+# 4. 两个实例：一个读写、一个只读
+docker compose up --build
+</code></pre></div>
+<h2 id="lab-1配置必须启动即失败">Lab 1：配置必须“启动即失败”</h2>
+<p><code>config.py</code> 只做一件事：<strong>把字符串变成可信的配置，配错就退出</strong>。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>MINI_AGENT_PORT=abc python3 -m examples.mini_agent_v3.app
+# 配置错误：MINI_AGENT_PORT 必须是整数，当前为 'abc'
+# exit=2
+</code></pre></div>
+<p>三个设计决定：</p>
+<ol>
+<li><strong>错误信息必须带变量名。</strong> 容器编排会把 stderr 原样给你，<code>config error</code> 这种话毫无帮助，<code>MINI_AGENT_PORT 必须是整数</code> 才能让人改对。</li>
+<li><strong>退出码是接口。</strong> 配置错误用 2，和“正常运行中失败”用 1 区分开，编排系统据此判断要不要重启。</li>
+<li><strong>布尔值不接受模糊输入。</strong> <code>maybe</code>、<code>yes please</code> 直接报错，不做“猜你想说什么”。</li>
+</ol>
+<p>还有一个来自真实事故的规则：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if self.env == &quot;prod&quot; and self.api_key == &quot;&quot;:
+    raise ConfigError(&quot;prod 环境必须配置 OPENAI_API_KEY（否则会退化为确定性替身并给出假答案）&quot;)
+</code></pre></div>
+<p>“没有 key 就用替身”在开发和测试里是优点，在 <code>prod</code> 里是<strong>事故</strong>：系统会稳定地给出看似合理但没有任何依据的答案。这种配置不应该是“警告”，应该是<strong>拒绝启动</strong>。</p>
+<h2 id="lab-2租户是配置出来的不是判断出来的">Lab 2：租户是配置出来的，不是判断出来的</h2>
+<p><code>TENANT_LIMITS=acme:5,globex:2</code> 会让校验器检查一件容易被忽略的事：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>unknown = [t for t in self.tenant_allowlist if t not in self.tenant_limits]
+if unknown:
+    raise ConfigError(&quot;TENANT_ALLOWLIST 中的租户缺少额度配置：%s&quot; % &quot;, &quot;.join(unknown))
+</code></pre></div>
+<p>为什么这条必须是错误而不是默认值？因为<strong>允许一个没有额度的租户等于开了一个不计费的洞</strong>。默认额度会让它在账本里以“未知租户”的身份花钱，事后对账时你根本不知道这是谁。</p>
+<p>对应到请求路径上，租户检查发生在任何工作之前：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if not self.settings.tenant_allowed(tenant):
+    return 403, {&quot;status&quot;: &quot;tenant_not_allowed&quot;, &quot;error&quot;: &quot;该租户未开通&quot;}
+</code></pre></div>
+<p>未开通的租户<strong>连“这个租户存不存在”都不该被告知</strong>，所以错误信息是统一的“未开通”，不区分“不存在”和“无权限”。</p>
+<h2 id="请求在服务层的完整路径">请求在服务层的完整路径</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant C as 客户端
+  participant H as HTTP Handler
+  participant A as App
+  participant S as Service
+  participant P as v3 管道
+
+  C-&gt;&gt;H: POST /v1/answer
+  H-&gt;&gt;H: 读 body（超限直接 413）
+  H-&gt;&gt;A: handle(path, body)
+  A-&gt;&gt;A: JSON 解析（失败 400）
+  A-&gt;&gt;A: 租户白名单（失败 403）
+  A-&gt;&gt;A: readonly 开关（写意图 403）
+  A-&gt;&gt;S: answer(text, tenant, user)
+  S-&gt;&gt;P: GatedRequest
+  P--&gt;&gt;S: result（route/status/cost）
+  S--&gt;&gt;A: 扁平响应
+  A--&gt;&gt;C: 200/403/429 + envelope
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 五道拒绝都在进入业务逻辑之前完成：体积、格式、租户、只读、权限</p>
+<h2 id="lab-3只读开关是一个部署属性不是提示词">Lab 3：只读开关是一个部署属性，不是提示词</h2>
+<p>生产上常见需求是“这个实例跑在灾区，只允许读”。实现方式有两种：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>做法</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>在提示词里写“不要执行写操作”</td>
+<td>是概率，不是边界</td>
+</tr>
+<tr>
+<td>在工具执行前判断 <code>readonly</code> 标记</td>
+<td>可以，但判断散落在各处</td>
+</tr>
+<tr>
+<td><strong>在配置层拒绝，并在网关层不注册写工具</strong></td>
+<td>边界明确，且可测试</td>
+</tr>
+</tbody>
+</table></div>
+<p>这个项目用的是第三种思路在 HTTP 入口的轻量版：只读实例对写意图的请求直接 403。</p>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>MINI_AGENT_READONLY=true
+curl -X POST ... -d '{&quot;text&quot;:&quot;帮我退款 A1024&quot;,...}'
+# → 403 {&quot;status&quot;:&quot;readonly&quot;,&quot;error&quot;:&quot;当前实例为只读模式，拒绝写操作&quot;}
+</code></pre></div>
+<p>注意这个开关是<strong>粗粒度</strong>的（按关键词识别写意图），文档里如实说明了这一点。更正确的做法是上一章的能力令牌：只读部署<strong>不给</strong> <code>order.refund</code> 这个 action 签发令牌，于是写操作在授权层就不可达。粗粒度开关只是最后一道兜底。</p>
+<h2 id="lab-4健康检查要查能服务不是进程活着">Lab 4：健康检查要查“能服务”，不是“进程活着”</h2>
+<div class="code-block"><div class="code-lang">dockerfile</div><pre><code>HEALTHCHECK CMD python3 -c &quot;import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status==200 else 1)&quot;
+</code></pre></div>
+<p><code>/health</code> 返回的是<strong>安全配置摘要</strong>，不是完整配置：</p>
+<div class="code-block"><div class="code-lang">json</div><pre><code>{&quot;ok&quot;: true, &quot;service&quot;: &quot;mini-agent-v3&quot;,
+ &quot;config&quot;: {&quot;env&quot;: &quot;dev&quot;, &quot;model&quot;: &quot;gpt-4.1-mini&quot;, &quot;live_model&quot;: false,
+            &quot;readonly&quot;: false, &quot;guard&quot;: true, &quot;tenants&quot;: [&quot;acme&quot;,&quot;globex&quot;]}}
+</code></pre></div>
+<p>关键点是 <code>live_model: false</code> —— 你能一眼看出这个实例<strong>没有接真实模型</strong>。把“进程活着”和“能正确服务”分开，是上线判断的基础：</p>
+<ul>
+<li><strong>liveness</strong>：进程还在，别重启我（本项目的 <code>/health</code> 偏 liveness）；</li>
+<li><strong>readiness</strong>：依赖都就绪，可以把流量打给我（生产应单独一个 <code>/ready</code>，检查模型可达性、存储可写）。</li>
+</ul>
+<p>本项目只有一个 <code>/health</code>，这是<strong>已知的生产化差距</strong>，在文档里标出来比假装完整更有用。</p>
+<h2 id="lab-5镜像里该有什么">Lab 5：镜像里该有什么</h2>
+<p><code>Dockerfile</code> 的关键选择：</p>
+<div class="code-block"><div class="code-lang">dockerfile</div><pre><code>FROM python:3.11-slim
+# 只复制运行需要的代码：docs/、offline/、node_modules/ 都不进镜像
+COPY examples/mini_agent ./examples/mini_agent
+RUN useradd --create-home --uid 10001 appuser &amp;&amp; chown -R appuser /app /data
+USER appuser
+</code></pre></div>
+<ul>
+<li><strong>非 root</strong>：容器内逃逸的第一步通常是拿到 root；<code>USER appuser</code> 让这一步失效。</li>
+<li><strong><code>/data</code> 是唯一可写目录</strong>：账本与审计落在卷里，重启不丢。</li>
+<li><strong><code>.dockerignore</code> 排除 <code>docs/</code> 与 <code>.data/</code></strong>：前者让镜像从几百 MB 变成几十 MB，后者避免把本地测试数据打进镜像（那是<strong>数据泄露</strong>）。</li>
+<li><strong>健康检查走真实端点</strong>，不是 <code>ps aux | grep python</code>。</li>
+</ul>
+<div class="custom-block tip"><p class="custom-block-title">本地怎么验证</p>
+<p>镜像构建需要 Docker daemon 能写自己的缓存目录。如果你的环境受限（比如沙箱里只允许写工作区），可以直接跑：</p>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v3.app   # 与容器内是同一条命令
+</code></pre></div>
+<p>CI 里有独立的 <code>image</code> 作业负责 <code>docker build</code> + 启动容器 + 探测端点——也就是说，<strong>镜像能否构建由 CI 证明，而不是由本地口头保证</strong>。</p>
+</div>
+<h2 id="lab-6ci-分成三件不同的事">Lab 6：CI 分成三件不同的事</h2>
+<p>一个常见错误是把所有检查塞进一个工作流。这个项目分成三条：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>工作流</th>
+<th>触发</th>
+<th>回答的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deploy-docs.yml</code></td>
+<td>push main</td>
+<td>文档站能不能构建、能不能部署</td>
+</tr>
+<tr>
+<td><code>ci.yml</code> / <code>test</code></td>
+<td>PR + push</td>
+<td>代码在不同 Python 版本上是否还正确</td>
+</tr>
+<tr>
+<td><code>ci.yml</code> / <code>smoke</code></td>
+<td>PR + push</td>
+<td>真实起服务后端点行为对不对</td>
+</tr>
+<tr>
+<td><code>ci.yml</code> / <code>image</code></td>
+<td>PR + push</td>
+<td>镜像能不能构建、容器能不能健康</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>smoke</code> 作业直接测行为，而不是只看进程：</p>
+<div class="code-block"><div class="code-lang">bash</div><pre><code># agent 主体必须被拒绝
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST .../v1/answer \
+  -d '{&quot;text&quot;:&quot;...&quot;,&quot;user_id&quot;:&quot;agent:support&quot;}')
+test &quot;$code&quot; = &quot;403&quot;
+</code></pre></div>
+<p>这正是单元测试测不到的那一类问题：配置、app、server 之间的<strong>接线错误</strong>。</p>
+<p><code>test</code> 作业的矩阵从 <strong>Python 3.8</strong> 开始，因为 README 声称 3.8+——声明必须由 CI 证明，否则就是一句愿望。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Docker, <strong>Dockerfile reference：HEALTHCHECK / USER</strong>——健康检查与非 root 运行的正确写法。<a href="https://docs.docker.com/reference/dockerfile/" target="_blank" rel="noopener">链接</a></li>
+<li>The Twelve-Factor App, <strong>III. Config</strong>——配置属于环境，不属于代码；本项目 <code>Settings</code> 的实现依据。<a href="https://12factor.net/config" target="_blank" rel="noopener">链接</a></li>
+<li>Kubernetes, <strong>Configure Liveness, Readiness and Startup Probes</strong>——三种探针的区别。<a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/" target="_blank" rel="noopener">链接</a></li>
+<li>OWASP, <strong>Docker Security Cheat Sheet</strong>——容器安全的最小要求。<a href="https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E9%83%A8%E7%BD%B2%E5%BD%A2%E6%80%81">推荐来源</a>。</p>
+<h2 id="已知的生产化差距">已知的生产化差距</h2>
+<p>诚实列出，而不是假装完整：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>差距</th>
+<th>现状</th>
+<th>生产做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP 服务器</td>
+<td><code>http.server</code>，单进程、无 TLS</td>
+<td>gunicorn/uvicorn + Ingress TLS 终止</td>
+</tr>
+<tr>
+<td>并发</td>
+<td>线程池，无背压</td>
+<td>连接池、限流、队列</td>
+</tr>
+<tr>
+<td>存储</td>
+<td>JSON 文件 + 追加日志</td>
+<td>数据库 + 对象存储</td>
+</tr>
+<tr>
+<td>就绪探针</td>
+<td>只有 <code>/health</code></td>
+<td>分离 <code>/ready</code>，检查模型与存储</td>
+</tr>
+<tr>
+<td>密钥管理</td>
+<td>环境变量</td>
+<td>密钥管理服务 + 轮换</td>
+</tr>
+<tr>
+<td>多副本</td>
+<td>单实例</td>
+<td>共享状态、幂等键跨实例</td>
+</tr>
+<tr>
+<td>可观测</td>
+<td>进程内计数器</td>
+<td>OpenTelemetry 导出</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能解释为什么配置错误要用非零退出码，而不是打日志后继续跑。</li>
+<li>[ ] 能说出「允许但没有额度的租户」会导致什么账务问题。</li>
+<li>[ ] 能说出只读开关的两种实现，以及为什么“在提示词里写”不算实现。</li>
+<li>[ ] 能区分 liveness 与 readiness，并指出本项目缺哪一个。</li>
+<li>[ ] 能说出镜像里不放 <code>docs/</code> 的两个理由。</li>
+<li>[ ] 能解释为什么 <code>smoke</code> 作业比单元测试更容易发现接线错误。</li>
+</ul>
+<p>下一步：<a href="../advanced/frameworks.html">框架对照</a>——知道这些组件在主流框架里分别对应什么，以及什么时候该用它们。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent-v3.html"><span>上一篇</span><strong>v3：工具网关、计费与持久化</strong></a><a class="next" href="cases.html"><span>下一篇</span><strong>真实案例拆解</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

@@ -241,6 +241,10 @@ def run_sandboxed(cmd: list[str], workspace: Path, timeout_s: int = 30,
 
 ## 十、审批：把不可逆动作交给人
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`capability_token.json`](../../examples/templates/capability_token.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 不是所有动作都适合同一个权限级别：
 
 | 级别 | 例子 | 策略 |
@@ -273,10 +277,36 @@ def run_sandboxed(cmd: list[str], workspace: Path, timeout_s: int = 30,
 | 同样任务结果不同 | 环境/依赖/数据漂移 | 镜像 digest + 快照 |
 | 点错按钮 | 坐标/等待/分辨率 | 选择器优先、固定环境、断言 |
 
+## 来源
+
+- gVisor, **Architecture Guide**——用户态内核的隔离边界与代价。[链接](https://gvisor.dev/docs/architecture_guide/)
+- Firecracker, **Design**——微虚拟机的启动开销与隔离强度，本章“隔离级别成本曲线”的依据。[链接](https://firecracker-microvm.github.io/)
+- OCI, **Runtime Specification：`config.json`**——`seccomp`、`rootfs`、`namespaces` 等配置项的实际字段。[链接](https://github.com/opencontainers/runtime-spec/blob/main/config.md)
+- NIST, **SP 800-190 Container Security Guide**——容器安全的检查清单。[链接](https://csrc.nist.gov/pubs/sp/800/190/final)
+
+完整清单见[推荐来源](/appendix/sources#运行时与沙箱)。
+
 ## 练习
 
 1. 列出你的 Agent 能访问的文件、网络、密钥，逐项标注“是否必要”。
 2. 为代码执行设计一个 30 秒超时 + 512MB 内存 + 无网络的沙箱配置。
 3. 设计一个高风险动作的审批卡：需要展示哪些信息，才能让人做出判断？
+
+::: details 参考答案与自检
+**1. 列出能访问的文件、网络、密钥**
+要点：逐项标“必要 / 可收窄 / 可移除”，并对“可移除”给出替代（如把密钥换成网关代签的短期 token）。
+参考：本章第六节“密钥：不要放进沙箱”。
+自检：如果结论是“都需要”，那说明你没有做最小权限，只是记录了一遍现状。
+
+**2. 30 秒超时 + 512MB + 无网络的沙箱配置**
+要点：要写到**具体机制**——`timeout` 与进程组 kill（只杀了 shell 会留下子进程）、`memory` 上限 + OOM 处理、`network_mode: none` 或出口白名单、只读根文件系统、非 root 用户、seccomp 白名单。
+参考实现见本章第九节的子进程执行器，以及 `examples/mini_agent/tools.py` 的 `Workspace` 路径约束。
+自检：如果只写了“用 docker 加三个参数”，缺了进程组清理与 OOM，不通过——这两项是线上最常见的事故源。
+
+**3. 审批卡需要哪些信息**
+要点：做什么（动作 + 参数）、为什么（依据哪条证据/规则）、影响范围（哪个资源、可逆性）、回滚方案、风险等级。默认选项必须是“拒绝”。
+参考：[交互与信任设计](/practice/ux)的“审批界面：一屏做决定”。
+自检：如果审批卡只显示“是否允许执行 rm -rf”，用户只能靠猜——这是最典型的失败设计。
+:::
 
 下一步：[测试与验证](/layers/testing)。

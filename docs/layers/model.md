@@ -234,6 +234,10 @@ def should_retry(exc) -> bool:
 
 ## 七、模型层的度量
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`usage_event.json`](../../examples/templates/usage_event.json)、[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 不要只记录“调用成功”。至少记录：
 
 ```json
@@ -304,10 +308,34 @@ class ModelClient:
 | 模型不遵守格式 | 是否只靠提示词 | 用 schema/结构化输出 + 服务端校验 |
 | 简单任务也用大模型 | 有没有路由 | 加分类器/规则路由，按难度分流 |
 
+## 来源
+
+- OpenAI, **Chat Completions API 参考**——`temperature`、`top_p`、`max_tokens` 的官方语义（注意 `max_tokens` 不等于回答长度）。[链接](https://platform.openai.com/docs/api-reference/chat)
+- Anthropic, **Prompt Caching 文档**——缓存命中条件与计价口径，决定“缓存友好”怎么排布。[链接](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+- Wang et al., **Self-Consistency Improves Chain of Thought Reasoning**（2022）——采样多次再投票的收益与代价。[链接](https://arxiv.org/abs/2203.11171)
+- Pydantic, **Models 与校验**——服务端 schema 校验的工程做法。[链接](https://docs.pydantic.dev/latest/concepts/models/)
+
+完整清单见[推荐来源](/appendix/sources#模型层)。
+
 ## 练习
 
 1. 用你的任务集比较两个模型：固定 20 条样本，记录成功率、P95 延迟、单任务成本，画一张二维图。
 2. 给你的模型调用加“schema 校验 + 一次修复重试 + 降级”，统计修复率。
 3. 估算：如果每步 input 从 4K 降到 1.5K，一个 20 步任务能省多少 token？哪些信息可以安全丢弃？
+
+::: details 参考答案与自检
+**1. 两个模型的二维比较（成功率 × P95 延迟 × 成本）**
+要点：固定 20 条样本，输出一张表 + 一张散点图，并给出**结论句式**：“在成功率不低于 X 的前提下，模型 A 便宜 Y%”。样本只有 20 条时，不要把 1–2 条的差异当结论。
+参考：本章“七、模型层的度量”给了指标定义；自检：如果你的报告只有“平均延迟”，缺 P95，不通过。
+
+**2. schema 校验 + 一次修复重试 + 降级**
+要点：修复重试要**把报错原文回给模型**（这是修复率的关键），且只重试一次；仍失败才降级到更稳的模型或返回“需要人工”。
+参考实现见 `examples/mini_agent/tools.py` 的 `validate_args()` 与本章第八节的客户端骨架。
+自检：统计口径要写清楚——“修复率 = 第二次尝试通过 / 首次失败数”，只报“最终成功率”会掩盖第一次失败。
+
+**3. 每步 input 从 4K 降到 1.5K 的节省**
+要点：单任务节省 = 步数 × 单步缩减量 = 20 × 2.5K = 50K 输入 token（若每步都带全量历史则更多，因为后面的步还要重复前置内容）。可安全丢弃的是：重复的工具定义、已归档的旧观察、原始大文件（换成引用 + 摘要）。
+自检：答出“不可丢的是：用户约束、失败过的尝试、当前计划”才算完整——见[上下文层](/layers/context)的预算分配。
+:::
 
 下一步：[模型适配与微调](/layers/model-adaptation)。

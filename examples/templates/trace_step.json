@@ -1,0 +1,47 @@
+{
+  "$comment": "一次决策步的 trace 记录。对应《评测与可观测性》第五节「Trace 是 Agent 的黑匣子」与《平台化》的评测闭环。",
+  "trace_id": "trc_01HXY...",
+  "task_id": "tsk_01HXY...",
+  "step": 3,
+  "tenant_id": "acme",
+  "agent_id": "support-agent",
+  "started_at": "2026-10-24T10:12:03.114+08:00",
+  "latency_ms": 812,
+  "kind": "tool_call",
+  "model": {
+    "name": "gpt-4.1-mini",
+    "version": "2025-04-14",
+    "temperature": 0.2,
+    "stop_reason": "tool_calls"
+  },
+  "decision": {
+    "thought": "需要先确认订单当前状态",
+    "tool_name": "order.lookup",
+    "arguments": { "order_id": "A1024" },
+    "valid": true
+  },
+  "tool_result": {
+    "ok": false,
+    "error_type": "timeout",
+    "retryable": true,
+    "hint": "订单服务超时，可重试一次或改用 order.cache_lookup",
+    "duration_ms": 30000
+  },
+  "usage": {
+    "input_tokens": 4210,
+    "cached_tokens": 3200,
+    "output_tokens": 180,
+    "cost_usd": 0.0021
+  },
+  "context": {
+    "input_tokens_estimate": 4210,
+    "sections_trimmed": ["tool_descriptions"],
+    "sources": ["kb://policy/refund-v3", "db://order/A1024"],
+    "tainted": false
+  },
+  "fields_note": {
+    "必填": ["trace_id", "step", "kind", "started_at", "latency_ms", "usage"],
+    "为什么": "trace_id 贯穿父子 Agent；step 决定能否还原顺序；tainted 标记不可信上下文，安全策略要用它",
+    "可删除": ["decision.thought — 如果它会被当作审计证据，请删除；思维过程不是证据"]
+  }
+}

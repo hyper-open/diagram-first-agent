@@ -252,10 +252,35 @@ def run(agent, goal: str, max_steps: int = 12) -> str:
 
 注意这段代码里，**模型没有直接操作状态、没有直接执行工具、也没有权力绕过验证**。这是刻意设计的。
 
+## 来源
+
+- Yao et al., **ReAct**（2022）——循环的原始形态与文本协议。[链接](https://arxiv.org/abs/2210.03629)
+- Yao et al., **Tree of Thoughts**（2023）——把循环扩展成搜索时的对照物，说明“循环 + 选择”的代价。[链接](https://arxiv.org/abs/2305.10601)
+- Zhou et al., **WebArena**（2023）——长循环在真实环境中的失败分布。[链接](https://arxiv.org/abs/2307.13854)
+- Anthropic, **Building Effective Agents**——循环与固定工作流的取舍边界。[链接](https://www.anthropic.com/research/building-effective-agents)
+
+完整清单见[推荐来源](/appendix/sources#核心循环)。
+
 ## 练习
 
 1. 给你的循环加上“连续两轮无进展就停止”的逻辑。什么算“有进展”？
 2. 设计一个工具错误格式，要求同时包含：错误类型、可读信息、是否可重试、建议的下一步。
 3. 思考：如果模型每轮都要求调用同一个工具，但参数略有不同，这算有进展吗？如何检测？
+
+::: details 参考答案与自检
+**1. 加“连续两轮无进展就停止”，什么算“有进展”**
+要点：进展不是“调用了工具”，而是**状态发生了可观测的变化**——新观察到的事实、新增或更新的产物、被消除的待办项。可以给状态算一个指纹（如 `hash(artifacts) + len(open_questions)`），指纹不变就是无进展。
+参考实现见 `examples/mini_agent/agent.py` 的 `_check_stall()`：它用“相同工具 + 相同参数”的重复度做代理，属于简化版。
+自检：如果你的“有进展”定义为“模型没有报错”，那模型换着花样失败时你永远不会停。
+
+**2. 工具错误格式**
+要点：`type / message / retryable / hint / field`。`hint` 是给模型看的修正建议，`retryable` 决定循环要不要重试，`field` 让模型定位到具体参数。
+可直接对照 `examples/mini_agent/tools.py` 的 `ToolResult` 与本章第七节的 JSON 示例。
+自检：缺少 `retryable` 时，模型只能靠猜要不要重试——这是“原地打转”的头号成因。
+
+**3. 每轮都调同一工具、参数略有不同，算进展吗**
+要点：**不算**，但现有的精确匹配检测会漏掉它。两级处理：先把参数规范化（去空格、统一数字与路径写法、排序 key）再比较；仍不同但“语义等价”的（如 `"a.py"` 与 `"./a.py"`）应视为重复。
+自检：能说出“精确匹配是低误杀的启发式，规范化是提高召回的手段，两者叠加才实用”即达标。
+:::
 
 下一步：[分层架构](/foundations/architecture)。

@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -349,10 +354,13 @@
 <p>每一个平台组件都应该对应一个真实、反复出现的问题。不要为了“平台感”提前建 L3。</p>
 </blockquote>
 <h2 id="最小可用平台清单">最小可用平台清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/preflight_checklist.json"><code>preflight_checklist.json</code></a>、<a href="../../examples/templates/usage_event.json"><code>usage_event.json</code></a>、<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 统一身份与租户，所有调用可归因</li>
-<li>[ ] Model Gateway：路由、回退、配额、用量记录</li>
-<li>[ ] Tool Gateway：注册、鉴权、限流、审计</li>
+<li>[ ] 模型网关：路由、回退、配额、用量记录</li>
+<li>[ ] 工具网关：注册、鉴权、限流、审计</li>
 <li>[ ] 沙箱：代码/浏览器隔离，无宿主凭证</li>
 <li>[ ] 策略引擎：高风险审批，默认拒绝</li>
 <li>[ ] Trace：每步模型/工具/成本可查</li>
@@ -368,6 +376,25 @@
   D --&gt; E[&quot;RAG&quot;] --&gt; F[&quot;意图路由&quot;] --&gt; G[&quot;多 Agent&quot;] --&gt; H[&quot;平台化&quot;]
 </div>
 <p class="diagram-caption"><strong>图 5</strong> · 每一级都在把“不可控”变成“可控”，代价是更多组件与运维</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OpenTelemetry, <strong>GenAI 语义约定</strong>——trace 与 usage 字段的标准来源，决定你能否回答“失败在哪一层”。<a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">链接</a></li>
+<li>AWS, <strong>Well-Architected：Cost Optimization Pillar</strong>——成本归因、配额与分摊的做法。<a href="https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html" target="_blank" rel="noopener">链接</a></li>
+<li>NIST, <strong>AI Risk Management Framework 1.0</strong>——平台控制面要管的风险维度。<a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>Moderation 文档</strong>——内容安全为何可以前置到每次调用。<a href="https://platform.openai.com/docs/guides/moderation" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#08-%E5%B9%B3%E5%8F%B0%E5%8C%96%E4%B8%8E%E6%B2%BB%E7%90%86">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 一次模型调用要记录哪些字段才能算清成本</strong>
+要点：<code>tenant / agent / model / input_tokens / cached_tokens / output_tokens / 工具调用次数 / 沙箱秒数 / idempotency_key</code>。缺 <code>cached_tokens</code> 会把成本算高，缺 <code>idempotency_key</code> 会把重试重复计费（本章“五个坑”里的前两个）。
+参考结构见本章“计费”一节的 usage event JSON。</p>
+<p><strong>2. 重试、缓存、异步任务如何避免重复计费</strong>
+要点：账本不可变，用冲正记录；每一笔计量都带幂等键，由<strong>网关</strong>而不是调用方生成。
+自检：如果“退款/调账”是直接改原记录，说明账本可被篡改，对账一定对不上。</p>
+<p><strong>3. 最小可用平台清单：只保留当前真正需要的组件</strong>
+要点：按本章第五节的三级成熟度表打分——你是 L1 原型，就不要建 L3 的控制面。判断标准是“这个问题是否已经反复发生”，而不是“别人有没有”。
+自检：清单里如果有组件说不出它对应哪个已发生的问题，就删掉它。</p>
+</details>
 <p>下一步：回到<a href="overview.html">架构总览</a>复盘整张图，或进入<a href="../advanced/optimization.html">优化手册</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="multi-agent.html"><span>上一篇</span><strong>07 多 Agent 协作</strong></a><a class="next" href="../foundations/loop.html"><span>下一篇</span><strong>核心循环</strong></a></nav>

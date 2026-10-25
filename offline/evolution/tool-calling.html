@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -148,6 +153,9 @@
 </div>
 <p class="diagram-caption"><strong>图 2</strong> · 工具描述不是文档，而是给模型、宿主、审计三方共同消费的接口</p>
 <h2 id="错误也是接口">错误也是接口</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/tool_spec.json"><code>tool_spec.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <div class="code-block"><div class="code-lang">json</div><pre><code>{
   &quot;ok&quot;: false,
   &quot;error&quot;: {
@@ -280,6 +288,26 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OpenAI, <strong>Function Calling 指南</strong>——<code>tool_calls</code> 数组、<code>tool_call_id</code> 与并行调用的官方定义。<a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Tool use 指南</strong>——<code>tool_use</code> / <code>tool_result</code> 块结构，以及工具错误如何回传。<a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview" target="_blank" rel="noopener">链接</a></li>
+<li>JSON Schema, <strong>Specification</strong>——参数声明的语义来源，校验器应当按它而不是按自己的直觉实现。<a href="https://json-schema.org/specification" target="_blank" rel="noopener">链接</a></li>
+<li>Patil et al., <strong>Gorilla</strong>（2023）——函数调用中的参数幻觉与选错工具的实测。<a href="https://arxiv.org/abs/2305.15334" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#02-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E4%B8%8E%E6%B3%A8%E5%86%8C">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 重写工具描述，让模型在 10 个用例上选对</strong>
+要点：描述里要写<strong>何时用</strong>和<strong>何时不用</strong>（后者最常被省略）；参数用 enum 收窄，用 description 给示例值；一次只做一件事。
+自检：用例里至少要有 2 条“看起来像但不该调用”的负样本。10 条全是正样本，测不出描述问题。</p>
+<p><strong>2. 写操作的幂等键与 dry-run</strong>
+要点：幂等键由<strong>宿主</strong>生成（<code>request_id + tool + 序号</code>），不能由模型提供；dry-run 返回“将变成什么样”的差异，而不是只返回成功。
+自检：如果模型能自己编一个幂等键，说明幂等保护可以被绕过——参见<a href="../layers/tools.html">工具层</a>第六节。</p>
+<p><strong>3. 工具返回内容里藏指令</strong>
+要点：把工具返回值标记为数据（如 <code>&lt;tool_result trusted=&quot;false&quot;&gt;</code>），并在出口处禁止“带不可信上下文的请求调用外发工具”。
+参考实现见 <code>examples/mini_agent/agent.py</code> 的工具结果处理与 <code>guard.py</code> 的阶段策略；完整思路见<a href="../layers/security.html">安全与权限</a>的“致命三要素”。
+自检：不执行这条指令只是及格；能说出<strong>在哪一层拦</strong>（策略引擎而不是提示词）才算通过。</p>
+</details>
 <p>下一步：<a href="model-gateway.html">阶段 3：模型网关与路由</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="react.html"><span>上一篇</span><strong>01 ReAct，最小可用 Agent</strong></a><a class="next" href="model-gateway.html"><span>下一篇</span><strong>03 模型网关与路由</strong></a></nav>

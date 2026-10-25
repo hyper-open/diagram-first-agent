@@ -39,6 +39,10 @@ flowchart LR
 
 ## 二、记忆系统的五个组件
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ### 1. 写入：从“全存”到“精选”
 
 不要存原始对话。原始对话噪声大、重复多、检索效果差。写入前做抽取：
@@ -240,10 +244,33 @@ class MemoryStore:
 | 删了还能查到 | 是否只删了缓存 | 硬删除 + 索引重建 + 审计 |
 | 记忆拖慢响应 | 检索链路 | 缓存、异步、限制 top-k |
 
+## 来源
+
+- Park et al., **Generative Agents**（2023）——记忆流、检索打分（相关性/新近性/重要性）、反思与规划，本章打分公式的来源。[链接](https://arxiv.org/abs/2304.03442)
+- Packer et al., **MemGPT**（2023）——分层记忆与上下文管理。[链接](https://arxiv.org/abs/2310.08560)
+- Zheng et al., **MemBench**（2025）——记忆系统的系统化评测。[链接](https://arxiv.org/abs/2506.21605)
+
+完整清单见[推荐来源](/appendix/sources#记忆层)。
+
 ## 练习
 
 1. 设计一张 `MemoryItem` 表，包含来源、置信度、租户、过期时间、替代关系。
 2. 为你的 Agent 写“写入规则”：哪些信息自动写、哪些需确认、哪些禁止写。
 3. 构造一个记忆冲突场景（用户先说要 A，后说要 B），验证系统是否用新值且能解释。
+
+::: details 参考答案与自检
+**1. MemoryItem 表设计**
+要点：除正文里的字段（`content / source / confidence / tenant / created_at / expires_at / supersedes`）外，还要有**写入者**与**访问控制**——否则无法区分“用户说的”“模型推测的”“系统注入的”。
+参考实现见 `examples/mini_agent/memory.py` 的 `MemoryItem`。
+自检：缺少 `source` 时，记忆污染无法追责（本章第三节）。
+
+**2. 写入规则**
+要点：自动写 = 用户明确表达且稳定的偏好/事实；需确认 = 涉及身份、金额、权限；禁止写 = 密钥、他人信息、模型推测的结论。
+自检：规则要能落到判断条件上（如 `confidence < 0.8 或 source == "model_inferred" → 不写`），只写三条口号不算完成。
+
+**3. 记忆冲突：先说 A 后说 B**
+要点：正确行为是**新值生效 + 旧值标记 superseded（不物理删除）+ 能解释“你在 X 时间说过 A，后来改成了 B”**。
+自检：如果实现是“直接覆盖”，无法回答“为什么现在是 B”；如果实现是“两条都保留且都进上下文”，模型会自相矛盾。两种都不通过。
+:::
 
 下一步：[编排层](/layers/orchestration)。

@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -341,6 +346,9 @@ def run_sandboxed(cmd: list[str], workspace: Path, timeout_s: int = 30,
 <li>审计与告警。</li>
 </ul>
 <h2 id="十审批把不可逆动作交给人">十、审批：把不可逆动作交给人</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/capability_token.json"><code>capability_token.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>不是所有动作都适合同一个权限级别：</p>
 <div class="table-wrap"><table>
 <thead>
@@ -430,12 +438,34 @@ def run_sandboxed(cmd: list[str], workspace: Path, timeout_s: int = 30,
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>gVisor, <strong>Architecture Guide</strong>——用户态内核的隔离边界与代价。<a href="https://gvisor.dev/docs/architecture_guide/" target="_blank" rel="noopener">链接</a></li>
+<li>Firecracker, <strong>Design</strong>——微虚拟机的启动开销与隔离强度，本章“隔离级别成本曲线”的依据。<a href="https://firecracker-microvm.github.io/" target="_blank" rel="noopener">链接</a></li>
+<li>OCI, <strong>Runtime Specification：<code>config.json</code></strong>——<code>seccomp</code>、<code>rootfs</code>、<code>namespaces</code> 等配置项的实际字段。<a href="https://github.com/opencontainers/runtime-spec/blob/main/config.md" target="_blank" rel="noopener">链接</a></li>
+<li>NIST, <strong>SP 800-190 Container Security Guide</strong>——容器安全的检查清单。<a href="https://csrc.nist.gov/pubs/sp/800/190/final" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E8%BF%90%E8%A1%8C%E6%97%B6%E4%B8%8E%E6%B2%99%E7%AE%B1">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>列出你的 Agent 能访问的文件、网络、密钥，逐项标注“是否必要”。</li>
 <li>为代码执行设计一个 30 秒超时 + 512MB 内存 + 无网络的沙箱配置。</li>
 <li>设计一个高风险动作的审批卡：需要展示哪些信息，才能让人做出判断？</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 列出能访问的文件、网络、密钥</strong>
+要点：逐项标“必要 / 可收窄 / 可移除”，并对“可移除”给出替代（如把密钥换成网关代签的短期 token）。
+参考：本章第六节“密钥：不要放进沙箱”。
+自检：如果结论是“都需要”，那说明你没有做最小权限，只是记录了一遍现状。</p>
+<p><strong>2. 30 秒超时 + 512MB + 无网络的沙箱配置</strong>
+要点：要写到<strong>具体机制</strong>——<code>timeout</code> 与进程组 kill（只杀了 shell 会留下子进程）、<code>memory</code> 上限 + OOM 处理、<code>network_mode: none</code> 或出口白名单、只读根文件系统、非 root 用户、seccomp 白名单。
+参考实现见本章第九节的子进程执行器，以及 <code>examples/mini_agent/tools.py</code> 的 <code>Workspace</code> 路径约束。
+自检：如果只写了“用 docker 加三个参数”，缺了进程组清理与 OOM，不通过——这两项是线上最常见的事故源。</p>
+<p><strong>3. 审批卡需要哪些信息</strong>
+要点：做什么（动作 + 参数）、为什么（依据哪条证据/规则）、影响范围（哪个资源、可逆性）、回滚方案、风险等级。默认选项必须是“拒绝”。
+参考：<a href="../practice/ux.html">交互与信任设计</a>的“审批界面：一屏做决定”。
+自检：如果审批卡只显示“是否允许执行 rm -rf”，用户只能靠猜——这是最典型的失败设计。</p>
+</details>
 <p>下一步：<a href="testing.html">测试与验证</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="orchestration.html"><span>上一篇</span><strong>编排层</strong></a><a class="next" href="testing.html"><span>下一篇</span><strong>测试与验证</strong></a></nav>

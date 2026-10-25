@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="optimization.html">优化手册</a>
 <a class="nav-item active" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -323,6 +328,9 @@
 <p><strong>Q：一定要分布式队列吗？</strong>
 小规模可以用数据库表 + 轮询，关键是<strong>状态外部化 + 幂等</strong>，而不是中间件选型。</p>
 <h2 id="落地清单">落地清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 状态是否外部化，进程崩溃后可恢复？</li>
 <li>[ ] 每步都有检查点，且包含版本号？</li>
@@ -334,15 +342,34 @@
 <li>[ ] 审批是事件，不占用 Worker？</li>
 <li>[ ] 做过杀进程/断网/重复投递演练？</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Temporal, <strong>Workflows：确定性重放</strong>——事件日志 + 重放的工程范式。<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">链接</a></li>
+<li>Apache Kafka, <strong>Semantics：Exactly-Once 与幂等生产者</strong>——幂等键在 broker 侧的实现。<a href="https://kafka.apache.org/documentation/#semantics" target="_blank" rel="noopener">链接</a></li>
+<li>AWS, <strong>Exponential Backoff and Jitter</strong>——为什么重试必须带抖动。<a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/" target="_blank" rel="noopener">链接</a></li>
+<li>Garcia-Molina &amp; Salem, <strong>Sagas</strong>（1987）——补偿事务的原始论文。<a href="https://dl.acm.org/doi/10.1145/38713.38742" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E9%95%BF%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%8F%AF%E9%9D%A0%E6%89%A7%E8%A1%8C">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>把一次“退款 + 通知 + 归档”的任务拆成可重放的步骤，标出每步的幂等键。</li>
 <li>设计一个租约机制：Worker 崩溃后多久任务可被接管？怎么避免两个 Worker 同时执行？</li>
 <li>为一个不可逆动作写补偿方案，并说明补偿失败时怎么告警。</li>
 </ol>
-<p>下一步：<a href="frontier.html">前沿与趋势</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. “退款 + 通知 + 归档”的幂等键</strong>
+要点：每步的幂等键应当<strong>由同一业务实体推导</strong>（如 <code>refund:{order_id}</code>、<code>notify:{refund_id}</code>、<code>archive:{task_id}</code>），而不是随机生成；这样重放时能真正去重。
+自检：如果每步的键都是“时间戳 + 随机数”，重放时会重复执行——等于没有幂等。</p>
+<p><strong>2. 租约机制</strong>
+要点：租约 = 任务持有者 + 过期时间 + 续约心跳。接管条件：租约过期且心跳停止 N 个周期。避免双执行需要<strong>围栏令牌</strong>（fencing token）：每次接管递增版本号，旧 Worker 的写入被下游拒绝。
+自检：如果只说“超时后别人可以接”，没有围栏令牌，两个 Worker 仍可能同时写成功——这正是本章第六节强调的那一点。</p>
+<p><strong>3. 不可逆动作的补偿</strong>
+要点：补偿是“用新动作抵消旧动作”（退款而不是撤销扣款），且补偿本身也要幂等；补偿失败必须告警并进入人工队列，不能静默重试到死。
+自检：如果你的补偿方案里没有“补偿失败怎么办”这一支，说明只设计了顺利路径。</p>
+</details>
+<p>下一步：<a href="frontier.html">前沿与趋势</a>；想看这套机制在工业界的成熟版本，见<a href="frameworks.html">框架对照</a>里的 Temporal 一节。</p>
 </article>
-        <nav class="pager"><a class="prev" href="optimization.html"><span>上一篇</span><strong>优化手册</strong></a><a class="next" href="frontier.html"><span>下一篇</span><strong>前沿与趋势</strong></a></nav>
+        <nav class="pager"><a class="prev" href="optimization.html"><span>上一篇</span><strong>优化手册</strong></a><a class="next" href="frameworks.html"><span>下一篇</span><strong>框架对照与迁移</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
       </div>
     </main>

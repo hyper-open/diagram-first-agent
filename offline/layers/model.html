@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -379,6 +384,9 @@ def should_retry(exc) -&gt; bool:
 </table></div>
 <p>语义缓存要非常谨慎：<strong>“退款政策是什么”和“如何申请退款”向量很近，但答案不同。</strong> 如果要用，必须加业务键、时效和人工抽检。</p>
 <h2 id="七模型层的度量">七、模型层的度量</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/usage_event.json"><code>usage_event.json</code></a>、<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>不要只记录“调用成功”。至少记录：</p>
 <div class="code-block"><div class="code-lang">json</div><pre><code>{
   &quot;model&quot;: &quot;...&quot;,
@@ -474,12 +482,32 @@ def should_retry(exc) -&gt; bool:
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OpenAI, <strong>Chat Completions API 参考</strong>——<code>temperature</code>、<code>top_p</code>、<code>max_tokens</code> 的官方语义（注意 <code>max_tokens</code> 不等于回答长度）。<a href="https://platform.openai.com/docs/api-reference/chat" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Prompt Caching 文档</strong>——缓存命中条件与计价口径，决定“缓存友好”怎么排布。<a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener">链接</a></li>
+<li>Wang et al., <strong>Self-Consistency Improves Chain of Thought Reasoning</strong>（2022）——采样多次再投票的收益与代价。<a href="https://arxiv.org/abs/2203.11171" target="_blank" rel="noopener">链接</a></li>
+<li>Pydantic, <strong>Models 与校验</strong>——服务端 schema 校验的工程做法。<a href="https://docs.pydantic.dev/latest/concepts/models/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E6%A8%A1%E5%9E%8B%E5%B1%82">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>用你的任务集比较两个模型：固定 20 条样本，记录成功率、P95 延迟、单任务成本，画一张二维图。</li>
 <li>给你的模型调用加“schema 校验 + 一次修复重试 + 降级”，统计修复率。</li>
 <li>估算：如果每步 input 从 4K 降到 1.5K，一个 20 步任务能省多少 token？哪些信息可以安全丢弃？</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 两个模型的二维比较（成功率 × P95 延迟 × 成本）</strong>
+要点：固定 20 条样本，输出一张表 + 一张散点图，并给出<strong>结论句式</strong>：“在成功率不低于 X 的前提下，模型 A 便宜 Y%”。样本只有 20 条时，不要把 1–2 条的差异当结论。
+参考：本章“七、模型层的度量”给了指标定义；自检：如果你的报告只有“平均延迟”，缺 P95，不通过。</p>
+<p><strong>2. schema 校验 + 一次修复重试 + 降级</strong>
+要点：修复重试要<strong>把报错原文回给模型</strong>（这是修复率的关键），且只重试一次；仍失败才降级到更稳的模型或返回“需要人工”。
+参考实现见 <code>examples/mini_agent/tools.py</code> 的 <code>validate_args()</code> 与本章第八节的客户端骨架。
+自检：统计口径要写清楚——“修复率 = 第二次尝试通过 / 首次失败数”，只报“最终成功率”会掩盖第一次失败。</p>
+<p><strong>3. 每步 input 从 4K 降到 1.5K 的节省</strong>
+要点：单任务节省 = 步数 × 单步缩减量 = 20 × 2.5K = 50K 输入 token（若每步都带全量历史则更多，因为后面的步还要重复前置内容）。可安全丢弃的是：重复的工具定义、已归档的旧观察、原始大文件（换成引用 + 摘要）。
+自检：答出“不可丢的是：用户约束、失败过的尝试、当前计划”才算完整——见<a href="context.html">上下文层</a>的预算分配。</p>
+</details>
 <p>下一步：<a href="model-adaptation.html">模型适配与微调</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="../foundations/evolution.html"><span>上一篇</span><strong>技术演进史</strong></a><a class="next" href="model-adaptation.html"><span>下一篇</span><strong>模型适配</strong></a></nav>

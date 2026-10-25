@@ -89,6 +89,10 @@ flowchart TB
 
 ## 错误也是接口
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`tool_spec.json`](../../examples/templates/tool_spec.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ```json
 {
   "ok": false,
@@ -165,5 +169,29 @@ def execute(call, registry, policy, budget):
 | 凭证由宿主直接持有 | 需要按租户/用户授权与审计 |
 | 同步调用、分钟级 | 长任务、异步、审批 |
 | 粗粒度权限 | 需要限流、配额、协议适配 |
+
+## 来源
+
+- OpenAI, **Function Calling 指南**——`tool_calls` 数组、`tool_call_id` 与并行调用的官方定义。[链接](https://platform.openai.com/docs/guides/function-calling)
+- Anthropic, **Tool use 指南**——`tool_use` / `tool_result` 块结构，以及工具错误如何回传。[链接](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview)
+- JSON Schema, **Specification**——参数声明的语义来源，校验器应当按它而不是按自己的直觉实现。[链接](https://json-schema.org/specification)
+- Patil et al., **Gorilla**（2023）——函数调用中的参数幻觉与选错工具的实测。[链接](https://arxiv.org/abs/2305.15334)
+
+完整清单见[推荐来源](/appendix/sources#02-工具调用与注册)。
+
+::: details 参考答案与自检
+**1. 重写工具描述，让模型在 10 个用例上选对**
+要点：描述里要写**何时用**和**何时不用**（后者最常被省略）；参数用 enum 收窄，用 description 给示例值；一次只做一件事。
+自检：用例里至少要有 2 条“看起来像但不该调用”的负样本。10 条全是正样本，测不出描述问题。
+
+**2. 写操作的幂等键与 dry-run**
+要点：幂等键由**宿主**生成（`request_id + tool + 序号`），不能由模型提供；dry-run 返回“将变成什么样”的差异，而不是只返回成功。
+自检：如果模型能自己编一个幂等键，说明幂等保护可以被绕过——参见[工具层](/layers/tools)第六节。
+
+**3. 工具返回内容里藏指令**
+要点：把工具返回值标记为数据（如 `<tool_result trusted="false">`），并在出口处禁止“带不可信上下文的请求调用外发工具”。
+参考实现见 `examples/mini_agent/agent.py` 的工具结果处理与 `guard.py` 的阶段策略；完整思路见[安全与权限](/layers/security)的“致命三要素”。
+自检：不执行这条指令只是及格；能说出**在哪一层拦**（策略引擎而不是提示词）才算通过。
+:::
 
 下一步：[阶段 3：模型网关与路由](/evolution/model-gateway)。

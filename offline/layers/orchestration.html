@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -249,6 +254,9 @@ class State:
 <li>每个节点声明自己读/写哪些字段，便于并发控制。</li>
 </ul>
 <h2 id="四规划计划不是越长越好">四、规划：计划不是越长越好</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/agent_task_packet.json"><code>agent_task_packet.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <h3 id="常见规划方式">常见规划方式</h3>
 <div class="table-wrap"><table>
 <thead>
@@ -476,12 +484,32 @@ class State:
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Anthropic, <strong>Building Effective Agents</strong>——五种编排模式（链式、路由、并行、编排者—工人、生成—评审）的原始描述。<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">链接</a></li>
+<li>LangGraph, <strong>Concepts：State / Node / Edge / Checkpointing</strong>——图编排的对照实现。<a href="https://langchain-ai.github.io/langgraph/concepts/low_level/" target="_blank" rel="noopener">链接</a></li>
+<li>Temporal, <strong>Workflows：确定性重放</strong>——持久执行与检查点的工程范式。<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">链接</a></li>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——多 Agent 失败模式。<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E7%BC%96%E6%8E%92%E5%B1%82">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>把你熟悉的 Agent 画成状态机：节点、边、终止条件。</li>
 <li>设计一个“研究 + 写作 + 评审”的多 Agent 流程，写出每个子 Agent 的契约。</li>
 <li>思考：什么情况下“多 Agent”反而比“单 Agent + 工具”更差？给出三个具体例子。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 把熟悉的 Agent 画成状态机</strong>
+要点：节点是<strong>纯函数或受控副作用</strong>，边是<strong>条件</strong>，终止条件单独标注。如果某条边的条件是“模型决定”，要标明这一点——它正是“Agent 节点”和“工作流节点”的区别。
+自检：如果你画出来的图里没有任何条件边，说明它其实是线性链，不是状态机。</p>
+<p><strong>2. “研究 + 写作 + 评审”的子 Agent 契约</strong>
+要点：每个子 Agent 写清输入 schema、输出 schema（含 <code>evidence</code> 与 <code>confidence</code>）、可用工具、预算、成功标准、失败回报方式。
+参考：本章“子 Agent 契约”一节的 JSON 示例可直接改写。
+自检：如果成功标准是“写得好”，不通过——必须是可判定的（如“每条结论都有证据、字数区间、无未决问题”）。</p>
+<p><strong>3. 多 Agent 比“单 Agent + 工具”更差的三个具体例子</strong>
+要点：可从本章“不适合的场景”中取材——(a) 任务步骤强依赖、需要频繁共享细粒度状态；(b) 只有一个角色有实际权限，其余只是转发；(c) 子任务共享同一个盲区，评审变成自我确认。
+自检：三个例子都要能说出<strong>多出来的那一跳带来了什么成本</strong>（token、延迟还是错误传播），只列场景不给代价不算完成。</p>
+</details>
 <p>下一步：<a href="runtime.html">运行时与沙箱</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="memory.html"><span>上一篇</span><strong>记忆层</strong></a><a class="next" href="runtime.html"><span>下一篇</span><strong>运行时与沙箱</strong></a></nav>

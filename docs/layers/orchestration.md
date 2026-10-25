@@ -196,6 +196,10 @@ class State:
 
 ## 四、规划：计划不是越长越好
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`agent_task_packet.json`](../../examples/templates/agent_task_packet.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ### 常见规划方式
 
 | 方式 | 做法 | 适合 | 风险 |
@@ -357,10 +361,34 @@ def build_graph():
 | 长任务中断后重来 | 是否持久化状态 | 检查点 + 恢复 |
 | 延迟太高 | 是否串行/多轮 | 并行、路由、缓存、流式 |
 
+## 来源
+
+- Anthropic, **Building Effective Agents**——五种编排模式（链式、路由、并行、编排者—工人、生成—评审）的原始描述。[链接](https://www.anthropic.com/research/building-effective-agents)
+- LangGraph, **Concepts：State / Node / Edge / Checkpointing**——图编排的对照实现。[链接](https://langchain-ai.github.io/langgraph/concepts/low_level/)
+- Temporal, **Workflows：确定性重放**——持久执行与检查点的工程范式。[链接](https://docs.temporal.io/workflows)
+- Cemri et al., **Why Do Multi-Agent LLM Systems Fail?**（2025）——多 Agent 失败模式。[链接](https://arxiv.org/abs/2503.13657)
+
+完整清单见[推荐来源](/appendix/sources#编排层)。
+
 ## 练习
 
 1. 把你熟悉的 Agent 画成状态机：节点、边、终止条件。
 2. 设计一个“研究 + 写作 + 评审”的多 Agent 流程，写出每个子 Agent 的契约。
 3. 思考：什么情况下“多 Agent”反而比“单 Agent + 工具”更差？给出三个具体例子。
+
+::: details 参考答案与自检
+**1. 把熟悉的 Agent 画成状态机**
+要点：节点是**纯函数或受控副作用**，边是**条件**，终止条件单独标注。如果某条边的条件是“模型决定”，要标明这一点——它正是“Agent 节点”和“工作流节点”的区别。
+自检：如果你画出来的图里没有任何条件边，说明它其实是线性链，不是状态机。
+
+**2. “研究 + 写作 + 评审”的子 Agent 契约**
+要点：每个子 Agent 写清输入 schema、输出 schema（含 `evidence` 与 `confidence`）、可用工具、预算、成功标准、失败回报方式。
+参考：本章“子 Agent 契约”一节的 JSON 示例可直接改写。
+自检：如果成功标准是“写得好”，不通过——必须是可判定的（如“每条结论都有证据、字数区间、无未决问题”）。
+
+**3. 多 Agent 比“单 Agent + 工具”更差的三个具体例子**
+要点：可从本章“不适合的场景”中取材——(a) 任务步骤强依赖、需要频繁共享细粒度状态；(b) 只有一个角色有实际权限，其余只是转发；(c) 子任务共享同一个盲区，评审变成自我确认。
+自检：三个例子都要能说出**多出来的那一跳带来了什么成本**（token、延迟还是错误传播），只列场景不给代价不算完成。
+:::
 
 下一步：[运行时与沙箱](/layers/runtime)。

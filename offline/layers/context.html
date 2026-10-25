@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -128,6 +133,9 @@
 </table></div>
 <p>把它们混成一个 <code>messages</code> 列表，是长任务失控的常见起点。</p>
 <h2 id="二预算先分配再填充">二、预算：先分配，再填充</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>假设模型窗口 128K，不代表你应该用满。实际预算要考虑：</p>
 <ul>
 <li>输出预留（尤其推理模型的 thinking token）。</li>
@@ -483,12 +491,32 @@ messages.append({&quot;role&quot;: &quot;tool&quot;, &quot;content&quot;: huge_r
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Liu et al., <strong>Lost in the Middle: How Language Models Use Long Contexts</strong>（2023）——位置效应，支撑本章“中间的信息容易被忽略”。<a href="https://arxiv.org/abs/2307.03172" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Prompt Caching</strong>——为什么“稳定内容前置、易变内容后置”能省钱。<a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener">链接</a></li>
+<li>Packer et al., <strong>MemGPT</strong>（2023）——上下文作为“内存”、外部存储作为“磁盘”的分层管理。<a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener">链接</a></li>
+<li>Jiang et al., <strong>LLMLingua</strong>（2023）——提示压缩与“关键信息保留率”的评估方法。<a href="https://arxiv.org/abs/2310.05736" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B1%82">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>给你当前的 Agent 请求做一次“section 审计”：每段占多少 token，哪些可以删？</li>
 <li>设计一个“关键信息保留率”测试：列出 10 条必须保留的事实，压缩后逐条检查。</li>
 <li>把历史全量拼接改成“状态 + 最近观察 + 证据”，比较 token 与成功率。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 做一次 section 审计</strong>
+要点：按本节“上下文预算图”的九段，逐段量 token 并标注“必要性 / 可压缩 / 可外置”。常见结论是<strong>工具定义与旧观察</strong>占了最大头。
+参考实现见 <code>examples/mini_agent/agent.py</code> 的 <code>_build_messages()</code>，它把系统提示、记忆、历史视图、当前目标分段拼装。
+自检：如果审计只列了占比，没给“删掉之后怎么验证没变差”，审计没有闭环。</p>
+<p><strong>2. 关键信息保留率测试</strong>
+要点：先列出 10 条<strong>必须保留</strong>的事实（含一条容易被压缩掉的条件，如“不要改公共 API”），压缩后逐条做包含式或语义断言，记录 <code>保留率</code>。
+自检：10 条全是“用户想干什么”这类显眼信息，测试没有区分度——要包含约束、已失败尝试、时间/数量边界。</p>
+<p><strong>3. 改成“状态 + 最近观察 + 证据”</strong>
+要点：比较三个量——输入 token、成功率、<strong>失败模式是否变化</strong>（是否出现“忘记约束”）。历史全量往往 token 高但约束保真；结构化状态反之，需要用“约束单独成段”来补。
+自检：如果只比了 token，没比成功率与约束遵守率，结论不可信。</p>
+</details>
 <p>下一步：<a href="retrieval.html">检索层</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="multimodal.html"><span>上一篇</span><strong>多模态与实时交互</strong></a><a class="next" href="retrieval.html"><span>下一篇</span><strong>检索层</strong></a></nav>

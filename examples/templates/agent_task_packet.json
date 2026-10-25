@@ -1,0 +1,37 @@
+{
+  "$comment": "父 Agent → 子 Agent 的任务包。对应《多 Agent》「子 Agent 契约」与《编排层》。",
+  "task_id": "sub_001",
+  "parent_trace_id": "trc_01HXY...",
+  "task": "找出 parser 模块中导致 3 个测试失败的最小修改",
+  "constraints": ["不要改公共 API", "不要新增依赖", "只读访问 src/"],
+  "tools": ["read_file", "search_code", "run_tests"],
+  "success_criteria": {
+    "must": ["3 个失败测试通过", "原有测试不回归"],
+    "verify_by": "run_tests 的输出，而不是子 Agent 的自评"
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "summary": { "type": "string" },
+      "files_changed": { "type": "array", "items": { "type": "string" } },
+      "evidence": { "type": "array", "items": { "type": "string" } },
+      "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+      "open_questions": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["summary", "evidence", "confidence", "open_questions"]
+  },
+  "budget": {
+    "max_steps": 20,
+    "max_tokens": 60000,
+    "max_wall_clock_s": 600,
+    "max_depth": 1
+  },
+  "on_failure": {
+    "return": "partial_result + reason + attempted",
+    "escalate_to": "parent"
+  },
+  "fields_note": {
+    "必填": ["task", "success_criteria", "output_schema", "budget", "on_failure"],
+    "为什么": "缺少 on_failure 时，子 Agent 失败会表现为“沉默”，父 Agent 只能重试整件事"
+  }
+}

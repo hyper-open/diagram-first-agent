@@ -168,9 +168,13 @@ flowchart LR
 
 ## 最小可用平台清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`preflight_checklist.json`](../../examples/templates/preflight_checklist.json)、[`usage_event.json`](../../examples/templates/usage_event.json)、[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 统一身份与租户，所有调用可归因
-- [ ] Model Gateway：路由、回退、配额、用量记录
-- [ ] Tool Gateway：注册、鉴权、限流、审计
+- [ ] 模型网关：路由、回退、配额、用量记录
+- [ ] 工具网关：注册、鉴权、限流、审计
 - [ ] 沙箱：代码/浏览器隔离，无宿主凭证
 - [ ] 策略引擎：高风险审批，默认拒绝
 - [ ] Trace：每步模型/工具/成本可查
@@ -190,5 +194,28 @@ flowchart LR
 ```
 
 <p class="diagram-caption"><strong>图 5</strong> · 每一级都在把“不可控”变成“可控”，代价是更多组件与运维</p>
+
+## 来源
+
+- OpenTelemetry, **GenAI 语义约定**——trace 与 usage 字段的标准来源，决定你能否回答“失败在哪一层”。[链接](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
+- AWS, **Well-Architected：Cost Optimization Pillar**——成本归因、配额与分摊的做法。[链接](https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html)
+- NIST, **AI Risk Management Framework 1.0**——平台控制面要管的风险维度。[链接](https://www.nist.gov/itl/ai-risk-management-framework)
+- OpenAI, **Moderation 文档**——内容安全为何可以前置到每次调用。[链接](https://platform.openai.com/docs/guides/moderation)
+
+完整清单见[推荐来源](/appendix/sources#08-平台化与治理)。
+
+::: details 参考答案与自检
+**1. 一次模型调用要记录哪些字段才能算清成本**
+要点：`tenant / agent / model / input_tokens / cached_tokens / output_tokens / 工具调用次数 / 沙箱秒数 / idempotency_key`。缺 `cached_tokens` 会把成本算高，缺 `idempotency_key` 会把重试重复计费（本章“五个坑”里的前两个）。
+参考结构见本章“计费”一节的 usage event JSON。
+
+**2. 重试、缓存、异步任务如何避免重复计费**
+要点：账本不可变，用冲正记录；每一笔计量都带幂等键，由**网关**而不是调用方生成。
+自检：如果“退款/调账”是直接改原记录，说明账本可被篡改，对账一定对不上。
+
+**3. 最小可用平台清单：只保留当前真正需要的组件**
+要点：按本章第五节的三级成熟度表打分——你是 L1 原型，就不要建 L3 的控制面。判断标准是“这个问题是否已经反复发生”，而不是“别人有没有”。
+自检：清单里如果有组件说不出它对应哪个已发生的问题，就删掉它。
+:::
 
 下一步：回到[架构总览](/evolution/overview)复盘整张图，或进入[优化手册](/advanced/optimization)。

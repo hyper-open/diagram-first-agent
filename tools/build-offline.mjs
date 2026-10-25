@@ -48,6 +48,10 @@ function rewriteHref(href, fromFile) {
     );
   }
 
+  // 指向仓库内文件（如 ../../examples/templates/*.json）的链接不在站点目录里，
+  // 离线版保持原相对路径，这样从 offline/ 打开时仍能指到仓库中的真实文件。
+  if (target.startsWith('..')) return raw + hash;
+
   const ext = path.posix.extname(target).toLowerCase();
   if (ext && ext !== '.md' && ext !== '.html') {
     // public assets are copied to offline/assets

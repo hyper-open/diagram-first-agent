@@ -176,10 +176,35 @@ Agent 很酷，但以下场景通常用固定工作流更划算：
 
 后文讨论架构时，这套分类比“聊天机器人/智能体”更有解释力。
 
+## 来源
+
+本章关于 workflow / agent 分界、组件划分与适用性判断的表述，主要依据：
+
+- Anthropic, **Building Effective Agents**——workflow 与 agent 的分界、五种编排模式，以及“什么时候不该用 agent”的原始论证。[链接](https://www.anthropic.com/research/building-effective-agents)
+- OpenAI, **A Practical Guide to Building Agents**——Agent 的组成部分（模型、工具、指令）与适用性判断。[链接](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)
+- Schick et al., **Toolformer**（2023）——“模型自学何时调用工具”，支撑“工具 × 选择正确率”的说法。[链接](https://arxiv.org/abs/2302.04761)
+- Lilian Weng, **LLM Powered Autonomous Agents**——规划、记忆、工具的三分法，本章“五个组成部分”的来源之一。[链接](https://lilianweng.github.io/posts/2023-06-23-agent/)
+
+完整清单见[推荐来源](/appendix/sources#什么是-agent)。
+
 ## 练习
 
 1. 选一个你常用的“AI 功能”，判断它是 Workflow 还是 Agent，依据是控制流由谁决定。
 2. 为“修复失败测试”写出至少 5 个可能的动作，以及每个动作失败时 Agent 应该观察到什么。
 3. 找一个“看起来像 Agent，其实不该用 Agent”的场景，说明用工作流如何实现。
+
+::: details 参考答案与自检
+**1. Workflow 还是 Agent？**
+要点：只看一个问题——控制流由谁决定。回答里要能指出“下一步”是在代码里写死（分支判断、固定链路），还是由模型根据观察临时决定；混合体要分开说（外层固定、节点内自主）。
+自检：如果回答里出现“因为用了大模型”“因为能多轮对话”这类依据，说明还没抓住判据。
+
+**2. 修失败测试的 5 个动作**
+要点：动作要覆盖“观察”和“修改”两类，且每个动作都要写出**失败时模型能看到什么**。例如 `pytest -q` 失败 → 应返回失败用例名、断言差异、堆栈摘要；读文件失败 → 返回 `invalid_argument` 与路径提示，而不是 `500`；修改代码后回归失败 → 返回新失败用例与上一轮对比。
+自检：如果某个动作失败后模型只拿到“Error”，说明动作设计不合格——这属于[工具层](/layers/tools)的错误契约问题。
+
+**3. “像 Agent 但该用工作流”的场景**
+要点：答案要给出**可枚举的步骤**（所以不需要模型决定控制流），并说明用工作流后省掉了什么（更便宜、更稳、可测试、无需授权）。
+自检：说不出“步骤怎么枚举”，只说了“工作流更简单”，属于结论正确但论证缺失。
+:::
 
 下一步：[架构总览](/evolution/overview)；如果你想先看最小实现，也可以直接读[核心循环](/foundations/loop)。

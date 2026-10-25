@@ -322,6 +322,10 @@ P95 延迟、失败率、最差任务类型，才是用户体验的真相。
 
 ## 十一、优化检查清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)、[`usage_event.json`](../../examples/templates/usage_event.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 有固定评测集和基线（质量/成本/延迟/可靠性）。
 - [ ] 指标分桶，不只看平均值。
 - [ ] 知道最大的成本项和延迟项。
@@ -332,10 +336,35 @@ P95 延迟、失败率、最差任务类型，才是用户体验的真相。
 - [ ] 高风险动作有权限与审批。
 - [ ] 改动可回滚（模型/提示/工具独立版本）。
 
+## 来源
+
+- Sculley et al., **Hidden Technical Debt in Machine Learning Systems**（2015）——为什么“先测量、再优化”。[链接](https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems.pdf)
+- Google, **SRE Book：Monitoring Distributed Systems**——P95 与告警阈值的工程惯例。[链接](https://sre.google/sre-book/monitoring-distributed-systems/)
+- Zheng et al., **MT-Bench / LLM-as-a-Judge**（2023）——评审者的偏差与校准。[链接](https://arxiv.org/abs/2306.05685)
+- Yao et al., **Tree of Thoughts**（2023）——采样与投票的收益边界。[链接](https://arxiv.org/abs/2305.10601)
+
+完整清单见[推荐来源](/appendix/sources#优化手册)。
+
 ## 练习
 
 1. 给你的 Agent 建一份基线报告，包含 `cost_per_success` 和 `pass^3`。
 2. 选一个失败案例，按“症状 → 层 → 根因 → 改动 → 验证”写一份优化记录。
 3. 设计一个路由策略：什么条件下升级到大模型？如何衡量路由错分率？
 
-下一步：[前沿与趋势](/advanced/frontier)。
+::: details 参考答案与自检
+**1. 基线报告：`cost_per_success` 与 `pass^3`**
+要点：`cost_per_success = 总成本 / 成功任务数`——它比“每任务成本”更真实，因为失败任务也在烧钱。`pass^3` 用同一用例跑三次。
+参考实现：`examples/mini_agent/eval.py` 已输出 `pass@1`、`pass^3`、`avg_steps`、`avg_tokens`，可在此基础上加成本字段。
+自检：如果报告里只有“通过率”，没有“失败任务花了多少钱”，优化的方向会偏——降本最快的往往是减少失败重试。
+
+**2. “症状 → 层 → 根因 → 改动 → 验证”记录**
+要点：每一栏都要能指到一个具体证据（trace 的某一步、某次评测结果）。验证栏要有**对比数字**，并且只改一个变量。
+自检：如果“改动”一栏同时改了提示词和模型，验证结果无法归因——这是最常见的优化错误（本章第一节“单变量改动”）。
+
+**3. 路由策略与错分率**
+要点：升级条件通常是“首次结果未通过验证 + 任务被判定为复杂”；错分率要分两个方向测——该升级没升级（质量损失）、不该升级却升级（成本损失），两者代价不同，不能只报一个总数。
+参考：本章“质量优化”的级联实现，以及[模型层](/layers/model)的级联路由图。
+自检：如果只统计“路由准确率”，不区分两个方向，调阈值时就没有依据。
+:::
+
+下一步：[框架对照与迁移](/advanced/frameworks) 或 [前沿与趋势](/advanced/frontier)。

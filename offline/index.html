@@ -48,12 +48,17 @@
 <a class="nav-item" href="layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="appendix/glossary.html">术语表</a>
+<a class="nav-item" href="appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -146,6 +151,10 @@
 <p>这六层是<strong>组件视角</strong>。想知道某个功能该由谁负责、出问题先查哪一层，看<a href="foundations/architecture.html">分层架构</a>的<strong>七层职责模型</strong>——两套编号的对应关系在那一页末尾有换算表。</p>
 <h2 id="这本书怎么读">这本书怎么读</h2>
 <div class="arch-grid">
+  <div class="arch-card">
+    <h3>想把代码跑起来</h3>
+    <p><a href="practice/mini-agent.html">v1：一个循环</a> → <a href="practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a> → <a href="practice/mini-agent-v3.html">v3：网关、计费与持久化</a>，三级都可运行、可测试，并可[部署](/practice/deployment)。</p>
+  </div>
   <div class="arch-card">
     <h3>第一次接触 Agent</h3>
     <p>按「架构总览 → ReAct → 工具调用 → Mini Agent Lab 1–2」走，先跑通一个能调用工具的最小循环。</p>

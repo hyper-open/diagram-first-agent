@@ -1,0 +1,42 @@
+{
+  "$comment": "一次调用的计量事件。对应《平台化》第一节「计费：从 token 到账单」。账本不可变，冲正用单独记录。",
+  "event_id": "evt_123",
+  "request_id": "req_456",
+  "idempotency_key": "req_456:llm:1",
+  "tenant_id": "acme",
+  "user_id": "user_88",
+  "agent_id": "support-agent",
+  "task_id": "tsk_01HXY...",
+  "occurred_at": "2026-10-24T10:12:03.114+08:00",
+  "kind": "llm",
+  "provider": "openai",
+  "model": "gpt-4.1-mini",
+  "usage": {
+    "input_tokens": 4210,
+    "cached_tokens": 3200,
+    "output_tokens": 180,
+    "reasoning_tokens": 0
+  },
+  "raw_usage": {
+    "$comment": "保留供应商返回的原始 usage，用于对账；不要把归一化后的值当唯一事实来源",
+    "prompt_tokens": 4210,
+    "prompt_tokens_details": { "cached_tokens": 3200 },
+    "completion_tokens": 180
+  },
+  "price": {
+    "price_table_version": "2026-10",
+    "input_per_1m": 0.4,
+    "cached_input_per_1m": 0.1,
+    "output_per_1m": 1.6,
+    "cost_usd": 0.00127
+  },
+  "tool_calls": [{ "name": "order.lookup", "count": 1 }],
+  "sandbox_seconds": 0,
+  "retry_of": null,
+  "reversal_of": null,
+  "fields_note": {
+    "必填": ["event_id", "idempotency_key", "tenant_id", "usage", "price"],
+    "为什么": "idempotency_key 防重试重复计费；cached_tokens 单独计价；raw_usage 用于和供应商账单对账",
+    "反模式": "把重试和首次调用记成两条独立费用，且没有 retry_of 关联"
+  }
+}

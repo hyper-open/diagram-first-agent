@@ -158,6 +158,10 @@ def test_budget_returns_partial(self):
 
 ## 落地清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] LLM 是可注入依赖，测试里可以替换成假模型？
 - [ ] 工具的参数校验、路径越界、错误契约都有测试？
 - [ ] 预算与终止的每条路径都有测试？
@@ -166,10 +170,34 @@ def test_budget_returns_partial(self):
 - [ ] CI 分层，单测足够快？
 - [ ] 评测集与单测职责分清？
 
+## 来源
+
+- Google, **Flaky Tests at Google and How We Mitigate Them**——flaky 要修不要重跑。[链接](https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html)
+- Hypothesis, **Property-Based Testing 文档**——用性质替代枚举样例。[链接](https://hypothesis.readthedocs.io/en/latest/)
+- Pact, **Consumer-Driven Contract Testing**——契约测试的工程实践。[链接](https://docs.pact.io/)
+- pytest, **Parametrize 与 Fixture**——本书 Mini Agent 测试所用机制。[链接](https://docs.pytest.org/en/stable/)
+
+完整清单见[推荐来源](/appendix/sources#测试与验证)。
+
 ## 练习
 
 1. 给你的 Agent 写一个“模型返回不存在工具”的测试，断言错误信息里包含可用工具列表。
 2. 设计一个回放用例，断言“只读任务绝不调用写工具”。
 3. 统计最近 20 个线上问题，看有多少本可以被单测拦住。
+
+::: details 参考答案与自检
+**1. “模型返回不存在工具”的测试**
+要点：断言错误里包含**可用工具列表**，且错误类型是 `unknown_tool`（而不是 `invalid_argument`），并带有可重试标记。
+参考实现见 `examples/mini_agent/tools.py` 的 `ToolRegistry.execute()`：未知工具会返回结构化的 `ToolResult`。
+自检：如果测试只断言“抛异常了”，模型就无法自我修正——见[工具层](/layers/tools)的“错误也是接口”。
+
+**2. 回放用例：只读任务绝不调用写工具**
+要点：断言形式是 `forbid_tools: ["write_file", "shell"]` + `max_steps`，而不是比对最终文本（本章第五节的 JSON 就是模板）。
+自检：断言里只写“期望调用 read_file”，没写禁止项，测试仍然能通过一个偷偷写文件的版本。
+
+**3. 最近 20 个线上问题能否被单测拦住**
+要点：分类统计成三类——可被单测拦住（确定性逻辑）、只能被回放/契约拦住（跨边界假设）、只能靠评测发现（质量分布）。比例本身就是团队测试成熟度的指标。
+自检：如果 20 个里有 15 个是“可被单测拦住但没写”，那缺的不是框架，是门禁——见本章第七节“CI 门禁设计”。
+:::
 
 下一步：[评测与可观测性](/layers/evaluation)。

@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -357,6 +362,9 @@
 <li>回滚开关：模型/提示/工具都可独立回滚。</li>
 </ul>
 <h2 id="七一个最小评测框架">七、一个最小评测框架</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>、<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
 class Case:
     id: str
@@ -513,12 +521,34 @@ safety        越权/注入/泄露
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Chen et al., <strong>Evaluating Large Language Models Trained on Code</strong>（2021）——<code>pass@k</code> 的原始定义与统计口径。<a href="https://arxiv.org/abs/2107.03374" target="_blank" rel="noopener">链接</a></li>
+<li>Jimenez et al., <strong>SWE-bench</strong>（2023）——真实仓库任务的评测协议。<a href="https://arxiv.org/abs/2310.06770" target="_blank" rel="noopener">链接</a></li>
+<li>Mialon et al., <strong>GAIA</strong>（2023）——通用助手任务基准及其评分方式。<a href="https://arxiv.org/abs/2311.12983" target="_blank" rel="noopener">链接</a></li>
+<li>Zheng et al., <strong>Judging LLM-as-a-Judge with MT-Bench</strong>（2023）——评审者偏差的来源。<a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">链接</a></li>
+<li>OpenTelemetry, <strong>GenAI 语义约定</strong>——trace 字段标准。<a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E8%AF%84%E6%B5%8B%E4%B8%8E%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>为你的 Agent 写 20 条评测用例，覆盖正常、边界、对抗三类。</li>
 <li>给一个失败任务补全 trace，指出最早出错的那一步。</li>
 <li>计算你的 <code>pass@1</code> 和 <code>pass^3</code>，比较差距。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 20 条评测用例（正常 / 边界 / 对抗）</strong>
+要点：三类的数量不必相等，但<strong>每一条都要有可判定的通过条件</strong>（断言、数值比对或 rubric）。边界类要覆盖“信息不足”“权限不足”“多意图”；对抗类要覆盖间接注入与越权诱导。
+参考 implementation：<code>examples/mini_agent/eval.py</code> 的 case 结构与 <code>run_eval()</code>。
+自检：如果 20 条里有超过一半是“正常问答”，你的评测发现不了真实问题——本章的失败分类会告诉你，线上失败大多在边界与对抗。</p>
+<p><strong>2. 给失败任务补 trace，找最早出错的一步</strong>
+要点：从后往前看会很自然会找到“最终输出错”，但<strong>最早出错的一步</strong>通常在中间：通常是“第一次检索没命中”或“某次工具返回被误读”。判据是：从这一步开始，后续所有步骤都在错误前提下推理。
+自检：如果结论是“模型能力不行”，而 trace 显示第 2 步的工具调用就选了错的工具，那就没找对。</p>
+<p><strong>3. 计算 <code>pass@1</code> 与 <code>pass^3</code></strong>
+要点：<code>pass@1</code> = 首次运行通过率；<code>pass^3</code> = 同一用例三次都通过的比例。两者差距越大，说明**“经常对但不稳定”**。
+参考：<code>examples/mini_agent/eval.py</code> 直接输出这两个指标。
+自检：如果只跑一次就报 <code>pass@1</code>，方差未测——本章第四节“别被 2% 的波动骗了”说的就是这个。</p>
+</details>
 <p>下一步：<a href="release.html">版本与发布</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="testing.html"><span>上一篇</span><strong>测试与验证</strong></a><a class="next" href="release.html"><span>下一篇</span><strong>版本与发布</strong></a></nav>

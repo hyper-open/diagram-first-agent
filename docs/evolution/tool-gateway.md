@@ -18,7 +18,7 @@ flowchart TB
   R --> T["MCP / 内部服务 / 沙箱"]
 ```
 
-<p class="diagram-caption"><strong>一图看懂</strong> · Tool Gateway 是 Agent 的“能力总线”：统一协议、鉴权、限流、审计</p>
+<p class="diagram-caption"><strong>一图看懂</strong> · 工具网关（Tool Gateway）是 Agent 的“能力总线”：统一协议、鉴权、限流、审计</p>
 
 <div class="flow-steps">
   <div class="flow-step"><b>1</b><strong>注册</strong><p>工具目录、schema、版本、负责人。</p></div>
@@ -107,6 +107,10 @@ class Capability:
 
 ## 关键设计原则
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`capability_token.json`](../../examples/templates/capability_token.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 见**图 3**：
 
 ```mermaid
@@ -162,5 +166,28 @@ class ToolGateway:
 | 工具同团队、本地、同步 | 需要私有知识、引用、权限过滤 |
 | 凭证由宿主直接持有 | 知识库需要租户/文档级 ACL |
 | 无高风险写操作 | 需要 Agentic RAG / 多跳检索 |
+
+## 来源
+
+- OWASP, **Top 10 for LLM Applications：LLM06 Excessive Agency**——“给 Agent 超级账号”的风险条目。[链接](https://genai.owasp.org/llm-top-10/)
+- IETF, **RFC 8693 OAuth 2.0 Token Exchange**——代表真实用户换取短期、限权凭证的标准做法。[链接](https://datatracker.ietf.org/doc/html/rfc8693)
+- IETF, **RFC 8707 Resource Indicators**——为什么凭证必须绑定目标资源，而不是“一个万能 token”。[链接](https://datatracker.ietf.org/doc/html/rfc8707)
+- Greshake et al., **Indirect Prompt Injection**（2023）——混淆代理与间接注入的原始实证。[链接](https://arxiv.org/abs/2302.12173)
+
+完整清单见[推荐来源](/appendix/sources#04-工具网关)。
+
+::: details 参考答案与自检
+**1. 能力令牌的最小字段**
+要点：`subject`（真实用户/租户）、`action`、`resource`、`expires_at`、`max_uses`，以及可选的 `approval_id`。少任何一个都会退化成“Agent 自己说了算”。
+自检：如果令牌里有“Agent 身份”却没有“用户身份”，这就是混淆代理的入口。
+
+**2. 设计一次工具调用的完整生命周期**
+要点要覆盖：鉴权 → 策略判定（允许/拒绝/审批）→ 签发短期凭证 → 注入幂等键执行 → 超时与错误规范化 → 脱敏 → 审计落盘。
+自检：审计记录里如果只有“调用了工具 X”而没有 `subject / resource / approval_id / 结果状态`，事后无法追责。
+
+**3. 工具投毒与 Schema 漂移**
+要点：投毒防线是来源审查 + 版本锁定 + 隔离运行；漂移防线是工具 schema 的版本化与兼容性检查（新增必填字段会打挂老 Agent）。
+自检：能说清“MCP 只统一了连接方式，没有统一信任等级”算过关。
+:::
 
 下一步：[阶段 5：RAG 与知识层](/evolution/rag)。

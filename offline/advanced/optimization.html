@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item active" href="optimization.html">优化手册</a>
 <a class="nav-item" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -408,6 +413,9 @@ def run(task):
 <p>P95 延迟、失败率、最差任务类型，才是用户体验的真相。</p>
 </div>
 <h2 id="十一优化检查清单">十一、优化检查清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>、<a href="../../examples/templates/usage_event.json"><code>usage_event.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 有固定评测集和基线（质量/成本/延迟/可靠性）。</li>
 <li>[ ] 指标分桶，不只看平均值。</li>
@@ -419,13 +427,34 @@ def run(task):
 <li>[ ] 高风险动作有权限与审批。</li>
 <li>[ ] 改动可回滚（模型/提示/工具独立版本）。</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Sculley et al., <strong>Hidden Technical Debt in Machine Learning Systems</strong>（2015）——为什么“先测量、再优化”。<a href="https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems.pdf" target="_blank" rel="noopener">链接</a></li>
+<li>Google, <strong>SRE Book：Monitoring Distributed Systems</strong>——P95 与告警阈值的工程惯例。<a href="https://sre.google/sre-book/monitoring-distributed-systems/" target="_blank" rel="noopener">链接</a></li>
+<li>Zheng et al., <strong>MT-Bench / LLM-as-a-Judge</strong>（2023）——评审者的偏差与校准。<a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">链接</a></li>
+<li>Yao et al., <strong>Tree of Thoughts</strong>（2023）——采样与投票的收益边界。<a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E4%BC%98%E5%8C%96%E6%89%8B%E5%86%8C">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>给你的 Agent 建一份基线报告，包含 <code>cost_per_success</code> 和 <code>pass^3</code>。</li>
 <li>选一个失败案例，按“症状 → 层 → 根因 → 改动 → 验证”写一份优化记录。</li>
 <li>设计一个路由策略：什么条件下升级到大模型？如何衡量路由错分率？</li>
 </ol>
-<p>下一步：<a href="frontier.html">前沿与趋势</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 基线报告：<code>cost_per_success</code> 与 <code>pass^3</code></strong>
+要点：<code>cost_per_success = 总成本 / 成功任务数</code>——它比“每任务成本”更真实，因为失败任务也在烧钱。<code>pass^3</code> 用同一用例跑三次。
+参考实现：<code>examples/mini_agent/eval.py</code> 已输出 <code>pass@1</code>、<code>pass^3</code>、<code>avg_steps</code>、<code>avg_tokens</code>，可在此基础上加成本字段。
+自检：如果报告里只有“通过率”，没有“失败任务花了多少钱”，优化的方向会偏——降本最快的往往是减少失败重试。</p>
+<p><strong>2. “症状 → 层 → 根因 → 改动 → 验证”记录</strong>
+要点：每一栏都要能指到一个具体证据（trace 的某一步、某次评测结果）。验证栏要有<strong>对比数字</strong>，并且只改一个变量。
+自检：如果“改动”一栏同时改了提示词和模型，验证结果无法归因——这是最常见的优化错误（本章第一节“单变量改动”）。</p>
+<p><strong>3. 路由策略与错分率</strong>
+要点：升级条件通常是“首次结果未通过验证 + 任务被判定为复杂”；错分率要分两个方向测——该升级没升级（质量损失）、不该升级却升级（成本损失），两者代价不同，不能只报一个总数。
+参考：本章“质量优化”的级联实现，以及<a href="../layers/model.html">模型层</a>的级联路由图。
+自检：如果只统计“路由准确率”，不区分两个方向，调阈值时就没有依据。</p>
+</details>
+<p>下一步：<a href="frameworks.html">框架对照与迁移</a> 或 <a href="frontier.html">前沿与趋势</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="../practice/ux.html"><span>上一篇</span><strong>交互与信任设计</strong></a><a class="next" href="durability.html"><span>下一篇</span><strong>长任务与可靠执行</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>

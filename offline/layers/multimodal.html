@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -295,6 +300,9 @@
 <p><strong>Q：多模态审核要单独做吗？</strong>
 要。图片/音频走独立审核通道，OCR/ASR 之后的文本还要再过一遍文本审核。</p>
 <h2 id="落地清单">落地清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 输入有降采样策略（尺寸、页数、时长）？</li>
 <li>[ ] 文档解析能保住表格与页码？</li>
@@ -304,12 +312,31 @@
 <li>[ ] Computer Use 优先用结构化界面信息？</li>
 <li>[ ] 多模态内容有审核通道与评测集？</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OpenAI, <strong>Vision 指南</strong>——图片 token 的计算方式与尺寸上限，本章“先降采样”的量化依据。<a href="https://platform.openai.com/docs/guides/vision" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Vision 文档</strong>——分辨率与 tile 的计费口径。<a href="https://docs.anthropic.com/en/docs/build-with-claude/vision" target="_blank" rel="noopener">链接</a></li>
+<li>Huang et al., <strong>LayoutLMv3</strong>（2022）——版面分析为何决定文档问答的上限。<a href="https://arxiv.org/abs/2204.08387" target="_blank" rel="noopener">链接</a></li>
+<li>Xie et al., <strong>OSWorld</strong>（2024）——Computer Use 的可复现评测环境。<a href="https://arxiv.org/abs/2404.07972" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E5%A4%9A%E6%A8%A1%E6%80%81%E4%B8%8E%E5%AE%9E%E6%97%B6%E4%BA%A4%E4%BA%92">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>算一次“100 页 PDF 问答”的 token 成本，再算“先检索 5 页”的成本。</li>
 <li>设计一个语音打断的测试用例，验证停止播放后不会重复已说内容。</li>
 <li>给你的 Agent 加一条规则：涉及数字的结论必须能定位到原文页。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 100 页 PDF 的两种成本</strong>
+要点：整本 = 页数 × 单页 token（随分辨率放大，可能是基线的数倍）；先检索 = 检索成本 + 5 页 token + 少量 OCR。结论通常是<strong>差一个数量级以上</strong>，并且整本还带来“中间遗忘”。
+自检：如果只算了输入 token，没算“整本导致答错后的重试”，成本比较不完整。</p>
+<p><strong>2. 语音打断的测试用例</strong>
+要点：用例必须覆盖“已播放的内容不重复、被丢弃的未播放内容不再出现、打断词本身不被打字误判为指令”。可写成断言：<code>stop() 后 300ms 内无新音频帧</code> + <code>下一轮上下文包含已播放部分</code>。
+自检：只测了“能停”，没测“停之后不重复”，不通过——本章第六节明确说这两件事是分开的。</p>
+<p><strong>3. 涉及数字的结论必须能定位到原文页</strong>
+要点：实现上的关键是把“页码/坐标”作为<strong>引用字段</strong>随证据一起进入上下文，并在生成后做引用校验（答案里的每个数字都要能对上某条引用）。
+自检：如果规则只写在提示词里（“请标注页码”），属于未通过——它必须是一条可校验的断言。</p>
+</details>
 <p>下一步：<a href="context.html">上下文层</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="model-adaptation.html"><span>上一篇</span><strong>模型适配</strong></a><a class="next" href="context.html"><span>下一篇</span><strong>上下文层</strong></a></nav>

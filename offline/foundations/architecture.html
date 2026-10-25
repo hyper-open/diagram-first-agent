@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -164,6 +169,9 @@
 <p><strong>常见错误</strong>：只打普通日志，没有 trace/span；没有记录每步的模型输入输出；评测靠手工；发布没有回归。</p>
 <p><strong>关键指标</strong>：trace 覆盖率、评测回归通过率、故障恢复时间、成本归因完整度。</p>
 <h2 id="层间契约比分层更重要">层间契约：比分层更重要</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/trace_step.json"><code>trace_step.json</code></a>、<a href="../../examples/templates/preflight_checklist.json"><code>preflight_checklist.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>分层不是画框，而是定义<strong>谁可以假设什么</strong>。下面这些契约值得写进代码：</p>
 <div class="table-wrap"><table>
 <thead>
@@ -339,12 +347,31 @@
 </tbody>
 </table></div>
 <p>一个实用判断：<strong>讨论“怎么部署、买什么组件”时用六层；讨论“这个 bug 该谁修”时用七层。</strong></p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Martin, <strong>Clean Architecture</strong>——依赖方向与“跨层只走契约”的思想来源。<a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank" rel="noopener">链接</a></li>
+<li>Brown, <strong>C4 Model</strong>——分层描述系统的工程惯例，本章画法与之对应。<a href="https://c4model.com/" target="_blank" rel="noopener">链接</a></li>
+<li>OpenTelemetry, <strong>规范总览</strong>——横切能力（观测）如何不占业务层的实例。<a href="https://opentelemetry.io/docs/specs/otel/overview/" target="_blank" rel="noopener">链接</a></li>
+<li>HumanLayer, <strong>12-Factor Agents</strong>——从职责切分角度看生产化缺口。<a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E4%B8%83%E5%B1%82%E8%81%8C%E8%B4%A3%E6%A8%A1%E5%9E%8B">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>画出你正在做的系统（或一个熟悉的 Agent 产品）的七层图，标注每层的输入/输出。</li>
 <li>找出一条跨层调用，检查它是否有超时、错误类型和 trace 字段。</li>
 <li>思考：如果把“记忆”合并进“上下文层”，会失去什么？如果把“运行时”合并进“工具层”，又会失去什么？</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 画出你系统的七层图并标注输入/输出</strong>
+要点：每层至少写一对”输入 → 输出“，且<strong>输出应当是下一层的输入</strong>。画不出来通常说明这一层没有明确契约。
+自检：如果某一层的输出写了“处理后的数据”，等于没写——要具体到字段（如 <code>messages + tools + response schema</code>，参见本章表 1）。</p>
+<p><strong>2. 检查一条跨层调用</strong>
+要点：同时具备三件事——超时、结构化错误类型、trace 字段（<code>request_id / step / tenant / latency</code>）。
+自检：如果这条调用只能抛出一个笼统的 <code>Exception</code>，上层就只能瞎猜，这正是本章结尾那句“只会抛 Exception，上层就只能瞎猜”的意思。</p>
+<p><strong>3. 合并层会失去什么</strong>
+要点：把“记忆”并入“上下文层”，会失去<strong>跨任务的持久化与遗忘策略</strong>（上下文是视图，可以随时重建；记忆是资产，需要生命周期管理）；把“运行时”并入“工具层”，会失去<strong>隔离边界</strong>——工具是接口，运行时是副作用发生的地方，混淆后权限与资源限制无处安放。
+自检：答案里能区分“视图 / 资产”“接口 / 副作用发生地”这两组概念，即说明分层不是背下来的。</p>
+</details>
 <p>下一步：<a href="evolution.html">技术演进史</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="loop.html"><span>上一篇</span><strong>核心循环</strong></a><a class="next" href="evolution.html"><span>下一篇</span><strong>技术演进史</strong></a></nav>

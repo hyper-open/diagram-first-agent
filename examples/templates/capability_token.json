@@ -1,0 +1,24 @@
+{
+  "$comment": "能力令牌。对应《工具网关》「能力令牌」一节。不问“Agent 是谁”，问“它持有哪个能力、能对哪个资源做什么”。",
+  "subject": "user:123",
+  "tenant": "acme",
+  "action": "order.refund",
+  "resource": "order:A1024",
+  "expires_at": "2026-10-24T10:17:03+08:00",
+  "max_uses": 1,
+  "approval_id": "apr_778",
+  "issued_by": "tool-gateway",
+  "on_behalf_of": {
+    "user_id": "user_123",
+    "oauth_token_exchange": "RFC 8693"
+  },
+  "constraints": {
+    "amount_max": 2000,
+    "ip_allowlist": ["10.0.4.0/24"]
+  },
+  "fields_note": {
+    "必填": ["subject", "action", "resource", "expires_at", "max_uses"],
+    "为什么": "subject 必须是真实用户，不能是 agent；max_uses=1 限制重放；approval_id 让审批与执行可对账",
+    "反模式": "签发 tenant:* / action:* 的万能 token"
+  }
+}

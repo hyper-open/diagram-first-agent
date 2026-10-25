@@ -154,6 +154,10 @@ flowchart TB
 
 ## 落地清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 交互形态与任务时长匹配？
 - [ ] 进度对应真实阶段，卡住有说明？
 - [ ] 停止/撤销的语义真实，不误导？
@@ -163,10 +167,35 @@ flowchart TB
 - [ ] 审批卡片一屏可决策，默认拒绝？
 - [ ] 有接受率、中断率、重做率的看板？
 
+## 来源
+
+- Nielsen, **Response Times: The 3 Important Limits**——0.1s / 1s / 10s 三个阈值，本章交互形态表的依据。[链接](https://www.nngroup.com/articles/response-times-3-important-limits/)
+- Amershi et al., **Guidelines for Human-AI Interaction**（CHI 2019）——18 条准则的论文版。[链接](https://dl.acm.org/doi/10.1145/3290605.3300233)
+- Microsoft, **HAX Toolkit：Guidelines**——上述准则的可操作版本。[链接](https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/)
+- Google PAIR, **People + AI Guidebook**——可控、可解释与信任校准。[链接](https://pair.withgoogle.com/guidebook/)
+
+完整清单见[推荐来源](/appendix/sources#交互与信任设计)。
+
 ## 练习
 
 1. 挑一个你的 Agent 任务，画出它的三个阶段，并写出每个阶段用户应该看到什么。
 2. 把“系统错误，请稍后再试”改写成符合三要素的话术。
 3. 设计一个审批卡片，要求用户在不展开详情的情况下也能做出正确决定。
+
+::: details 参考答案与自检
+**1. 三个阶段与用户应看到什么**
+要点：计划阶段 → 给计划与预计影响；执行阶段 → 真实阶段（不是假进度条）+ 可中断；收尾阶段 → 结果 + 证据 + 可撤销入口。
+参考：本章第一节的三种交互形态表。
+自检：如果三个阶段给用户看的内容一样（都在转圈），说明交互没有随任务状态变化。
+
+**2. 改写“系统错误，请稍后再试”**
+要点：三要素——发生了什么（可公开的那部分）、影响是什么、还能做什么（重试/转人工/换表达）。示例：“这次检索你订单时超时了，没有扣款也不会产生费用。要我再试一次，还是转人工帮你查？”
+自检：如果改写后仍然只有“请稍后再试”，只是换了措辞，没给出口。
+
+**3. 一屏可决策的审批卡**
+要点：动作 + 参数摘要、依据、影响范围、是否可逆、默认拒绝、以及“改一下再执行”的入口。
+参考：[运行时与沙箱](/layers/runtime)第十节的审批分级表。
+自检：如果在折叠状态看不到“影响范围”和“是否可逆”，用户只能盲点——本章“审批界面：一屏做决定”要求的关键信息就在这两项。
+:::
 
 下一步：[优化手册](/advanced/optimization)。

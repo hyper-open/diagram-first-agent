@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -574,6 +579,9 @@
 <p><strong>Q：什么时候该上 Agentic RAG？</strong>
 当“是否需要检索”本身不确定、且简单查询占比高时。全部请求都走多轮检索，成本和延迟都会失控。</p>
 <h2 id="落地清单">落地清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 有 query → evidence 的评测集，且覆盖多跳与指代？</li>
 <li>[ ] 切分尊重结构，表格未被切碎？</li>
@@ -586,6 +594,15 @@
 <li>[ ] 索引切换有影子对比与回滚？</li>
 <li>[ ] Recall@50 / Recall@5 / 引用支持率在看板上？</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Cormack et al., <strong>Reciprocal Rank Fusion</strong>（2009）——书中 RRF 与 <code>k=60</code> 的原始出处。<a href="https://dl.acm.org/doi/10.1145/1571941.1572114" target="_blank" rel="noopener">链接</a></li>
+<li>Robertson &amp; Zaragoza, <strong>The Probabilistic Relevance Framework: BM25 and Beyond</strong>（2009）——稀疏检索基线。<a href="https://dl.acm.org/doi/10.1561/1500000019" target="_blank" rel="noopener">链接</a></li>
+<li>Malkov &amp; Yashunin, <strong>Efficient and Robust ANN Search Using HNSW Graphs</strong>（2016）——索引参数 M / ef 的语义。<a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener">链接</a></li>
+<li>Nogueira &amp; Cho, <strong>Passage Re-ranking with BERT</strong>（2019）——重排的经典做法。<a href="https://arxiv.org/abs/1901.04085" target="_blank" rel="noopener">链接</a></li>
+<li>Lewis et al., <strong>RAG</strong>（2020）——为什么“召回决定上限”。<a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E6%A3%80%E7%B4%A2%E5%B1%82">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>给你的知识库造 50 条评测样本，量一次 Recall@5 和 Recall@50，看差距在哪。</li>
@@ -593,6 +610,21 @@
 <li>加一路 BM25 召回，用 RRF 融合，对比融合前后的 Recall@5。</li>
 <li>找出一个被切碎的表格，改成整表索引，看数值类问题的准确率变化。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 50 条样本量 Recall@5 与 Recall@50</strong>
+要点：两个数的差距说明“排序问题”还是“召回问题”。Recall@50 依然低 → 切分/embedding/改写有问题；Recall@50 高而 @5 低 → 重排或融合有问题（本章第一节的三分类）。
+参考：本章第十节给了 <code>recall_at_k()</code> 的最小实现。
+自检：如果样本全是“能从标题直接命中”的简单问题，两个指标都会很高，测不出问题——样本要包含精确标识（订单号、错误码）和多跳问题。</p>
+<p><strong>2. 把正确证据直接塞给模型</strong>
+要点：塞进去能答对 → 检索/排序问题；塞进去仍答错 → 生成侧问题（上下文组织、提示、模型）。这是本章第一节给的<strong>唯一判据</strong>。
+自检：不做这个对照就直接调 <code>k</code> 和阈值，是本末倒置。</p>
+<p><strong>3. 加一路 BM25 + RRF</strong>
+要点：融合前后的 Recall@5 要有对比数字；同时要观察延迟变化（多一路召回 = 多一次查询 + 融合开销）。
+参考实现：本章第四节的 <code>rrf()</code>；自检：如果两路结果的分数直接相加，不通过——向量分数与 BM25 分数不可比，必须用排名融合。</p>
+<p><strong>4. 被切碎的表格改成整表索引</strong>
+要点：先造一组“数值类问题”（求和、比较、条件筛选），再改索引方式，比较准确率与 token 成本（整表索引会变大）。
+自检：只看了“是否能查到”，没看“答案里的数字对不对”，不通过——表格问题的高发错误是数值幻觉。</p>
+</details>
 <p>下一步：<a href="tools.html">工具层</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="context.html"><span>上一篇</span><strong>上下文层</strong></a><a class="next" href="tools.html"><span>下一篇</span><strong>工具层</strong></a></nav>

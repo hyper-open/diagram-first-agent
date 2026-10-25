@@ -148,6 +148,10 @@ Coding Agent、Deep Research 把任务时长推到小时级。长程任务暴露
 
 ## 五、给学习者的建议
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`preflight_checklist.json`](../../examples/templates/preflight_checklist.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 ### 1. 先把“不变的部分”学扎实
 
 - 循环、状态、预算、终止。
@@ -200,4 +204,29 @@ Agent 的迷人之处在于“自主”，但它的工程本质是**在不确定
 
 模型会继续变强，但这些层不会消失。**把每一层的契约设计好，你就能在模型换代时保留大部分系统价值。**
 
-下一步：[术语表](/appendix/glossary) 与 [延伸阅读](/appendix/reading)。
+## 来源
+
+- Anthropic, **Model Context Protocol**——协议与生态方向。[链接](https://modelcontextprotocol.io/)
+- A2A Project, **Agent2Agent Protocol**——Agent 间协作与发现的标准。[链接](https://a2a-protocol.org/)
+- DeepSeek-AI, **DeepSeek-R1**（2025）——可验证奖励驱动的推理训练。[链接](https://arxiv.org/abs/2501.12948)
+- Cemri et al., **Why Do Multi-Agent LLM Systems Fail?**（2025）——本章“仍然没有答案的问题”里的多 Agent 可靠性。[链接](https://arxiv.org/abs/2503.13657)
+
+完整清单见[推荐来源](/appendix/sources#前沿与趋势)。
+
+::: details 参考答案与自检
+本章没有「练习」，用三条自检替代：
+
+**1. 能否把新概念归到“能力问题”还是“工程问题”？**
+要点：按本章的判断框架——只在绕过模型缺陷的技术会消失，解决系统约束的会留下。任取一个当下的热点（如“长上下文取代 RAG”“新 Agent 框架”），能在一分钟内归类并给出理由。
+自检：如果归类理由是“大厂都在推”，说明还没建立判断框架。
+
+**2. 能否说出一个“只是补丁”的技术？**
+要点：例如“用正则兜底解析 JSON 输出”“用提示词逼迫模型不要泄露系统提示”——它们的共同点是**依赖模型的特定缺陷**，模型升级后即失效。
+自检：如果举不出反例（只能举会留下来的技术），判断力还不够。
+
+**3. 五条结构性变化能否复述**
+要点：能力内化、协议与身份、评测与可靠性、长程任务、人机协作——并能各举一个当前证据（论文、规范或产品行为）。
+自检：如果只能复述名字，说不出证据，说明这一章读成了列表。
+:::
+
+下一步：[框架对照与迁移](/advanced/frameworks) 把这套分层映射到具体工具；也可以直接去[术语表](/appendix/glossary)与[延伸阅读](/appendix/reading)。

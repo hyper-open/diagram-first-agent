@@ -1,0 +1,36 @@
+{
+  "$comment": "工具定义。对应《工具层》。同一份定义有三个消费者：模型（怎么选）、宿主（怎么校验）、审计（怎么追责）。",
+  "name": "order.refund",
+  "version": "2.1.0",
+  "description": "为当前用户的订单发起退款。仅在用户明确要求且订单满足退款政策时使用；查询状态请用 order.lookup。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "order_id": { "type": "string", "description": "订单号，例如 A1024" },
+      "amount": { "type": "number", "minimum": 0, "description": "退款金额；不传表示全额" },
+      "reason": {
+        "type": "string",
+        "enum": ["damaged", "not_received", "wrong_item", "other"],
+        "description": "退款原因，必须是枚举值之一"
+      }
+    },
+    "required": ["order_id", "reason"],
+    "additionalProperties": false
+  },
+  "side_effect": "destructive",
+  "idempotent": false,
+  "idempotency_key": "refund:{order_id}:{request_id}",
+  "timeout_s": 30,
+  "requires": {
+    "capability": "order.write",
+    "approval": "always"
+  },
+  "returns": {
+    "ok": { "refund_id": "string", "status": "string" },
+    "error": { "type": "invalid_argument | not_found | forbidden | upstream_error", "retryable": "boolean", "hint": "string" }
+  },
+  "fields_note": {
+    "必填": ["name", "description", "parameters", "side_effect", "idempotent", "requires"],
+    "为什么": "side_effect 决定审批级别；idempotent=false 强制要求幂等键；description 要写“何时不用”"
+  }
+}

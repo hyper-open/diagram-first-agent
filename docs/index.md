@@ -25,7 +25,7 @@ features:
     details: 从四个部件的 ReAct 循环，到控制面/数据面分离的 Agent 平台，逐级画清边界。
   - icon: 🚪
     title: 讲透网关与路由
-    details: API Gateway、Model Gateway、Tool Gateway 各管什么；模型路由、回退、配额、计费怎么落地。
+    details: API 网关、模型网关、工具网关各管什么；模型路由、回退、配额、计费怎么落地。
   - icon: 📚
     title: RAG 与意图识别
     details: 知识层如何做权限过滤与引用；为什么不是所有请求都该跑 Agent。
@@ -123,6 +123,10 @@ features:
 ## 这本书怎么读
 
 <div class="arch-grid">
+  <div class="arch-card">
+    <h3>想把代码跑起来</h3>
+    <p><a href="practice/mini-agent">v1：一个循环</a> → <a href="practice/mini-agent-v2">v2：加 RAG、路由与记忆治理</a> → <a href="practice/mini-agent-v3">v3：网关、计费与持久化</a>，三级都可运行、可测试，并可[部署](/practice/deployment)。</p>
+  </div>
   <div class="arch-card">
     <h3>第一次接触 Agent</h3>
     <p>按「架构总览 → ReAct → 工具调用 → Mini Agent Lab 1–2」走，先跑通一个能调用工具的最小循环。</p>

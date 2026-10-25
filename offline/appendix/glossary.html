@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item active" href="glossary.html">术语表</a>
+<a class="nav-item" href="sources.html">推荐来源</a>
 <a class="nav-item" href="reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -70,6 +75,15 @@
   A --&gt; S[&quot;安全&quot;]
 </div>
 <p class="diagram-caption"><strong>一图看懂</strong> · 术语不是孤立定义：它们都挂在 Agent 的同一张架构图上</p>
+<div class="custom-block tip"><p class="custom-block-title">全书中英对照约定</p>
+<p>本书对三个网关采用<strong>统一写法</strong>：</p>
+<ul>
+<li>中文正文用「<strong>模型网关</strong>」「<strong>工具网关</strong>」「<strong>API 网关</strong>」；</li>
+<li>首次出现时在括号里给出英文（模型网关 / Model Gateway），之后不再重复；</li>
+<li><strong>架构图、时序图、JSON 字段、配置项、表格中的产品/组件名</strong>保留英文原文，因为这些是要直接写进代码和图里的。</li>
+</ul>
+<p>按这套约定检索不会漏：搜「模型网关」能找到论述，搜「Model Gateway」能找到图与代码。</p>
+</div>
 <p>按主题分组。带 ★ 的是最容易混淆、建议优先掌握的概念。</p>
 <h2 id="基础">基础</h2>
 <div class="table-wrap"><table>
@@ -729,6 +743,15 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<p>术语的英文命名与定义以官方文档为准，本章的取舍是“按工程职责归类”，定义本身尽量贴合原文：</p>
+<ul>
+<li>Anthropic, <strong>Glossary</strong>——Agent、tool use、MCP 等术语的官方释义。<a href="https://docs.anthropic.com/en/docs/build-with-claude/glossary" target="_blank" rel="noopener">链接</a></li>
+<li>Lilian Weng, <strong>LLM Powered Autonomous Agents</strong>——规划/记忆/工具三分法，本章分组的来源。<a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>Prompt Engineering Guide</strong>——提示工程与上下文相关术语。<a href="https://platform.openai.com/docs/guides/prompt-engineering" target="_blank" rel="noopener">链接</a></li>
+<li>Chen et al., <strong>HumanEval</strong>（2021）——<code>pass@k</code> 的官方定义。<a href="https://arxiv.org/abs/2107.03374" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="sources.html#%E6%9C%AF%E8%AF%AD%E8%A1%A8">推荐来源</a>。</p>
 <h2 id="一句话记住">一句话记住</h2>
 <ul>
 <li><strong>Agent = 模型 + 循环 + 工具 + 状态 + 环境。</strong></li>
@@ -749,7 +772,7 @@
 <li><strong>信任来自可预期、可干预、可解释。</strong></li>
 </ul>
 </article>
-        <nav class="pager"><a class="prev" href="../advanced/frontier.html"><span>上一篇</span><strong>前沿与趋势</strong></a><a class="next" href="reading.html"><span>下一篇</span><strong>延伸阅读</strong></a></nav>
+        <nav class="pager"><a class="prev" href="../advanced/frontier.html"><span>上一篇</span><strong>前沿与趋势</strong></a><a class="next" href="sources.html"><span>下一篇</span><strong>推荐来源</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
       </div>
     </main>

@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item active" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -261,6 +266,9 @@
 <li><strong>留痕本身也是数据</strong>，要遵守留存期限和删除义务——留太久同样违规。</li>
 </ul>
 <h2 id="七上线前的四张表">七、上线前的四张表</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/compliance_four_tables.json"><code>compliance_four_tables.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -314,12 +322,32 @@
 <li>[ ] 变更是否分级，高风险变更是否有人审？</li>
 <li>[ ] 是否有事件报告流程与对外沟通口径？</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>国家互联网信息办公室,《<strong>互联网信息服务深度合成管理规定</strong>》——深度合成标识义务。<a href="https://www.cac.gov.cn/2022-12/11/c_1672221949354811.htm" target="_blank" rel="noopener">链接</a></li>
+<li>国家互联网信息办公室,《<strong>生成式人工智能服务管理暂行办法</strong>》——备案、训练数据来源与内容责任。<a href="https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm" target="_blank" rel="noopener">链接</a></li>
+<li>国家互联网信息办公室等,《<strong>人工智能生成合成内容标识办法</strong>》——显式与隐式标识的落地要求。<a href="https://www.cac.gov.cn/2025-03/14/c_1743654684782215.htm" target="_blank" rel="noopener">链接</a></li>
+<li>全国人大常委会,《<strong>网络安全法</strong>》——日志留存与等级保护的上位依据。<a href="http://www.npc.gov.cn/npc/c30834/201611/270b43e8b35e4f7ea98502b6f0e26f8a.shtml" target="_blank" rel="noopener">链接</a></li>
+<li>NIST, <strong>AI RMF 1.0</strong>——风险治理框架的通用对照。<a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E5%90%88%E8%A7%84%E4%B8%8E%E6%B3%95%E5%BE%8B">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>为你的 Agent 填一遍“四张表”，看哪一张填不出来。</li>
 <li>检查一次生成文件的元数据：里面有没有可追溯的来源标识？</li>
 <li>假设明天要进入医疗行业，列出需要改的三处架构，而不是三处文案。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 填“四张表”，看哪一张填不出来</strong>
+要点：资产表、模型表、场景表、变更表。最常填不出来的是<strong>模型表</strong>（不知道数据是否回流）和<strong>变更表</strong>（没有审计留痕）。
+自检：如果四张表都能凭记忆填完，但没有一个是系统导出的，说明它们随时会过期——本章开头那句“没有这四张表，合规检查只能靠回忆”说的正是这个。</p>
+<p><strong>2. 生成文件的元数据</strong>
+要点：检查是否包含来源标识（哪次请求、哪个版本、哪个模型）、隐式标识（如可追溯的水印或哈希）、以及数据来源的引用。
+自检：如果答案只检查了“文件名对不对”，属于未通过——标识要落在<strong>产物</strong>上，而不是界面提示（本章第一节）。</p>
+<p><strong>3. 进入医疗行业要改的三处架构</strong>
+要点：必须改架构而不是文案，例如：(a) 知识库与检索增加医疗资质内容分级与来源白名单；(b) 引入更强的拒答策略与强制人工兜底出口；(c) 审计留痕扩展到“建议来源 + 审批人”，并限制模型服务区域。
+自检：如果三条里有一条是“加免责声明”，那属于文案——题目明确排除了文案。</p>
+</details>
 <p>下一步：<a href="../practice/mini-agent.html">从零实现 Mini Agent</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="privacy.html"><span>上一篇</span><strong>隐私与数据治理</strong></a><a class="next" href="../practice/mini-agent.html"><span>下一篇</span><strong>从零实现 Mini Agent</strong></a></nav>

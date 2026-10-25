@@ -109,6 +109,10 @@ sequenceDiagram
 
 ## 优化与度量
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 | 症状 | 手段 |
 | --- | --- |
 | 误分类 | 分层意图、混合路由、置信度阈值、人工兜底 |
@@ -133,5 +137,28 @@ sequenceDiagram
 | 请求类型少、路径清晰 | 单 Agent 无法高效处理复杂任务 |
 | 一个 Agent 能覆盖大部分场景 | 子任务可并行、需要独立评审 |
 | 子任务上下文差异不大 | 需要不同角色/权限/工具集 |
+
+## 来源
+
+- Anthropic, **Building Effective Agents：Routing**——最简单的路由器长什么样，以及为什么它不该自己做回答。[链接](https://www.anthropic.com/research/building-effective-agents)
+- Botpress, **Intent 与 Entity 文档**——意图体系的分层设计与训练数据组织。[链接](https://botpress.com/docs)
+- Casanueva et al., **IntentGPT**（2024）——小样本/开放意图分类，回答“新产品上线后分类器失效”怎么办。[链接](https://arxiv.org/abs/2410.01651)
+- AWS, **Well-Architected：Reliability Pillar**——降级与兜底的设计原则。[链接](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html)
+
+完整清单见[推荐来源](/appendix/sources#06-意图识别与路由)。
+
+::: details 参考答案与自检
+**1. 设计 5 条路由并写出低置信兜底**
+要点：每条路由都要有“上升”和“下降”两个出口——高置信直接走，低置信要么澄清、要么降级到更保守的路径（RAG → Agent → 人工）。
+自检：如果五条路由的兜底全是“转人工”，等于没有设计兜底——人工是最后的出口，不是默认出口。
+
+**2. 置信度阈值应该由什么决定**
+要点：由**误路由的代价**决定，而不是由“准确率好看”决定。漏放一个退款请求（应人工却走了 Agent）与多问一句“您是要查订单还是退款”，成本完全不同。
+参考：本章开头的“置信度决定路径”图给了 0.8 / 0.5 两档，你的系统可以不同，但要能说出为什么不同。
+
+**3. 线上误分类怎么排查**
+要点：先看**分布**（低置信率是否突增、新意图是否涌现），再看**规则**（阈值是否被改过），最后看**样本**（把误分类的样本按 handler 分组）。
+自检：如果第一反应是“再补几条提示词”，说明还没把路由当成一个有监控指标的服务——见本章「优化与度量」的路由准确率、低置信率、误路由代价三个指标。
+:::
 
 下一步：[阶段 7：多 Agent 协作](/evolution/multi-agent)。

@@ -180,6 +180,10 @@ flowchart LR
 
 ## 落地清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 - [ ] 状态是否外部化，进程崩溃后可恢复？
 - [ ] 每步都有检查点，且包含版本号？
 - [ ] 不可逆动作都有幂等键与去重表？
@@ -190,10 +194,33 @@ flowchart LR
 - [ ] 审批是事件，不占用 Worker？
 - [ ] 做过杀进程/断网/重复投递演练？
 
+## 来源
+
+- Temporal, **Workflows：确定性重放**——事件日志 + 重放的工程范式。[链接](https://docs.temporal.io/workflows)
+- Apache Kafka, **Semantics：Exactly-Once 与幂等生产者**——幂等键在 broker 侧的实现。[链接](https://kafka.apache.org/documentation/#semantics)
+- AWS, **Exponential Backoff and Jitter**——为什么重试必须带抖动。[链接](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)
+- Garcia-Molina & Salem, **Sagas**（1987）——补偿事务的原始论文。[链接](https://dl.acm.org/doi/10.1145/38713.38742)
+
+完整清单见[推荐来源](/appendix/sources#长任务与可靠执行)。
+
 ## 练习
 
 1. 把一次“退款 + 通知 + 归档”的任务拆成可重放的步骤，标出每步的幂等键。
 2. 设计一个租约机制：Worker 崩溃后多久任务可被接管？怎么避免两个 Worker 同时执行？
 3. 为一个不可逆动作写补偿方案，并说明补偿失败时怎么告警。
 
-下一步：[前沿与趋势](/advanced/frontier)。
+::: details 参考答案与自检
+**1. “退款 + 通知 + 归档”的幂等键**
+要点：每步的幂等键应当**由同一业务实体推导**（如 `refund:{order_id}`、`notify:{refund_id}`、`archive:{task_id}`），而不是随机生成；这样重放时能真正去重。
+自检：如果每步的键都是“时间戳 + 随机数”，重放时会重复执行——等于没有幂等。
+
+**2. 租约机制**
+要点：租约 = 任务持有者 + 过期时间 + 续约心跳。接管条件：租约过期且心跳停止 N 个周期。避免双执行需要**围栏令牌**（fencing token）：每次接管递增版本号，旧 Worker 的写入被下游拒绝。
+自检：如果只说“超时后别人可以接”，没有围栏令牌，两个 Worker 仍可能同时写成功——这正是本章第六节强调的那一点。
+
+**3. 不可逆动作的补偿**
+要点：补偿是“用新动作抵消旧动作”（退款而不是撤销扣款），且补偿本身也要幂等；补偿失败必须告警并进入人工队列，不能静默重试到死。
+自检：如果你的补偿方案里没有“补偿失败怎么办”这一支，说明只设计了顺利路径。
+:::
+
+下一步：[前沿与趋势](/advanced/frontier)；想看这套机制在工业界的成熟版本，见[框架对照](/advanced/frameworks)里的 Temporal 一节。

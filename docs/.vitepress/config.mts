@@ -10,6 +10,12 @@ export default withMermaid(
     // GitHub Pages 项目站点部署在 /<repo>/ 子路径下
     base: '/diagram-first-agent/',
     cleanUrls: true,
+    // 指向仓库内代码/模板（../examples/...）的链接在站点里没有对应页面，
+    // 但在 GitHub 上有效；issue 链接用相对路径以保证离线版可用。
+    ignoreDeadLinks: [
+      /examples\/templates\//,
+      /issues$/
+    ],
     lastUpdated: true,
     head: [
       ['meta', { name: 'theme-color', content: '#4f46e5' }],

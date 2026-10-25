@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item active" href="cases.html">真实案例拆解</a>
 <a class="nav-item" href="ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -521,15 +526,38 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Jimenez et al., <strong>SWE-bench</strong>（2023）——Coding Agent 的任务分布与评测协议。<a href="https://arxiv.org/abs/2310.06770" target="_blank" rel="noopener">链接</a></li>
+<li>Yang et al., <strong>SWE-agent</strong>（2024）——Agent-Computer Interface 设计如何影响成功率。<a href="https://arxiv.org/abs/2405.15793" target="_blank" rel="noopener">链接</a></li>
+<li>OpenAI, <strong>Deep Research</strong>——研究型 Agent 的流程与已知失败。<a href="https://openai.com/index/deep-research/" target="_blank" rel="noopener">链接</a></li>
+<li>Xie et al., <strong>OSWorld</strong>（2024）——Computer Use 的可复现评测。<a href="https://arxiv.org/abs/2404.07972" target="_blank" rel="noopener">链接</a></li>
+<li>Yao et al., <strong>τ-bench</strong>（2024）——工具 + 政策遵循的评测，对应本章客服案例。<a href="https://arxiv.org/abs/2406.12045" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E7%9C%9F%E5%AE%9E%E6%A1%88%E4%BE%8B%E6%8B%86%E8%A7%A3">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/agent_task_packet.json"><code>agent_task_packet.json</code></a>、<a href="../../examples/templates/eval_case.json"><code>eval_case.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ol>
 <li>选一个你熟悉的产品，填出它的七层表，并标出最薄弱的层。</li>
 <li>为“客服 Agent”写三条必须由代码而不是提示词保证的规则。</li>
 <li>设计一个“Deep Research”的缺口检查表：满足什么条件才允许写最终报告？</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 填一个产品的七层表，标出最薄弱的一层</strong>
+要点：最薄弱层通常不是“模型”，而是 <strong>L7 成功标准</strong>（没人定义什么叫完成）或 <strong>L1 可观测</strong>（出问题查不到）。能给出证据（如“他们的失败提示只有‘出错了’”）。
+自检：如果结论是“最弱是 L2 模型不够强”，说明还在用模型能力解释系统问题——回到本章的四个案例对比表。</p>
+<p><strong>2. 客服 Agent 必须由代码保证的三条规则</strong>
+要点：从本章“关键设计”里挑，且必须是<strong>防模型绕过</strong>的类型，例如：只能查当前用户的数据（强制 tenant/user 过滤）、退款期限由策略引擎判定、低置信自动升级人工。
+自检：如果三条里有“要礼貌”“不要承诺未授权内容”这种提示词级别的规则，不通过——它们不可判定。</p>
+<p><strong>3. Deep Research 的缺口检查表</strong>
+要点：写成可判定的条件，例如：每个结论至少一条可访问引用、未决问题清单为空或已被明确标注、覆盖率（问题域的子问题是否都查过）、时间窗口内无矛盾来源。
+自检：如果检查表最终归结为“让模型自己说有没有缺口”，那是自我确认——本章第二节“缺口检测与证据管理”明确要求外部判据。</p>
+</details>
 <p>下一步：<a href="ux.html">交互与信任设计</a>。</p>
 </article>
-        <nav class="pager"><a class="prev" href="mini-agent.html"><span>上一篇</span><strong>从零实现 Mini Agent</strong></a><a class="next" href="ux.html"><span>下一篇</span><strong>交互与信任设计</strong></a></nav>
+        <nav class="pager"><a class="prev" href="deployment.html"><span>上一篇</span><strong>部署形态：从能跑到能上线</strong></a><a class="next" href="ux.html"><span>下一篇</span><strong>交互与信任设计</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
       </div>
     </main>

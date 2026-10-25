@@ -30,9 +30,9 @@
 | **架构主线** | [架构总览](docs/evolution/overview.md) · [ReAct](docs/evolution/react.md) · [工具调用](docs/evolution/tool-calling.md) · [模型网关](docs/evolution/model-gateway.md) · [工具网关](docs/evolution/tool-gateway.md) · [RAG](docs/evolution/rag.md) · [意图识别](docs/evolution/intent.md) · [多 Agent](docs/evolution/multi-agent.md) · [平台化](docs/evolution/platform.md) | 一条从最小 Agent 到可运营平台的演进路径 |
 | 基础参考 | [核心循环](docs/foundations/loop.md) · [七层职责模型](docs/foundations/architecture.md) · [技术演进史](docs/foundations/evolution.md) | 职责视角与技术史背景 |
 | 分层深入 | [模型](docs/layers/model.md) · [模型适配](docs/layers/model-adaptation.md) · [多模态](docs/layers/multimodal.md) · [上下文](docs/layers/context.md) · [检索](docs/layers/retrieval.md) · [工具](docs/layers/tools.md) · [记忆](docs/layers/memory.md) · [编排](docs/layers/orchestration.md) · [运行时](docs/layers/runtime.md) · [测试](docs/layers/testing.md) · [评测](docs/layers/evaluation.md) · [版本发布](docs/layers/release.md) · [安全](docs/layers/security.md) · [内容安全](docs/layers/content-safety.md) · [隐私](docs/layers/privacy.md) · [合规](docs/layers/compliance.md) | 每层的技术、故障与优化 |
-| 动手 | [Mini Agent](docs/practice/mini-agent.md) · [案例拆解](docs/practice/cases.md) · [交互设计](docs/practice/ux.md) | 可运行代码、真实系统分析与产品体验 |
-| 进阶 | [优化手册](docs/advanced/optimization.md) · [长任务](docs/advanced/durability.md) · [前沿](docs/advanced/frontier.md) | 从基线到回归的优化闭环 |
-| 附录 | [术语表](docs/appendix/glossary.md) · [延伸阅读](docs/appendix/reading.md) | 速查与继续深入 |
+| 动手 | [Mini Agent v1](docs/practice/mini-agent.md) · [v2](docs/practice/mini-agent-v2.md) · [v3](docs/practice/mini-agent-v3.md) · [部署形态](docs/practice/deployment.md) · [案例拆解](docs/practice/cases.md) · [交互设计](docs/practice/ux.md) | 可运行代码（三级递进）、可部署形态、真实系统分析 |
+| 进阶 | [优化手册](docs/advanced/optimization.md) · [长任务](docs/advanced/durability.md) · [框架对照与迁移](docs/advanced/frameworks.md) · [前沿](docs/advanced/frontier.md) | 优化闭环、主流框架映射与迁移检查表 |
+| 附录 | [术语表](docs/appendix/glossary.md) · [推荐来源](docs/appendix/sources.md) · [延伸阅读](docs/appendix/reading.md) | 速查、逐章出处与继续深入 |
 
 ## 怎么读：先图后文
 
@@ -80,9 +80,25 @@ pnpm docs:preview
 ### 2. 跑 Mini Agent（不需要 API Key）
 
 ```bash
+# v1：一个循环（工具、记忆、预算、审核、评测）
 python3 -m examples.mini_agent.cli --demo
 python3 -m examples.mini_agent.cli --demo --trace
 python3 -m examples.mini_agent.eval          # 评测报告：pass@1 / pass^k
+
+# v2：六条路径（FAQ / 查单 / RAG / Agent / 澄清 / 人工）
+python3 -m examples.mini_agent_v2.cli --demo
+python3 -m examples.mini_agent_v2.cli --eval # 检索评测：Recall + ACL 泄漏
+python3 -m examples.mini_agent_v2.eval       # 端到端：路由准确率 + 转人工率
+
+# v3：能力令牌 / 工具网关 / 账本 / 审计 / 断点续跑
+python3 -m examples.mini_agent_v3.cli --demo         # 含非法主体被拒 + 审计记录
+python3 -m examples.mini_agent_v3.cli --eval         # 平台不变量：配额、幂等、审计无 PII
+python3 -m examples.mini_agent_v3.cli --resume-demo  # 模拟崩溃后续跑
+
+# 起一个可部署的服务（零依赖，标准库 HTTP）
+MINI_AGENT_PORT=8000 TENANT_LIMITS="acme:5" python3 -m examples.mini_agent_v3.app
+curl -s http://127.0.0.1:8000/health
+# 或者容器：docker compose up --build   （端口 8000 读写 / 8001 只读）
 ```
 
 演示覆盖：工具调用、读写文件、验证器拒绝、记忆注入、停滞检测、输入拦截、输出打码、流式审核。
@@ -117,22 +133,31 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 │   ├── layers/                 # 十六层深入（含适配、多模态、检索、测试、发布、治理）
 │   ├── practice/               # 实战与案例
 │   ├── advanced/               # 优化、前沿
-│   ├── appendix/               # 术语、书单
+│   ├── appendix/               # 术语、推荐来源、书单
 │   └── .vitepress/             # 站点配置、主题、共享侧边栏
 ├── offline/                    # 离线静态版（双击 index.html）
 ├── tools/
 │   ├── build-offline.mjs       # 离线构建脚本
 │   └── offline/                # 离线 CSS/JS
-├── examples/mini_agent/        # 无依赖 Agent 实现
-│   ├── types.py                # Decision / ToolCall / Budget / Trace
-│   ├── llm.py                  # Mock + OpenAI 兼容客户端
-│   ├── tools.py                # Schema 校验 / 工作区 / 错误契约
-│   ├── memory.py               # 带来源与时效的简单记忆
-│   ├── guard.py                # 内容审核：阶段策略 + 流式护栏
-│   ├── agent.py                # 循环 / 上下文 / 验证 / 停滞检测
-│   ├── eval.py                 # 迷你评测 harness
-│   └── cli.py                  # 八个演示场景
-├── tests/                      # 26 个单元测试
+├── Dockerfile / docker-compose.yml   # 教学镜像：非 root、健康检查、/data 卷
+├── .github/workflows/ci.yml    # 测试矩阵 + 冒烟 + 镜像构建
+├── examples/
+│   ├── mini_agent/             # v1：无依赖 Agent 实现
+│   │   ├── types.py            # Decision / ToolCall / Budget / Trace
+│   │   ├── llm.py              # Mock + OpenAI 兼容客户端
+│   │   ├── tools.py            # Schema 校验 / 工作区 / 错误契约
+│   │   ├── memory.py           # 带来源与时效的简单记忆
+│   │   ├── guard.py            # 内容审核：阶段策略 + 流式护栏
+│   │   ├── agent.py            # 循环 / 上下文 / 验证 / 停滞检测
+│   │   ├── eval.py             # 迷你评测 harness
+│   │   └── cli.py              # 八个演示场景
+│   ├── mini_agent_v2/          # v2：RAG + 意图路由 + 记忆治理（复用 v1）
+│   ├── mini_agent_v3/          # v3：能力令牌 + 网关 + 账本 + 审计 + 持久化
+│   │   ├── config.py           # 环境变量 → 启动即校验
+│   │   ├── server.py           # 标准库 HTTP（/health /v1/answer /metrics）
+│   │   └── app.py              # 进程入口（SIGTERM 优雅退出）
+│   └── templates/              # 10 个可复制 JSON 模板（清单的结构化版本）
+├── tests/                      # 129 个测试（v1 26 + v2 32 + v3 43 + 部署 28）
 └── package.json                # VitePress 站点脚本
 ```
 
@@ -144,7 +169,7 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 - **演进视角**：不只讲“有什么”，更讲“为什么需要它、它又制造了什么”。
 - **框架无关**：先讲清循环与契约，再谈框架。所有示例不依赖 Agent 框架。
 - **每层落到问题**：不只列技术，还给症状、根因、验证方法和修复手段。
-- **可运行**：Mini Agent 有测试、trace、预算、错误契约，不是伪代码。
+- **可运行**：Mini Agent 有测试、trace、预算、错误契约，不是伪代码；v2 接上 RAG、路由与记忆治理，v3 接上能力令牌、计量账本、审计与断点续跑，并可直接以容器形态启动。
 - **可替换**：LLM 是接口，工具是注册表，运行时可以换成容器/微虚拟机。
 - **承认局限**：示例中的线程超时、简单裁剪、关键词记忆、规则式内容审核都标注了生产化差距。
 
@@ -156,11 +181,22 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 
 不需要先学某个 Agent 框架。需要基础 Python 与 HTTP/JSON 知识。
 
+**这本书不教什么**（避免预期落差）：
+
+- 不教主流 Agent 框架（LangGraph、OpenAI Agents SDK、CrewAI、Dify 等）的用法——只讲它们背后的循环、契约与编排模式，选型判断需要你自己补。
+- 不提供生产级实现：Mini Agent 是**教学实现**，线程超时、简单裁剪、规则式审核都标注了生产化差距。
+- 不覆盖模型原理（Transformer、训练、RLHF 的数学）、GPU 部署与推理优化。
+- 不是新闻追踪：`frontier` 章给的是判断框架，不是最新产品清单。
+
 ## 状态
 
-- 文档：38 篇、95 张图；每张图都有图注，每章以「一图看懂」开篇、其余按章内序号编号，正文用「见图 N」引用。
-- 代码：Mini Agent + 26 个单元测试，Python 3.8+，零第三方运行时依赖。
+- 文档：38 篇、95 张图；每张图都有图注，每章以「一图看懂」开篇、其余按章内序号编号，正文用「见**图 N**」引用图表。
+- 出处：38 章各有「来源」小节（每章 3–5 条），逐章完整清单汇总在[推荐来源](docs/appendix/sources.md)。
+- 练习：26 处「练习」均配「参考答案与自检」（可折叠），给出要点与判定标准而非标准答案。
+- 模板：`examples/templates/` 提供 10 个可复制 JSON（trace、usage event、评测用例、工具定义、能力令牌、任务包、发布记录、四张表、上线门禁、Mini Agent 配置），31 章的清单与之互引。
+- 代码：Mini Agent **v1（单循环）→ v2（RAG / 路由 / 记忆治理）→ v3（网关 / 账本 / 审计 / 持久化）→ 可部署服务**，**129 个测试**，Python 3.8+，零第三方运行时依赖；CI 在 3.8/3.11/3.12 上跑测试与评测，并构建镜像、冒烟探测 HTTP 端点。
 - 站点：VitePress 1.x + Mermaid 图表；另提供 `offline/` 纯静态离线版。
+- 文档侧已补：每章来源、练习参考答案、可复制模板、主线与分层章的对照表、术语写法约定。
 
 ## 联系作者
 

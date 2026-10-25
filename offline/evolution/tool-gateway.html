@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -72,7 +77,7 @@
   G --&gt; C[&quot;凭证托管 · 审计 · 计量&quot;]
   R --&gt; T[&quot;MCP / 内部服务 / 沙箱&quot;]
 </div>
-<p class="diagram-caption"><strong>一图看懂</strong> · Tool Gateway 是 Agent 的“能力总线”：统一协议、鉴权、限流、审计</p>
+<p class="diagram-caption"><strong>一图看懂</strong> · 工具网关（Tool Gateway）是 Agent 的“能力总线”：统一协议、鉴权、限流、审计</p>
 <div class="flow-steps">
   <div class="flow-step"><b>1</b><strong>注册</strong><p>工具目录、schema、版本、负责人。</p></div>
   <div class="flow-step"><b>2</b><strong>授权</strong><p>这个用户/租户/Agent 能不能调用？</p></div>
@@ -195,6 +200,9 @@ class Capability:
 </tbody>
 </table></div>
 <h2 id="关键设计原则">关键设计原则</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/capability_token.json"><code>capability_token.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>见<strong>图 3</strong>：</p>
 <div class="mermaid">flowchart TB
   A[&quot;默认拒绝&quot;] --&gt; B[&quot;最小权限&quot;]
@@ -285,6 +293,25 @@ class Capability:
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OWASP, <strong>Top 10 for LLM Applications：LLM06 Excessive Agency</strong>——“给 Agent 超级账号”的风险条目。<a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">链接</a></li>
+<li>IETF, <strong>RFC 8693 OAuth 2.0 Token Exchange</strong>——代表真实用户换取短期、限权凭证的标准做法。<a href="https://datatracker.ietf.org/doc/html/rfc8693" target="_blank" rel="noopener">链接</a></li>
+<li>IETF, <strong>RFC 8707 Resource Indicators</strong>——为什么凭证必须绑定目标资源，而不是“一个万能 token”。<a href="https://datatracker.ietf.org/doc/html/rfc8707" target="_blank" rel="noopener">链接</a></li>
+<li>Greshake et al., <strong>Indirect Prompt Injection</strong>（2023）——混淆代理与间接注入的原始实证。<a href="https://arxiv.org/abs/2302.12173" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#04-%E5%B7%A5%E5%85%B7%E7%BD%91%E5%85%B3">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 能力令牌的最小字段</strong>
+要点：<code>subject</code>（真实用户/租户）、<code>action</code>、<code>resource</code>、<code>expires_at</code>、<code>max_uses</code>，以及可选的 <code>approval_id</code>。少任何一个都会退化成“Agent 自己说了算”。
+自检：如果令牌里有“Agent 身份”却没有“用户身份”，这就是混淆代理的入口。</p>
+<p><strong>2. 设计一次工具调用的完整生命周期</strong>
+要点要覆盖：鉴权 → 策略判定（允许/拒绝/审批）→ 签发短期凭证 → 注入幂等键执行 → 超时与错误规范化 → 脱敏 → 审计落盘。
+自检：审计记录里如果只有“调用了工具 X”而没有 <code>subject / resource / approval_id / 结果状态</code>，事后无法追责。</p>
+<p><strong>3. 工具投毒与 Schema 漂移</strong>
+要点：投毒防线是来源审查 + 版本锁定 + 隔离运行；漂移防线是工具 schema 的版本化与兼容性检查（新增必填字段会打挂老 Agent）。
+自检：能说清“MCP 只统一了连接方式，没有统一信任等级”算过关。</p>
+</details>
 <p>下一步：<a href="rag.html">阶段 5：RAG 与知识层</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="model-gateway.html"><span>上一篇</span><strong>03 模型网关与路由</strong></a><a class="next" href="rag.html"><span>下一篇</span><strong>05 RAG 与知识层</strong></a></nav>

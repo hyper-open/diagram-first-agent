@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Agent v2：加 RAG、意图路由与记忆治理 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item active" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v2：加 RAG、路由与记忆治理</strong></div>
+        <article class="doc"><h1 id="mini-agent-v2从「一个循环」到「一条管线」">Mini Agent v2：从「一个循环」到「一条管线」</h1>
+<h2 id="本章在整套内容里的位置">本章在整套内容里的位置</h2>
+<p>v1 只回答了“一个 Agent 怎么跑”。但真实产品里，<strong>大部分请求根本不该进入 Agent 循环</strong>：</p>
+<ul>
+<li>“退款多久到账” 应该查知识库，不该让模型自由发挥；</li>
+<li>“订单 A1024 到哪了” 应该走固定流程，不该多轮推理；</li>
+<li>“我要投诉” 应该立刻转人工，不该继续自动回答。</li>
+</ul>
+<p>v2 做的就是把这三种判断变成代码，并把 v1 的 Agent 循环降级为<strong>其中一条路径</strong>。</p>
+<div class="mermaid">flowchart LR
+  REQ[&quot;请求&quot;] --&gt; R[&quot;IntentRouter&quot;]
+  R --&gt;|&quot;FAQ&quot;| F[&quot;知识库直答&lt;br/&gt;0 步&quot;]
+  R --&gt;|&quot;查单&quot;| W[&quot;固定工作流&lt;br/&gt;1 步&quot;]
+  R --&gt;|&quot;解释文档&quot;| G[&quot;RAG&lt;br/&gt;检索 + 引用校验&quot;]
+  R --&gt;|&quot;复杂任务&quot;| A[&quot;MiniAgent v1&lt;br/&gt;多步循环&quot;]
+  R --&gt;|&quot;低置信&quot;| C[&quot;澄清&quot;]
+  R --&gt;|&quot;投诉/高风险&quot;| H[&quot;转人工&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · v2 把 v1 的循环变成六条路径之一，每条路径有自己的成本与失败模式</p>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v2.cli --demo     # 六个典型请求的路由与处理
+python3 -m examples.mini_agent_v2.cli --eval     # 检索评测：Recall + ACL 泄漏
+python3 -m examples.mini_agent_v2.eval           # 端到端评测：路由 + 检索 + 转人工率
+python3 -m unittest discover -s tests            # 58 个测试（v1 的 26 个 + v2 的 32 个）
+</code></pre></div>
+<p>不需要 API Key：RAG 路径使用一个<strong>只引用证据</strong>的确定性替身，用来验证“引用校验”这条契约。</p>
+<h2 id="代码结构">代码结构</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>examples/mini_agent_v2/
+├── corpus.py           文档 / 片段 / 确定性 embedding（哈希词袋）
+├── retrieval.py        结构化切分、混合检索、加权 RRF、ACL 前置过滤、评测
+├── router.py           规则 + 例子的意图路由，置信度分叉
+├── memory_hygiene.py   来源、冲突取代、写入前脱敏、按主体删除
+├── pipeline.py         六条路径的调度、引用校验、trace、转人工包
+├── fixtures.py         种子知识库（含 ACL 陷阱）与评测集
+├── eval.py             端到端评测
+└── cli.py              演示 / 单问 / 评测
+</code></pre></div>
+<div class="custom-block tip"><p class="custom-block-title">和 v1 的关系</p>
+<p>v2 <strong>不 fork</strong> v1：<code>pipeline.py</code> 直接 <code>from ..mini_agent.agent import MiniAgent</code>，<code>Tool</code>、<code>ToolRegistry</code>、<code>Budget</code>、<code>Guard</code> 全部复用。
+这本身是一个结论——<strong>“加 RAG、加路由”不该以重写 Agent 循环为代价</strong>。</p>
+</div>
+<h2 id="lab-1切分顺序错了后面全白做">Lab 1：切分——顺序错了，后面全白做</h2>
+<p><code>chunk_document()</code> 的顺序是刻意的：</p>
+<ol>
+<li><strong>先按结构切</strong>（<code>## 标题</code>），因为“退款条件”和“退款金额”不能拼进同一个片段；</li>
+<li><strong>再按长度切</strong>，带 10% 左右重叠，但<strong>不跨章节</strong>；</li>
+<li><strong>最后补上下文</strong>，把章节标题放回片段首行。</li>
+</ol>
+<p>开发过程中这里出过一个真实的 bug：最初把<strong>文档标题</strong>也拼进了每个片段，结果同一文档的所有片段共享一个前缀，向量分数被压平到 0.031~0.032 的噪声区间，排序基本随机。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 错误：标题进了正文 → 所有片段共享前缀 → 相似度塌缩
+body = f&quot;{document.title} / {section}\n{text}&quot;
+# 正确：标题走元数据（doc_id / section），正文只留本章节内容
+body = f&quot;{section}\n{text}&quot; if section else text
+</code></pre></div>
+<p><strong>教训</strong>：给片段补上下文是对的，但补什么必须想清楚——补“区分性”的信息（章节），而不是补“共有”的信息（文档名）。</p>
+<h2 id="lab-2混合检索与加权-rrf">Lab 2：混合检索与加权 RRF</h2>
+<p>纯向量在精确标识（<code>GW-4021</code>、订单号、函数名）上表现很差——这正是本书<a href="../layers/retrieval.html">检索层</a>强调的一点。v2 用两路召回 + RRF 融合，并在实测中发现了<strong>纯 RRF 的一个坑</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>查询</th>
+<th>BM25 分数</th>
+<th>纯 RRF 排序</th>
+<th>加权 RRF 排序</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GW-4021 是什么错误</code></td>
+<td>6.99 vs 1.78</td>
+<td>错（超时）</td>
+<td>对（错误码）</td>
+</tr>
+<tr>
+<td><code>解释一下退款时效条款</code></td>
+<td>明显领先</td>
+<td>错（退款金额）</td>
+<td>对（退款时效）</td>
+</tr>
+</tbody>
+</table></div>
+<p>原因：纯 RRF 只吃排名 <code>1/(k+rank)</code>，第 1 名和第 2 名的差距只有约 0.0005——<strong>BM25 里 6.99 和 1.78 的差距被抹平了</strong>。所以 v2 默认给词法路线加权：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>self.weights = {&quot;vector&quot;: 1.0, &quot;bm25&quot;: 2.5}   # 不把两种分数相加，只调信任度
+</code></pre></div>
+<p>这不是“调参玄学”，而是把**“精确匹配更可信”这个先验**写进融合公式。测试 <code>test_rrf_is_rank_based_not_score_based</code> 会断言 RRF 分数仍然等于 <code>Σ weight/(k+rank)</code>，防止有人改回“分数相加”。</p>
+<h2 id="lab-3权限过滤必须发生在召回之前">Lab 3：权限过滤必须发生在召回之前</h2>
+<p>这是全书反复强调、也最容易写错的一条。v2 的实现只做一件事：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 1. 先过滤：候选集里根本不存在无权访问的片段
+visible = [chunk for chunk in self.chunks if chunk.acl &amp; principals]
+# 2. 再排序、融合、截断
+</code></pre></div>
+<p>种子知识库里埋了两个 ACL 陷阱（<code>policy-vip</code>、<code>internal-ops</code>），评测集用 <code>forbid_docs</code> 断言 <strong>public 身份下这些文档一个片段都不能出现在结果里</strong>，并统计 <code>forbidden_hits</code>——这个数必须是 0，没有任何“优化空间”。</p>
+<p><code>python3 -m examples.mini_agent_v2.cli --eval</code> 会输出：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>retrieval eval: samples=15 recall@5=1.000 recall@20=1.000 forbidden_hits=0
+</code></pre></div>
+<h2 id="lab-4引用不是请求出来的是校验出来的">Lab 4：引用不是请求出来的，是校验出来的</h2>
+<p>RAG 路径里，模型被要求用 <code>[c1]</code> 标注来源。但管线<strong>不相信模型</strong>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>used = self._verify_citations(answer, allowed_refs)
+if not used:
+    return &quot;ungrounded&quot;  # 降级转人工，而不是把无依据答案发给用户
+</code></pre></div>
+<p>测试 <code>test_ungrounded_answer_is_downgraded_not_returned</code> 用 <code>_BadLLM</code> 模拟“编造一个 <code>[c99]</code>”的模型，断言结果是 <code>ungrounded</code> 而不是 <code>success</code>。</p>
+<p><strong>练习</strong>：把校验规则改成“至少 50% 的句子带引用”，思考为什么这条规则会比“有任意一个引用”更难被绕开。</p>
+<h2 id="lab-5置信度必须能用于决策">Lab 5：置信度必须能用于决策</h2>
+<p>路由的置信度有三个用途：选路径、设告警、做评估。所以它<strong>不能是一个不能动的常数</strong>。</p>
+<p>开发中一度出现过 <code>0.7 + similarity / 3</code> 的写法，结果多个请求都稳定显示 <code>1.000</code>。这看起来“很自信”，实际上意味着：</p>
+<ul>
+<li>阈值形同虚设（永远在阈值之上）；</li>
+<li>监控看不出置信度分布；</li>
+<li>评测无法用置信度区分“拿不准”和“很确定”。</li>
+</ul>
+<p>v2 的修法是：规则命中与语义分歧时<strong>降</strong>置信度（<code>min(0.9, ...)</code>），两者一致时按 <code>0.55×0.9 + 0.45×similarity</code> 融合，语义单路命中时上限 <code>0.95</code>。</p>
+<h2 id="lab-6记忆的三条硬规则">Lab 6：记忆的三条硬规则</h2>
+<p><code>memory_hygiene.py</code> 只用三条规则就挡住了记忆系统最常见的事故：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>规则</th>
+<th>代码</th>
+<th>挡住的失败</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推断不能写成事实</td>
+<td><code>source == &quot;model_inferred&quot;</code> → 拒绝</td>
+<td>记忆污染</td>
+</tr>
+<tr>
+<td>新值取代旧值但保留旧记录</td>
+<td><code>supersedes</code> / <code>superseded_by</code></td>
+<td>无法解释“为什么现在是 B”</td>
+</tr>
+<tr>
+<td>写入前脱敏、密钥直接拒绝</td>
+<td><code>scan_text</code> / <code>redact</code></td>
+<td>记忆成为第二份泄露源</td>
+</tr>
+</tbody>
+</table></div>
+<p>加上租户隔离（跨租户写入直接 <code>raise</code>）和 <code>purge_subject()</code>（按主体删除，对应《隐私与数据治理》的删除义务），这就是一个能讲清来源、能追溯变更、能配合删除的最小记忆。</p>
+<p><strong>练习</strong>：现在的冲突检测用“<code>key：value</code> 的 key 或前两个 token”作为主题，非常粗糙。请把它换成显式的 <code>(subject, predicate)</code> 槽位，并说明为什么生产系统通常不会自动抽取槽位。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出六条路径各自<strong>为什么不该合并</strong>。</li>
+<li>[ ] 能解释：为什么权限过滤放在召回之后（例如重排后再删）是错的。</li>
+<li>[ ] 能说出纯 RRF 在什么情况下会丢信息，以及加权 RRF 为什么仍然安全。</li>
+<li>[ ] 能解释“引用校验”为什么必须由宿主完成，而不是提示词要求。</li>
+<li>[ ] 能说出置信度不可用于决策时，会造成哪三类后果。</li>
+<li>[ ] 能说出记忆冲突“直接覆盖”和“取代 + 保留”的差别。</li>
+</ul>
+<h2 id="和-v1-的对照">和 v1 的对照</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>v1</th>
+<th>v2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>入口</td>
+<td>只有 Agent 循环</td>
+<td>六条路径，循环是其中一条</td>
+</tr>
+<tr>
+<td>知识</td>
+<td>无</td>
+<td>结构化切分 + 混合检索 + ACL 前置过滤</td>
+</tr>
+<tr>
+<td>权限</td>
+<td>工作区路径约束</td>
+<td>文档级 ACL + 逐条凭证（v3 补齐）</td>
+</tr>
+<tr>
+<td>引用</td>
+<td>无</td>
+<td>强制校验，不能对应则降级</td>
+</tr>
+<tr>
+<td>记忆</td>
+<td>关键词检索</td>
+<td>来源 / 冲突取代 / 写入脱敏 / 按主体删除</td>
+</tr>
+<tr>
+<td>评测</td>
+<td>4 条 case，全绿</td>
+<td>15 条检索 case（含 ACL 陷阱）+ 8 条路由 case</td>
+</tr>
+<tr>
+<td>测试</td>
+<td>26</td>
+<td>58</td>
+</tr>
+</tbody>
+</table></div>
+<p>下一步：<a href="mini-agent-v3.html">Mini Agent v3</a>——把能力令牌、计量账本、审计与断点续跑接进来；理论部分见<a href="../evolution/tool-gateway.html">工具网关</a>与<a href="../advanced/durability.html">长任务与可靠执行</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent.html"><span>上一篇</span><strong>从零实现 Mini Agent</strong></a><a class="next" href="mini-agent-v3.html"><span>下一篇</span><strong>v3：工具网关、计费与持久化</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

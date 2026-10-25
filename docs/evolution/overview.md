@@ -108,7 +108,7 @@ Gateway 的本质是**把横切关注点集中到一个边界**：
 | Model Gateway | Agent → 模型供应商 | 统一协议、路由、回退、配额、计费、缓存、观测 |
 | Tool Gateway | Agent → 工具/执行环境 | 注册、鉴权、权限、限流、审计、结果规范化、沙箱路由 |
 
-注意：**API Gateway 不等于 Agent Gateway，Model Gateway 也不等于 Tool Gateway。** 它们解决的是不同边界上的问题，后文会逐级展开。
+注意：**API 网关不等于 Agent 网关，模型网关也不等于工具网关。** 它们解决的是不同边界上的问题，后文会逐级展开。
 
 ## 三、八级演进：每一级只解决一个新矛盾
 
@@ -152,11 +152,30 @@ flowchart TB
 
 判断是否该升级，不看“别人有没有”，而看**当前架构是否已经被某一类问题反复卡住**：
 
-- 每次接新模型都要改 N 个服务 → 该有 Model Gateway。
-- 每个团队都在自己管工具密钥 → 该有 Tool Gateway。
+- 每次接新模型都要改 N 个服务 → 该有模型网关。
+- 每个团队都在自己管工具密钥 → 该有工具网关。
 - 无法回答“这个月谁花了多少钱” → 该有计量与计费。
 - 同一类问题反复答错、无法回归 → 该有评测与追踪。
 - 请求类型差异巨大、Agent 经常选错工具 → 该有意图路由。
+
+::: tip 主线是地图，细节在分层章
+`evolution/` 下的九章是**导航**，不是全部内容：每章讲清“这一级为什么要出现、加了什么、又制造了什么”，平均约 1,000 字，读完你能判断“我的系统该不该进入这一级”。
+
+真正要动手时的细节在 `layers/` 下：主线的每一级都对应一个或多个分层章，对照表如下。
+
+| 主线章节 | 篇幅 | 配套细节章 |
+| --- | --- | --- |
+| [ReAct](/evolution/react) | ~740 字 | [核心循环](/foundations/loop) |
+| [工具调用](/evolution/tool-calling) | ~820 字 | [工具层](/layers/tools) |
+| [模型网关](/evolution/model-gateway) | ~980 字 | [模型层](/layers/model)、[模型适配](/layers/model-adaptation) |
+| [工具网关](/evolution/tool-gateway) | ~780 字 | [安全与权限](/layers/security)、[运行时与沙箱](/layers/runtime) |
+| [RAG](/evolution/rag) | ~870 字 | [检索层](/layers/retrieval)、[上下文层](/layers/context) |
+| [意图识别](/evolution/intent) | ~970 字 | [编排层](/layers/orchestration) |
+| [多 Agent](/evolution/multi-agent) | ~810 字 | [编排层](/layers/orchestration) |
+| [平台化](/evolution/platform) | ~1,150 字 | [评测](/layers/evaluation)、[发布](/layers/release)、[隐私](/layers/privacy)、[合规](/layers/compliance) |
+
+**建议读法**：主线通读一遍建立坐标系（约 2 小时），然后**按需下钻**——不要为了“读完一遍”把 38 章从头刷到尾，那样会读成资料检索。
+:::
 
 ## 五、这本主线怎么读
 
@@ -197,5 +216,28 @@ flowchart TB
 | 可观测与发布 | 打日志 | trace + 评测集 + 灰度回滚 |
 
 它们容易被推迟，因为“现在还能跑”。但推迟的代价是**事后补不回来**：没有 trace 就补不出历史，没有版本就回滚不了，没有审核就删不掉已发出去的内容。
+
+## 来源
+
+- Google Cloud, **API Gateway 架构总览**——接入层与后端服务的边界，是“网关”概念的原始语境。[链接](https://cloud.google.com/api-gateway/docs/architecture-overview)
+- AWS, **Well-Architected：Operational Excellence**——控制面/数据面与运维职责的划分。[链接](https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html)
+- HumanLayer, **12-Factor Agents**——把 Agent 当成软件系统设计的十二条原则。[链接](https://github.com/humanlayer/12-factor-agents)
+- Anthropic, **Building Effective Agents**——复杂度应当随真实问题增长，而非提前建设。[链接](https://www.anthropic.com/research/building-effective-agents)
+
+完整清单见[推荐来源](/appendix/sources#架构演进主线)。
+
+::: details 参考答案与自检
+本章没有「练习」小节，但第五节给了阅读顺序。用以下三条自检是否真的看懂了总览：
+
+**1. 为什么不能把所有逻辑写进 Agent 进程？**
+要点：不是“进程会挂”，而是**规则无法集中**——配额、鉴权、路由、计费、审计在每个进程里各写一遍，变更就要全量发布，且无法回答“谁花了多少”。
+
+**2. 模型网关与工具网关的边界**
+要点：前者管**策略函数**（选哪个模型、怎么回退、token 怎么计），后者管**外部副作用**（能不能调、以谁的身份调、调完留痕）。两者的共同点是不信任 Agent 进程。
+
+**3. 什么时候“不该上平台”？**
+要点：问题还没稳定复现、租户和调用量都很小、或者当前瓶颈其实是模型能力而不是工程约束——此时上平台只是增加维护面。
+自检：如果你的答案里出现了“因为大厂都这么做”，回到第四节的三级成熟度表重新判断。
+:::
 
 下一步：[阶段 1：ReAct](/evolution/react)。

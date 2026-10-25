@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="optimization.html">优化手册</a>
 <a class="nav-item" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="frameworks.html">框架对照与迁移</a>
 <a class="nav-item active" href="frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -200,6 +205,9 @@
 <li><strong>成本曲线</strong>：推理成本下降后，哪些架构会变得可行？</li>
 </ol>
 <h2 id="五给学习者的建议">五、给学习者的建议</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/preflight_checklist.json"><code>preflight_checklist.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <h3 id="1-先把不变的部分学扎实">1. 先把“不变的部分”学扎实</h3>
 <ul>
 <li>循环、状态、预算、终止。</li>
@@ -242,9 +250,29 @@
 <li>用评测获得可改进性。</li>
 </ul>
 <p>模型会继续变强，但这些层不会消失。<strong>把每一层的契约设计好，你就能在模型换代时保留大部分系统价值。</strong></p>
-<p>下一步：<a href="../appendix/glossary.html">术语表</a> 与 <a href="../appendix/reading.html">延伸阅读</a>。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Anthropic, <strong>Model Context Protocol</strong>——协议与生态方向。<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">链接</a></li>
+<li>A2A Project, <strong>Agent2Agent Protocol</strong>——Agent 间协作与发现的标准。<a href="https://a2a-protocol.org/" target="_blank" rel="noopener">链接</a></li>
+<li>DeepSeek-AI, <strong>DeepSeek-R1</strong>（2025）——可验证奖励驱动的推理训练。<a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">链接</a></li>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——本章“仍然没有答案的问题”里的多 Agent 可靠性。<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E5%89%8D%E6%B2%BF%E4%B8%8E%E8%B6%8B%E5%8A%BF">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p>本章没有「练习」，用三条自检替代：</p>
+<p><strong>1. 能否把新概念归到“能力问题”还是“工程问题”？</strong>
+要点：按本章的判断框架——只在绕过模型缺陷的技术会消失，解决系统约束的会留下。任取一个当下的热点（如“长上下文取代 RAG”“新 Agent 框架”），能在一分钟内归类并给出理由。
+自检：如果归类理由是“大厂都在推”，说明还没建立判断框架。</p>
+<p><strong>2. 能否说出一个“只是补丁”的技术？</strong>
+要点：例如“用正则兜底解析 JSON 输出”“用提示词逼迫模型不要泄露系统提示”——它们的共同点是<strong>依赖模型的特定缺陷</strong>，模型升级后即失效。
+自检：如果举不出反例（只能举会留下来的技术），判断力还不够。</p>
+<p><strong>3. 五条结构性变化能否复述</strong>
+要点：能力内化、协议与身份、评测与可靠性、长程任务、人机协作——并能各举一个当前证据（论文、规范或产品行为）。
+自检：如果只能复述名字，说不出证据，说明这一章读成了列表。</p>
+</details>
+<p>下一步：<a href="frameworks.html">框架对照与迁移</a> 把这套分层映射到具体工具；也可以直接去<a href="../appendix/glossary.html">术语表</a>与<a href="../appendix/reading.html">延伸阅读</a>。</p>
 </article>
-        <nav class="pager"><a class="prev" href="durability.html"><span>上一篇</span><strong>长任务与可靠执行</strong></a><a class="next" href="../appendix/glossary.html"><span>下一篇</span><strong>术语表</strong></a></nav>
+        <nav class="pager"><a class="prev" href="frameworks.html"><span>上一篇</span><strong>框架对照与迁移</strong></a><a class="next" href="../appendix/glossary.html"><span>下一篇</span><strong>术语表</strong></a></nav>
         <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
       </div>
     </main>

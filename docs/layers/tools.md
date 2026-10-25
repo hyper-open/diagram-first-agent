@@ -35,6 +35,10 @@ flowchart LR
 
 ## 一、工具是什么
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`tool_spec.json`](../../examples/templates/tool_spec.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 一个工具至少包含：
 
 ```python
@@ -410,10 +414,35 @@ class ToolRegistry:
 | 写操作重复执行 | 是否幂等 | 幂等键 + 去重缓存 |
 | 被网页内容带偏 | 是否标记数据边界 | 标签隔离、出口白名单、人工确认 |
 
+## 来源
+
+- Anthropic, **Writing effective tools for agents**——工具粒度、命名与描述的官方建议，本章“写给模型看的接口”的依据。[链接](https://www.anthropic.com/engineering/writing-tools-for-agents)
+- Anthropic, **Model Context Protocol 规范**——MCP 的传输、能力协商与资源暴露。[链接](https://modelcontextprotocol.io/specification/2025-06-18)
+- OpenAPI Initiative, **OpenAPI 3.1**——工具 schema 的另一种描述来源。[链接](https://spec.openapis.org/oas/v3.1.0)
+- OWASP, **LLM01: Prompt Injection**——为什么工具返回内容必须当作不可信数据。[链接](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
+
+完整清单见[推荐来源](/appendix/sources#工具层)。
+
 ## 练习
 
 1. 挑一个你现有的工具，重写它的描述和 schema，让模型在 10 个测试用例上选对。
 2. 为写操作设计幂等键和 dry-run 流程。
 3. 构造一个“工具返回内容包含恶意指令”的测试，验证你的系统不会执行它。
+
+::: details 参考答案与自检
+**1. 重写描述与 schema，10 条用例选对**
+要点：描述里写“何时用 / 何时不用”，参数加 `enum` 与示例，把“可选参数过多”收敛成两个更小的工具（本章第三节的粒度原则）。
+参考实现见 `examples/mini_agent/tools.py` 的 `Tool.spec()` 与 `build_default_tools()`。
+自检：10 条用例中至少要有一条“相似工具的干扰项”，否则测不出描述质量。
+
+**2. 写操作的幂等键与 dry-run**
+要点：幂等键由宿主生成、随请求透传下游；dry-run 返回将要发生的变化（diff），并标注“本次未执行”。
+自检：如果 dry-run 只是“参数校验通过”，没有 diff，不通过。
+
+**3. 工具返回内容含恶意指令**
+要点：测试要覆盖两条——(a) 内容被标记为不可信数据，模型没有执行它；(b) 即使模型尝试执行，**策略引擎**也会拦住外发动作（本章第九节“三个真实攻击面” + [安全与权限](/layers/security)的出口控制）。
+参考：`examples/mini_agent/guard.py` 在工具返回阶段把结果当作待审内容处理。
+自检：只测了“模型遵守了提示”，不算通过——那是概率，不是边界。
+:::
 
 下一步：[记忆层](/layers/memory)。

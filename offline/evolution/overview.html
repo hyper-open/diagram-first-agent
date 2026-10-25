@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -178,7 +183,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>注意：<strong>API Gateway 不等于 Agent Gateway，Model Gateway 也不等于 Tool Gateway。</strong> 它们解决的是不同边界上的问题，后文会逐级展开。</p>
+<p>注意：<strong>API 网关不等于 Agent 网关，模型网关也不等于工具网关。</strong> 它们解决的是不同边界上的问题，后文会逐级展开。</p>
 <h2 id="三八级演进每一级只解决一个新矛盾">三、八级演进：每一级只解决一个新矛盾</h2>
 <p>见<strong>图 2</strong>：</p>
 <div class="mermaid">flowchart TB
@@ -302,12 +307,68 @@
 </table></div>
 <p>判断是否该升级，不看“别人有没有”，而看<strong>当前架构是否已经被某一类问题反复卡住</strong>：</p>
 <ul>
-<li>每次接新模型都要改 N 个服务 → 该有 Model Gateway。</li>
-<li>每个团队都在自己管工具密钥 → 该有 Tool Gateway。</li>
+<li>每次接新模型都要改 N 个服务 → 该有模型网关。</li>
+<li>每个团队都在自己管工具密钥 → 该有工具网关。</li>
 <li>无法回答“这个月谁花了多少钱” → 该有计量与计费。</li>
 <li>同一类问题反复答错、无法回归 → 该有评测与追踪。</li>
 <li>请求类型差异巨大、Agent 经常选错工具 → 该有意图路由。</li>
 </ul>
+<div class="custom-block tip"><p class="custom-block-title">主线是地图，细节在分层章</p>
+<p><code>evolution/</code> 下的九章是<strong>导航</strong>，不是全部内容：每章讲清“这一级为什么要出现、加了什么、又制造了什么”，平均约 1,000 字，读完你能判断“我的系统该不该进入这一级”。</p>
+<p>真正要动手时的细节在 <code>layers/</code> 下：主线的每一级都对应一个或多个分层章，对照表如下。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>主线章节</th>
+<th>篇幅</th>
+<th>配套细节章</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="react.html">ReAct</a></td>
+<td>~740 字</td>
+<td><a href="../foundations/loop.html">核心循环</a></td>
+</tr>
+<tr>
+<td><a href="tool-calling.html">工具调用</a></td>
+<td>~820 字</td>
+<td><a href="../layers/tools.html">工具层</a></td>
+</tr>
+<tr>
+<td><a href="model-gateway.html">模型网关</a></td>
+<td>~980 字</td>
+<td><a href="../layers/model.html">模型层</a>、<a href="../layers/model-adaptation.html">模型适配</a></td>
+</tr>
+<tr>
+<td><a href="tool-gateway.html">工具网关</a></td>
+<td>~780 字</td>
+<td><a href="../layers/security.html">安全与权限</a>、<a href="../layers/runtime.html">运行时与沙箱</a></td>
+</tr>
+<tr>
+<td><a href="rag.html">RAG</a></td>
+<td>~870 字</td>
+<td><a href="../layers/retrieval.html">检索层</a>、<a href="../layers/context.html">上下文层</a></td>
+</tr>
+<tr>
+<td><a href="intent.html">意图识别</a></td>
+<td>~970 字</td>
+<td><a href="../layers/orchestration.html">编排层</a></td>
+</tr>
+<tr>
+<td><a href="multi-agent.html">多 Agent</a></td>
+<td>~810 字</td>
+<td><a href="../layers/orchestration.html">编排层</a></td>
+</tr>
+<tr>
+<td><a href="platform.html">平台化</a></td>
+<td>~1,150 字</td>
+<td><a href="../layers/evaluation.html">评测</a>、<a href="../layers/release.html">发布</a>、<a href="../layers/privacy.html">隐私</a>、<a href="../layers/compliance.html">合规</a></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>建议读法</strong>：主线通读一遍建立坐标系（约 2 小时），然后<strong>按需下钻</strong>——不要为了“读完一遍”把 38 章从头刷到尾，那样会读成资料检索。</p>
+</div>
 <h2 id="五这本主线怎么读">五、这本主线怎么读</h2>
 <p>每一章都按同一个结构展开：</p>
 <div class="code-block"><div class="code-lang">text</div><pre><code>上一阶段长什么样
@@ -360,6 +421,24 @@
 </tbody>
 </table></div>
 <p>它们容易被推迟，因为“现在还能跑”。但推迟的代价是<strong>事后补不回来</strong>：没有 trace 就补不出历史，没有版本就回滚不了，没有审核就删不掉已发出去的内容。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Google Cloud, <strong>API Gateway 架构总览</strong>——接入层与后端服务的边界，是“网关”概念的原始语境。<a href="https://cloud.google.com/api-gateway/docs/architecture-overview" target="_blank" rel="noopener">链接</a></li>
+<li>AWS, <strong>Well-Architected：Operational Excellence</strong>——控制面/数据面与运维职责的划分。<a href="https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html" target="_blank" rel="noopener">链接</a></li>
+<li>HumanLayer, <strong>12-Factor Agents</strong>——把 Agent 当成软件系统设计的十二条原则。<a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Building Effective Agents</strong>——复杂度应当随真实问题增长，而非提前建设。<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B%E4%B8%BB%E7%BA%BF">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p>本章没有「练习」小节，但第五节给了阅读顺序。用以下三条自检是否真的看懂了总览：</p>
+<p><strong>1. 为什么不能把所有逻辑写进 Agent 进程？</strong>
+要点：不是“进程会挂”，而是<strong>规则无法集中</strong>——配额、鉴权、路由、计费、审计在每个进程里各写一遍，变更就要全量发布，且无法回答“谁花了多少”。</p>
+<p><strong>2. 模型网关与工具网关的边界</strong>
+要点：前者管<strong>策略函数</strong>（选哪个模型、怎么回退、token 怎么计），后者管<strong>外部副作用</strong>（能不能调、以谁的身份调、调完留痕）。两者的共同点是不信任 Agent 进程。</p>
+<p><strong>3. 什么时候“不该上平台”？</strong>
+要点：问题还没稳定复现、租户和调用量都很小、或者当前瓶颈其实是模型能力而不是工程约束——此时上平台只是增加维护面。
+自检：如果你的答案里出现了“因为大厂都这么做”，回到第四节的三级成熟度表重新判断。</p>
+</details>
 <p>下一步：<a href="react.html">阶段 1：ReAct</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="../start/what-is-agent.html"><span>上一篇</span><strong>什么是 Agent</strong></a><a class="next" href="react.html"><span>下一篇</span><strong>01 ReAct，最小可用 Agent</strong></a></nav>

@@ -19,6 +19,16 @@ flowchart LR
 <p class="diagram-caption"><strong>一图看懂</strong> · 术语不是孤立定义：它们都挂在 Agent 的同一张架构图上</p>
 
 
+::: tip 全书中英对照约定
+本书对三个网关采用**统一写法**：
+
+- 中文正文用「**模型网关**」「**工具网关**」「**API 网关**」；
+- 首次出现时在括号里给出英文（模型网关 / Model Gateway），之后不再重复；
+- **架构图、时序图、JSON 字段、配置项、表格中的产品/组件名**保留英文原文，因为这些是要直接写进代码和图里的。
+
+按这套约定检索不会漏：搜「模型网关」能找到论述，搜「Model Gateway」能找到图与代码。
+:::
+
 按主题分组。带 ★ 的是最容易混淆、建议优先掌握的概念。
 
 ## 基础
@@ -175,6 +185,17 @@ flowchart LR
 | 蒸馏 | Distillation | 用大模型输出训练小模型，换取更低成本与延迟 |
 | 灾难性遗忘 | Catastrophic Forgetting | 微调后通用能力下降 |
 | 数据飞轮 | Data Flywheel | 线上失败 → 标注 → 训练 → 评测 → 上线的闭环 |
+
+## 来源
+
+术语的英文命名与定义以官方文档为准，本章的取舍是“按工程职责归类”，定义本身尽量贴合原文：
+
+- Anthropic, **Glossary**——Agent、tool use、MCP 等术语的官方释义。[链接](https://docs.anthropic.com/en/docs/build-with-claude/glossary)
+- Lilian Weng, **LLM Powered Autonomous Agents**——规划/记忆/工具三分法，本章分组的来源。[链接](https://lilianweng.github.io/posts/2023-06-23-agent/)
+- OpenAI, **Prompt Engineering Guide**——提示工程与上下文相关术语。[链接](https://platform.openai.com/docs/guides/prompt-engineering)
+- Chen et al., **HumanEval**（2021）——`pass@k` 的官方定义。[链接](https://arxiv.org/abs/2107.03374)
+
+完整清单见[推荐来源](/appendix/sources#术语表)。
 
 ## 一句话记住
 

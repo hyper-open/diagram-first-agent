@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -103,6 +108,9 @@
 </div>
 <p class="diagram-caption"><strong>图 1d</strong> · 辩论：适合判断类任务，成本高、可能虚假共识</p>
 <h2 id="子-agent-契约">子 Agent 契约</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/agent_task_packet.json"><code>agent_task_packet.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <p>见<strong>图 2</strong>：</p>
 <div class="mermaid">flowchart LR
   P[&quot;父 Agent&quot;] --&gt;|&quot;任务包&quot;| C[&quot;子 Agent&quot;]
@@ -199,7 +207,7 @@
 </tr>
 <tr>
 <td>不绕网关</td>
-<td>模型/工具调用仍走 Model Gateway / Tool Gateway</td>
+<td>模型/工具调用仍走模型网关 / 工具网关</td>
 </tr>
 </tbody>
 </table></div>
@@ -249,6 +257,25 @@
 </tr>
 </tbody>
 </table></div>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——多 Agent 失败的实证分类（MAST），本章“错误传播”一节的依据。<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">链接</a></li>
+<li>Wu et al., <strong>AutoGen</strong>（2023）——可对话的多 Agent 编排与四种拓扑的工程来源。<a href="https://arxiv.org/abs/2308.08155" target="_blank" rel="noopener">链接</a></li>
+<li>Hong et al., <strong>MetaGPT</strong>（2023）——SOP 式分工与角色契约。<a href="https://arxiv.org/abs/2308.00352" target="_blank" rel="noopener">链接</a></li>
+<li>A2A Project, <strong>Agent2Agent Protocol</strong>——跨系统委派、能力发现与协作的规范。<a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#07-%E5%A4%9A-agent">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 设计“研究 → 写作 → 评审”的流程</strong>
+要点：三者之间的<strong>不是对话</strong>，而是契约——每个子 Agent 的输入 schema、输出 schema、可用工具、预算、成功标准、失败回报方式。评审 Agent 的输出必须包含“结论 + 证据 + 未决问题”，否则主管无法裁决。
+自检：如果你的设计里子 Agent 能互相自由对话，先回答本章的“协调死锁”和“错误传播”该如何避免。</p>
+<p><strong>2. 去掉评审 Agent，质量会下降吗</strong>
+要点：先做 A/B：同一批任务，有评审 vs 无评审，比较<strong>证据支持率</strong>和<strong>返工率</strong>，而不是比“感觉更好”。
+自检：如果下降无法被指标观测到，结论应当是“这个多 Agent 目前没必要”——本章的设计原则第一条就是“少即是多”。</p>
+<p><strong>3. 什么情况下多 Agent 比“单 Agent + 工具”更差</strong>
+要点：三个具体例子可以从本章的错误传播图里找——(a) 子任务强依赖，拆开后要反复同步上下文；(b) 只有一个角色有真实权限，其余 Agent 只是转发，多一跳只增加延迟；(c) 任务本身可验证性弱，评审 Agent 和生成 Agent 共享同样的盲区，形成虚假共识。
+自检：能说出“多 Agent 增加的是边界，不是智能”——这是本章开头的原话，能用自己的例子复述它才算理解。</p>
+</details>
 <p>下一步：<a href="platform.html">阶段 8：平台化</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="intent.html"><span>上一篇</span><strong>06 意图识别与路由</strong></a><a class="next" href="platform.html"><span>下一篇</span><strong>08 平台化与治理</strong></a></nav>

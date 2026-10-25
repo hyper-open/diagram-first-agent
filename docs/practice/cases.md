@@ -232,10 +232,38 @@ quadrantChart
 | 关键护栏 | 测试/沙箱 | 引用校验 | 策略引擎 | 桌面隔离/确认 |
 | 适合自主性 | 高 | 高 | 中 | 低–中 |
 
+## 来源
+
+- Jimenez et al., **SWE-bench**（2023）——Coding Agent 的任务分布与评测协议。[链接](https://arxiv.org/abs/2310.06770)
+- Yang et al., **SWE-agent**（2024）——Agent-Computer Interface 设计如何影响成功率。[链接](https://arxiv.org/abs/2405.15793)
+- OpenAI, **Deep Research**——研究型 Agent 的流程与已知失败。[链接](https://openai.com/index/deep-research/)
+- Xie et al., **OSWorld**（2024）——Computer Use 的可复现评测。[链接](https://arxiv.org/abs/2404.07972)
+- Yao et al., **τ-bench**（2024）——工具 + 政策遵循的评测，对应本章客服案例。[链接](https://arxiv.org/abs/2406.12045)
+
+完整清单见[推荐来源](/appendix/sources#真实案例拆解)。
+
 ## 练习
+
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`agent_task_packet.json`](../../examples/templates/agent_task_packet.json)、[`eval_case.json`](../../examples/templates/eval_case.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
 
 1. 选一个你熟悉的产品，填出它的七层表，并标出最薄弱的层。
 2. 为“客服 Agent”写三条必须由代码而不是提示词保证的规则。
 3. 设计一个“Deep Research”的缺口检查表：满足什么条件才允许写最终报告？
+
+::: details 参考答案与自检
+**1. 填一个产品的七层表，标出最薄弱的一层**
+要点：最薄弱层通常不是“模型”，而是 **L7 成功标准**（没人定义什么叫完成）或 **L1 可观测**（出问题查不到）。能给出证据（如“他们的失败提示只有‘出错了’”）。
+自检：如果结论是“最弱是 L2 模型不够强”，说明还在用模型能力解释系统问题——回到本章的四个案例对比表。
+
+**2. 客服 Agent 必须由代码保证的三条规则**
+要点：从本章“关键设计”里挑，且必须是**防模型绕过**的类型，例如：只能查当前用户的数据（强制 tenant/user 过滤）、退款期限由策略引擎判定、低置信自动升级人工。
+自检：如果三条里有“要礼貌”“不要承诺未授权内容”这种提示词级别的规则，不通过——它们不可判定。
+
+**3. Deep Research 的缺口检查表**
+要点：写成可判定的条件，例如：每个结论至少一条可访问引用、未决问题清单为空或已被明确标注、覆盖率（问题域的子问题是否都查过）、时间窗口内无矛盾来源。
+自检：如果检查表最终归结为“让模型自己说有没有缺口”，那是自我确认——本章第二节“缺口检测与证据管理”明确要求外部判据。
+:::
 
 下一步：[交互与信任设计](/practice/ux)。

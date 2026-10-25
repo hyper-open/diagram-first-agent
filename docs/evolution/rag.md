@@ -111,6 +111,10 @@ ACL 要在索引期写入元数据，查询时过滤，而不是取回结果再�
 
 ## 优化矩阵
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`eval_case.json`](../../examples/templates/eval_case.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 > 这张表只给方向。切分、混合检索、重排参数与评测方法，见[检索层](/layers/retrieval)。
 
 | 症状 | 手段 |
@@ -142,5 +146,28 @@ ACL 要在索引期写入元数据，查询时过滤，而不是取回结果再�
 | 问题类型单一、路径固定 | 请求类型差异大：FAQ/工单/Agent 混在一起 |
 | 所有请求都值得检索 | 简单请求检索反而更慢更贵 |
 | 统一入口、统一策略 | 需要按意图选择不同处理路径 |
+
+## 来源
+
+- Lewis et al., **Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks**（2020）——原始论文。[链接](https://arxiv.org/abs/2005.11401)
+- Gao et al., **RAG for Large Language Models: A Survey**（2023）——管线式 / 高级 / Agentic 三阶段，本章的分类依据。[链接](https://arxiv.org/abs/2312.10997)
+- Asai et al., **Self-RAG**（2023）——让模型自己判断“要不要检索、检索结果够不够”。[链接](https://arxiv.org/abs/2310.11511)
+- Trivedi et al., **IRCoT**（2022）——多跳问题为何需要检索与推理交替。[链接](https://arxiv.org/abs/2212.10509)
+
+完整清单见[推荐来源](/appendix/sources#05-rag)。
+
+::: details 参考答案与自检
+**1. 写一张索引元数据表**
+要点：至少包含 `doc_id / tenant / acl / source / updated_at / section_path / page`。缺 `acl` 就无法在召回阶段过滤，缺 `section_path` 就无法给出可信引用。
+自检：如果表里只有“内容 + 向量”，你的 RAG 只能做演示。
+
+**2. 五条路由（FAQ / 查单 / RAG / Agent / 人工）**
+要点：每条都要写出**低置信兜底**，且兜底不能是“再来一次”。例如 FAQ 低置信 → RAG；RAG 无命中 → Agent；Agent 涉及不可逆动作 → 人工。
+参考设计见[意图识别](/evolution/intent)的置信度分叉；自检：五条路径里若没有“人工”，说明高风险出口缺失。
+
+**3. “无权限但语义相关”的检索用例**
+要点：测试要断言**召回结果不含该文档**（而不是“回答里不出现”）。后者仍然泄露了存在性。
+自检：过滤发生在召回之后（如重排后再删）属于未通过——见[检索层](/layers/retrieval)第七节“权限过滤：越早越好”。
+:::
 
 下一步：[阶段 6：意图识别与路由](/evolution/intent)。

@@ -57,6 +57,10 @@ flowchart LR
 
 ## 二、预算：先分配，再填充
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`trace_step.json`](../../examples/templates/trace_step.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 假设模型窗口 128K，不代表你应该用满。实际预算要考虑：
 
 - 输出预留（尤其推理模型的 thinking token）。
@@ -331,10 +335,34 @@ class ContextBuilder:
 | 缓存命中低 | 前缀是否稳定 | 固定顺序、去掉时间戳 |
 | 检索没用 | 查询/切分/重排 | 改查询构造，加混合检索与重排 |
 
+## 来源
+
+- Liu et al., **Lost in the Middle: How Language Models Use Long Contexts**（2023）——位置效应，支撑本章“中间的信息容易被忽略”。[链接](https://arxiv.org/abs/2307.03172)
+- Anthropic, **Prompt Caching**——为什么“稳定内容前置、易变内容后置”能省钱。[链接](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+- Packer et al., **MemGPT**（2023）——上下文作为“内存”、外部存储作为“磁盘”的分层管理。[链接](https://arxiv.org/abs/2310.08560)
+- Jiang et al., **LLMLingua**（2023）——提示压缩与“关键信息保留率”的评估方法。[链接](https://arxiv.org/abs/2310.05736)
+
+完整清单见[推荐来源](/appendix/sources#上下文层)。
+
 ## 练习
 
 1. 给你当前的 Agent 请求做一次“section 审计”：每段占多少 token，哪些可以删？
 2. 设计一个“关键信息保留率”测试：列出 10 条必须保留的事实，压缩后逐条检查。
 3. 把历史全量拼接改成“状态 + 最近观察 + 证据”，比较 token 与成功率。
+
+::: details 参考答案与自检
+**1. 做一次 section 审计**
+要点：按本节“上下文预算图”的九段，逐段量 token 并标注“必要性 / 可压缩 / 可外置”。常见结论是**工具定义与旧观察**占了最大头。
+参考实现见 `examples/mini_agent/agent.py` 的 `_build_messages()`，它把系统提示、记忆、历史视图、当前目标分段拼装。
+自检：如果审计只列了占比，没给“删掉之后怎么验证没变差”，审计没有闭环。
+
+**2. 关键信息保留率测试**
+要点：先列出 10 条**必须保留**的事实（含一条容易被压缩掉的条件，如“不要改公共 API”），压缩后逐条做包含式或语义断言，记录 `保留率`。
+自检：10 条全是“用户想干什么”这类显眼信息，测试没有区分度——要包含约束、已失败尝试、时间/数量边界。
+
+**3. 改成“状态 + 最近观察 + 证据”**
+要点：比较三个量——输入 token、成功率、**失败模式是否变化**（是否出现“忘记约束”）。历史全量往往 token 高但约束保真；结构化状态反之，需要用“约束单独成段”来补。
+自检：如果只比了 token，没比成功率与约束遵守率，结论不可信。
+:::
 
 下一步：[检索层](/layers/retrieval)。

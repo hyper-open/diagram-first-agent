@@ -48,12 +48,17 @@
 <a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -142,6 +147,9 @@
 </div>
 <p class="diagram-caption"><strong>图 2</strong> · ReAct 的失控通常不是“想错了”，而是“没有新信息还继续”</p>
 <h2 id="第一轮工程化不换架构先补护栏">第一轮工程化：不换架构，先补护栏</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/mini_agent_config.json"><code>mini_agent_config.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -221,6 +229,24 @@
 </tbody>
 </table></div>
 <p>下一阶段先解决最痛的一个：<strong>动作协议</strong>。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Yao et al., <strong>ReAct: Synergizing Reasoning and Acting in Language Models</strong>（2022）——原始论文。论文的提示模板与解析逻辑正是本章“文本协议脆弱”的来源。<a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">链接</a></li>
+<li>Wei et al., <strong>Chain-of-Thought Prompting</strong>（2022）——ReAct 的推理前身，“把计算放进生成过程”。<a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener">链接</a></li>
+<li>Shinn et al., <strong>Reflexion</strong>（2023）——语言化反思，是“停滞检测 + 外部验证”的思想来源。<a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">链接</a></li>
+<li>Zhou et al., <strong>WebArena</strong>（2023）——长循环任务在真实环境中的失败率，支撑“没有护栏的循环会失控”。<a href="https://arxiv.org/abs/2307.13854" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#01-react">推荐来源</a>。</p>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p>本章正文的「练习」以 TIP 形式出现在「第一轮工程化」表格之后：</p>
+<p><strong>1. 把 <code>max_steps</code> 改成 1，观察 <code>status</code> 和 <code>output</code></strong>
+要点：<code>status</code> 应为 <code>partial</code>（预算耗尽不等于失败），<code>output</code> 应包含已完成的部分与失败原因，而不是空字符串或抛异常。
+参考实现见 <code>examples/mini_agent/agent.py</code> 的 <code>_partial_output()</code>：它把“已执行步数 / 最近观察 / 建议下一步”写进输出。
+自检：如果你拿到的是 <code>error</code> 或异常，说明循环把“资源耗尽”当成了“程序错误”——见<a href="../advanced/optimization.html">优化手册</a>。</p>
+<p><strong>2. 改成 3，观察停滞检测何时触发</strong>
+要点：同一个工具、同一组参数连续出现第 3 次时触发（阈值可配），而不是等到步数耗尽。参数“略有不同但语义相同”（如 <code>1+1</code> 与 <code>1 + 1</code>）能否识别，取决于你是否对参数做了规范化。
+自检：能说清“停滞是启发式，<code>max_steps</code> 是硬兜底，两者不能互相替代”即达标。</p>
+</details>
 <p>下一步：<a href="tool-calling.html">阶段 2：工具调用与注册</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="overview.html"><span>上一篇</span><strong>00 架构总览</strong></a><a class="next" href="tool-calling.html"><span>下一篇</span><strong>02 工具调用与注册</strong></a></nav>

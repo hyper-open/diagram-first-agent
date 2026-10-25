@@ -70,6 +70,10 @@ flowchart LR
 
 ## 子 Agent 契约
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`agent_task_packet.json`](../../examples/templates/agent_task_packet.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 见**图 2**：
 
 ```mermaid
@@ -134,7 +138,7 @@ flowchart LR
 | 编排确定性 | 能写死的流程不要交给 Agent 协商 |
 | 可观测 | trace_id 贯穿父子 Agent，能还原调用树 |
 | 有上限 | 委派深度、并行数、总预算、总时长 |
-| 不绕网关 | 模型/工具调用仍走 Model Gateway / Tool Gateway |
+| 不绕网关 | 模型/工具调用仍走模型网关 / 工具网关 |
 
 ## MCP 与 A2A
 
@@ -152,5 +156,28 @@ flowchart LR
 | 任务线性、共享细粒度状态 | 需要按租户/Agent 计费、配额、审计 |
 | 没有可靠合并/裁决机制 | 一次任务跨多个模型/工具/团队 |
 | 预算/延迟敏感 | 需要控制面、账单、合规、评测与灰度 |
+
+## 来源
+
+- Cemri et al., **Why Do Multi-Agent LLM Systems Fail?**（2025）——多 Agent 失败的实证分类（MAST），本章“错误传播”一节的依据。[链接](https://arxiv.org/abs/2503.13657)
+- Wu et al., **AutoGen**（2023）——可对话的多 Agent 编排与四种拓扑的工程来源。[链接](https://arxiv.org/abs/2308.08155)
+- Hong et al., **MetaGPT**（2023）——SOP 式分工与角色契约。[链接](https://arxiv.org/abs/2308.00352)
+- A2A Project, **Agent2Agent Protocol**——跨系统委派、能力发现与协作的规范。[链接](https://a2a-protocol.org/latest/specification/)
+
+完整清单见[推荐来源](/appendix/sources#07-多-agent)。
+
+::: details 参考答案与自检
+**1. 设计“研究 → 写作 → 评审”的流程**
+要点：三者之间的**不是对话**，而是契约——每个子 Agent 的输入 schema、输出 schema、可用工具、预算、成功标准、失败回报方式。评审 Agent 的输出必须包含“结论 + 证据 + 未决问题”，否则主管无法裁决。
+自检：如果你的设计里子 Agent 能互相自由对话，先回答本章的“协调死锁”和“错误传播”该如何避免。
+
+**2. 去掉评审 Agent，质量会下降吗**
+要点：先做 A/B：同一批任务，有评审 vs 无评审，比较**证据支持率**和**返工率**，而不是比“感觉更好”。
+自检：如果下降无法被指标观测到，结论应当是“这个多 Agent 目前没必要”——本章的设计原则第一条就是“少即是多”。
+
+**3. 什么情况下多 Agent 比“单 Agent + 工具”更差**
+要点：三个具体例子可以从本章的错误传播图里找——(a) 子任务强依赖，拆开后要反复同步上下文；(b) 只有一个角色有真实权限，其余 Agent 只是转发，多一跳只增加延迟；(c) 任务本身可验证性弱，评审 Agent 和生成 Agent 共享同样的盲区，形成虚假共识。
+自检：能说出“多 Agent 增加的是边界，不是智能”——这是本章开头的原话，能用自己的例子复述它才算理解。
+:::
 
 下一步：[阶段 8：平台化](/evolution/platform)。

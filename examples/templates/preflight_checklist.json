@@ -1,0 +1,20 @@
+{
+  "$comment": "上线门禁清单。是《平台化》「最小可用平台清单」与《安全与权限》「安全检查清单」的可执行版本：每条都要有一个可验证的证据来源。",
+  "version": "1.0",
+  "gates": [
+    { "id": "identity", "item": "统一身份与租户，所有调用可归因", "evidence": "trace 100% 含 tenant_id / user_id", "owner": "平台" },
+    { "id": "model-gateway", "item": "模型访问走网关：路由、回退、配额、用量记录", "evidence": "直连模型调用数为 0", "owner": "平台" },
+    { "id": "tool-gateway", "item": "工具访问走网关：鉴权、限流、审计", "evidence": "工具凭据不出现在 Agent 进程内", "owner": "平台" },
+    { "id": "sandbox", "item": "代码/浏览器在沙箱内执行，无宿主凭证", "evidence": "沙箱无网络或有出口白名单", "owner": "安全" },
+    { "id": "policy", "item": "高风险动作默认拒绝，需审批", "evidence": "策略引擎单测覆盖 deny/approval 分支", "owner": "安全" },
+    { "id": "trace", "item": "每步模型/工具/成本可查", "evidence": "能回答『昨天失败的任务失败在哪一层』", "owner": "平台" },
+    { "id": "eval", "item": "评测集 + 回归门禁", "evidence": "CI 中评测不下降即阻止合并", "owner": "研发" },
+    { "id": "billing", "item": "能回答『谁花了多少』", "evidence": "usage_event 可按 tenant 汇总", "owner": "平台" },
+    { "id": "rollback", "item": "模型/提示/工具/策略可独立回滚", "evidence": "回滚演练记录，含耗时", "owner": "研发" },
+    { "id": "incident", "item": "失败分类与告警", "evidence": "告警能定位到具体层", "owner": "研发" },
+    { "id": "content-safety", "item": "输入/工具返回/输出/记忆写入四个卡点", "evidence": "每个卡点有测试用例", "owner": "安全" },
+    { "id": "privacy", "item": "日志默认脱敏，删除任务可执行", "evidence": "删除流程覆盖索引与缓存", "owner": "安全" },
+    { "id": "compliance", "item": "四张表可导出（见 compliance_four_tables.json）", "evidence": "系统导出而非人工填写", "owner": "合规" }
+  ],
+  "usage": "每个 gate 的 evidence 必须是可判定的（能跑一条命令或看一个看板）；写成『已注意』的一律不算通过。"
+}

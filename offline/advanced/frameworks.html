@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>框架对照与迁移 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="../practice/mini-agent.html">实战</a><a href="optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
+<a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="optimization.html">优化手册</a>
+<a class="nav-item" href="durability.html">长任务与可靠执行</a>
+<a class="nav-item active" href="frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>进阶</span><span>/</span><strong>框架对照与迁移</strong></div>
+        <article class="doc"><h1 id="框架对照它们替你做了什么又藏起了什么">框架对照：它们替你做了什么，又藏起了什么</h1>
+<h2 id="为什么这本书刻意不用框架">为什么这本书刻意“不用框架”</h2>
+<p>前面的 v1–v3 是手写的，这不是反框架，而是一个判断：<strong>框架的价值只有在你知道它在做什么时才能兑现</strong>。</p>
+<ul>
+<li>不知道循环怎么终止 → 框架的 <code>max_turns</code> 你会设成默认值，然后线上开始无限重试；</li>
+<li>不知道工具错误契约 → 框架抛出的异常你会直接透给用户；</li>
+<li>不知道上下文怎么组装 → 框架的“记忆”会给你的模型塞进 20 轮对话和一条过期偏好。</li>
+</ul>
+<p>所以这一章的目标不是教你用某个框架，而是给你一副<strong>对照镜</strong>：看到框架的每个概念，能立刻说出它对应本书的哪一层、省掉了哪段代码、又把哪个责任留给了你。</p>
+<div class="custom-block warning"><p class="custom-block-title">时效性</p>
+<p>框架迭代很快，<strong>具体 API 会变，抽象和边界不会变</strong>。本章只对“它解决哪类问题”做断言，具体的函数名、参数请以官方文档为准（每节都给了链接）。</p>
+</div>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  subgraph S[&quot;框架通常覆盖&quot;]
+    L1[&quot;循环与终止&quot;]
+    L2[&quot;工具注册与调用&quot;]
+    L3[&quot;状态与检查点&quot;]
+    L4[&quot;多 Agent 编排&quot;]
+    L5[&quot;追踪与评测钩子&quot;]
+  end
+  subgraph Y[&quot;框架通常不管&quot;]
+    L6[&quot;能力令牌 / 审批&quot;]
+    L7[&quot;计量与账本&quot;]
+    L8[&quot;内容安全与合规&quot;]
+    L9[&quot;沙箱与出口控制&quot;]
+  end
+  S --&gt; APP[&quot;你的应用&quot;]
+  Y --&gt; APP
+  APP --&gt; P[&quot;仍然是你自己的：&lt;br/&gt;契约 · 评测 · 上线判断&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 框架覆盖上半部分（编排），下半部分（治理）几乎总是留给你</p>
+<h2 id="框架概念与本书组件的映射">框架概念与本书组件的映射</h2>
+<p>见<strong>图 1</strong>：</p>
+<div class="mermaid">flowchart LR
+  subgraph F[&quot;框架抽象&quot;]
+    F1[&quot;Agent / Runner&quot;]
+    F2[&quot;Tool / Handoff&quot;]
+    F3[&quot;State / Checkpoint&quot;]
+    F4[&quot;Guardrail&quot;]
+    F5[&quot;Trace&quot;]
+  end
+  subgraph B[&quot;本书的层&quot;]
+    B1[&quot;v1 循环 + 预算&quot;]
+    B2[&quot;工具层 + 能力令牌&quot;]
+    B3[&quot;persistence + 幂等&quot;]
+    B4[&quot;内容安全 + 审批&quot;]
+    B5[&quot;评测集 + 失败分类&quot;]
+  end
+  F1 --&gt; B1
+  F2 --&gt; B2
+  F3 --&gt; B3
+  F4 --&gt; B4
+  F5 --&gt; B5
+</div>
+<p class="diagram-caption"><strong>图 1</strong> · 映射之后你会发现：框架给的是“上半截”，每一层下半截的契约仍然在你手里</p>
+<h2 id="二先给一张总表">二、先给一张总表</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>框架</th>
+<th>它最擅长的</th>
+<th>它给你但容易误用的</th>
+<th>它基本不管</th>
+<th>本项目的对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OpenAI Agents SDK</strong></td>
+<td>极简基元：Agent / Handoff / Guardrail + 内置循环与 tracing</td>
+<td>内置 tracing 容易当成“可观测已经做完了”</td>
+<td>计量、租户、能力令牌、内容合规</td>
+<td>v1 的循环 + <code>guard.py</code></td>
+</tr>
+<tr>
+<td><strong>LangGraph</strong></td>
+<td>用图表达控制流、持久化、检查点、可恢复与人为中断</td>
+<td>“能恢复”容易误读为“能可靠重试副作用”</td>
+<td>授权、计费、跨系统审计</td>
+<td>v3 的 <code>persistence.py</code></td>
+</tr>
+<tr>
+<td><strong>Claude Agent SDK</strong></td>
+<td>面向 Claude 的 Agent 循环封装与工具/MCP 接入</td>
+<td>供应商绑定</td>
+<td>同上</td>
+<td>v1 + MCP 接入点</td>
+</tr>
+<tr>
+<td><strong>AutoGen / CrewAI 类</strong></td>
+<td>多 Agent 角色协作、对话式委派</td>
+<td>角色提示 ≠ 契约；错误会顺着对话传播</td>
+<td>权限边界、成本控制</td>
+<td>v3 的 <code>agent_task_packet.json</code> 思想</td>
+</tr>
+<tr>
+<td><strong>Dify / Coze 等平台</strong></td>
+<td>低代码编排、可视化调试、内置 RAG 与发布</td>
+<td>平台替你做的选择看不见，出问题难定位</td>
+<td>你的业务约束与合规义务</td>
+<td>v1–v3 的分层</td>
+</tr>
+<tr>
+<td><strong>Temporal（非 Agent 框架）</strong></td>
+<td>持久执行：确定性重放、活动、补偿</td>
+<td>需要把 Agent 改造成“可重放的步骤”</td>
+<td>模型调用本身</td>
+<td>v3 的租约与检查点</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="三逐个看映射到哪里责任留在哪">三、逐个看：映射到哪里，责任留在哪</h2>
+<h3 id="1-openai-agents-sdk">1. OpenAI Agents SDK</h3>
+<p>官方给出的基元很少，这是它的设计原则（“少到能快速学会”）：</p>
+<ul>
+<li><strong>Agents</strong>：带 instruction 和 tools 的 LLM；</li>
+<li><strong>Handoffs / Agents as tools</strong>：委派给子 Agent；</li>
+<li><strong>Guardrails</strong>：并行校验输入输出，失败即中断；</li>
+<li><strong>内置循环</strong>：一直跑到任务完成；</li>
+<li><strong>内置 tracing</strong>。</li>
+</ul>
+<p><strong>映射</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>SDK 概念</th>
+<th>本书位置</th>
+<th>你仍然要补的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent loop</td>
+<td><a href="../foundations/loop.html">核心循环</a>、v1 <code>agent.py</code></td>
+<td>预算、停滞检测、部分结果语义</td>
+</tr>
+<tr>
+<td>Function tools</td>
+<td><a href="../layers/tools.html">工具层</a>、v1 <code>tools.py</code></td>
+<td>错误契约字段、幂等、审批</td>
+</tr>
+<tr>
+<td>Guardrails</td>
+<td><a href="../layers/content-safety.html">内容安全</a>、v1 <code>guard.py</code></td>
+<td>分级处置（allow/rewrite/review/block）、人审队列</td>
+</tr>
+<tr>
+<td>Handoffs</td>
+<td><a href="../evolution/multi-agent.html">多 Agent</a></td>
+<td>子 Agent 契约、预算继承、失败回传</td>
+</tr>
+<tr>
+<td>Tracing</td>
+<td><a href="../layers/evaluation.html">评测与可观测</a></td>
+<td>指标定义、失败分类、评测集</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最容易踩的坑</strong>：把“有 tracing”当成“有可观测性”。tracing 告诉你<strong>发生了什么</strong>，不告诉你<strong>这是不是好的</strong>——后者需要评测集和指标，框架不会替你定义。</p>
+<p>来源：<a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">OpenAI Agents SDK 官方文档</a></p>
+<h3 id="2-langgraph">2. LangGraph</h3>
+<p>它把控制流表达成图：节点、边、状态；并提供了持久化、检查点、流式事件与中断（interrupt）。官方文档里这些是独立的“能力”页，而不是示例技巧。</p>
+<p><strong>映射</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>LangGraph 概念</th>
+<th>本书位置</th>
+<th>你仍然要补的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>State / Node / Edge</td>
+<td><a href="../layers/orchestration.html">编排层</a></td>
+<td>每个节点的契约（读哪些字段、写哪些字段）</td>
+</tr>
+<tr>
+<td>Checkpointer / Persistence</td>
+<td><a href="durability.html">长任务与可靠执行</a>、v3 <code>persistence.py</code></td>
+<td><strong>幂等</strong>：检查点恢复 ≠ 副作用不重复</td>
+</tr>
+<tr>
+<td>Interrupt</td>
+<td><a href="../practice/ux.html">交互与信任设计</a> 的审批</td>
+<td>审批单绑定 action+resource，且只能用一次</td>
+</tr>
+<tr>
+<td>Time travel</td>
+<td>失败复盘</td>
+<td>复盘要能定位到“最早出错的一步”，而不是最后一帧</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最容易踩的坑</strong>：以为“支持检查点”就等于“长任务可靠”。检查点只保证<strong>状态能恢复</strong>，不保证<strong>副作用不重复发生</strong>。v3 里这两件事是分开实现的：<code>persistence.py</code> 管状态，<code>idempotency</code> 管副作用，测试分别覆盖。这也是本书反复强调“重试要分类”的原因。</p>
+<p>来源：<a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">LangGraph 概览</a>、<a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">Persistence</a>、<a href="https://docs.langchain.com/oss/python/langgraph/checkpointers" target="_blank" rel="noopener">Checkpointers</a></p>
+<h3 id="3-claude-agent-sdk-与-mcp">3. Claude Agent SDK 与 MCP</h3>
+<p>以 Claude 为中心的封装，提供 Agent 循环、工具执行、MCP 接入和权限回调等能力。</p>
+<p><strong>映射</strong>：它基本等价于“v1 的循环 + <a href="../layers/tools.html">工具层</a> 的 MCP 接入”。真正的差异在<strong>供应商绑定</strong>：模型层被固定后，<a href="../evolution/model-gateway.html">模型网关</a> 的路由/回退/成本策略就要重新设计。</p>
+<p><strong>判断</strong>：如果你的产品已经深度绑定单一模型供应商，这类 SDK 能省掉很多胶水代码；如果你需要多模型路由或数据出境合规要求，那<a href="../evolution/model-gateway.html">模型网关</a>那一层必须自己做，SDK 帮不上。</p>
+<h3 id="4-autogen-crewai-类多-agent-框架">4. AutoGen / CrewAI 类多 Agent 框架</h3>
+<p>核心卖点是“让多个角色协作”。它们的抽象是<strong>对话</strong>和<strong>角色</strong>。</p>
+<p><strong>映射</strong>：对应<a href="../evolution/multi-agent.html">多 Agent</a>章，但要注意本书的一个反直觉结论——<strong>多 Agent 的失败大多不是“不聪明”，而是“错误被复制”</strong>。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>框架的抽象</th>
+<th>本书的要求</th>
+<th>差距</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>角色提示（“你是一个资深评审”）</td>
+<td>输出 schema + 成功标准 + 证据字段</td>
+<td>提示是概率，schema 是契约</td>
+</tr>
+<tr>
+<td>自由对话</td>
+<td>结构化任务包（见 <code>templates/agent_task_packet.json</code>）</td>
+<td>自由对话会让错误在角色间传播</td>
+</tr>
+<tr>
+<td>默认无预算</td>
+<td>委派深度、并行数、总 token 上限</td>
+<td>成本爆炸的常见来源</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>实操建议</strong>：先在单 Agent 上把工具和评测做扎实，只有当子任务<strong>确实独立</strong>或<strong>需要不同权限/工具集</strong>时，再引入多 Agent。判断标准在<a href="../evolution/multi-agent.html">多 Agent</a>章的“三个适用场景”。</p>
+<h3 id="5-dify-coze-等低代码平台">5. Dify / Coze 等低代码平台</h3>
+<p>这类平台的真实价值是<strong>缩短从想法到可演示的距离</strong>：可视化编排、内置 RAG、内置发布。</p>
+<p>代价是<strong>一部分决策被隐藏</strong>：它怎么切分文档、怎么拼上下文、默认温度是多少、失败怎么重试。这些恰好在出问题时决定你能不能定位。</p>
+<p><strong>用法建议</strong>：</p>
+<ul>
+<li>用平台做<strong>验证阶段</strong>（一周内验证需求是否存在）；</li>
+<li>迁移时，用本书的分层做<strong>检查表</strong>：逐层确认平台替你做了什么；</li>
+<li>RAG 相关至少核对<a href="../layers/retrieval.html">检索层</a>的五个问题：切分、embedding 与索引、混合检索、重排、权限过滤。</li>
+</ul>
+<h3 id="6-temporal不是-agent-框架但值得对照">6. Temporal（不是 Agent 框架，但值得对照）</h3>
+<p>Temporal 解决的是“持久执行”：把长流程写成可重放的确定性步骤。它和本书 v3 的关系是<strong>同一类问题的不同成熟度</strong>：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>v3 的 persistence.py:  检查点 + 租约 + 围栏令牌
+Temporal:             事件日志 + 确定性重放 + 活动重试策略
+</code></pre></div>
+<p>如果你的 Agent 需要跑几小时、跨天等待审批、必须保证“不重复扣款”，用 Temporal 这类基础设施比自己写检查点靠谱得多。v3 的代码价值在于<strong>让你看懂它在解决什么</strong>，而不是替代它。</p>
+<p>来源：<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">Temporal Workflows</a></p>
+<h2 id="四可迁移检查表">四、可迁移检查表</h2>
+<p>换框架时，逐条回答；答不上来的那一条，就是你会踩的坑。</p>
+<h3 id="循环与终止">循环与终止</h3>
+<ul>
+<li>[ ] 默认最大轮数是多少？超限后的返回是什么（异常 / 部分结果）？</li>
+<li>[ ] 有没有“无进展检测”？还是只靠轮数兜底？</li>
+<li>[ ] 预算（token / 时间 / 工具次数）分别在哪里设置？</li>
+</ul>
+<h3 id="工具">工具</h3>
+<ul>
+<li>[ ] 工具错误的结构是什么？模型能看到哪些字段？</li>
+<li>[ ] 写操作有幂等键吗？由谁生成？</li>
+<li>[ ] 权限检查发生在<strong>执行前</strong>还是工具内部？</li>
+<li>[ ] 工具返回的内容会被当作可信数据吗？</li>
+</ul>
+<h3 id="状态与持久化">状态与持久化</h3>
+<ul>
+<li>[ ] 状态在哪？重启后还在吗？</li>
+<li>[ ] 检查点与副作用的幂等是分开实现的吗？</li>
+<li>[ ] 两个 worker 同时跑同一个任务时会发生什么？</li>
+</ul>
+<h3 id="多-agent">多 Agent</h3>
+<ul>
+<li>[ ] 子 Agent 的输出有 schema 吗？</li>
+<li>[ ] 委派深度和总预算有上限吗？</li>
+<li>[ ] 子 Agent 失败时，父 Agent 拿到的信息够不够做决策？</li>
+</ul>
+<h3 id="治理框架通常不管">治理（框架通常不管）</h3>
+<ul>
+<li>[ ] 能力令牌 / 权限模型是谁的职责？</li>
+<li>[ ] 计量与计费在哪一层？</li>
+<li>[ ] 审计日志记录了<strong>被拒绝</strong>的调用吗？</li>
+<li>[ ] 内容审核的卡点覆盖几处（输入/工具返回/输出/记忆写入）？</li>
+<li>[ ] 谁能回答“这个月哪个租户花了多少钱”？</li>
+</ul>
+<h3 id="发布">发布</h3>
+<ul>
+<li>[ ] 模型、提示、工具 schema 分别怎么版本化？</li>
+<li>[ ] 灰度期间看哪些护栏指标？</li>
+<li>[ ] 回滚需要多久？数据层能回滚吗？</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>OpenAI, <strong>Agents SDK 文档</strong>——Agent / Handoffs / Guardrails / Tracing 的官方定义。<a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener">链接</a></li>
+<li>LangChain, <strong>LangGraph 概览</strong>——图、状态、持久化与中断。<a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">链接</a></li>
+<li>LangChain, <strong>LangGraph Persistence 与 Checkpointers</strong>——检查点不等于幂等这一区别的官方说明入口。<a href="https://docs.langchain.com/oss/python/langgraph/persistence" target="_blank" rel="noopener">链接</a></li>
+<li>Temporal, <strong>Workflows</strong>——持久执行的工业级实现。<a href="https://docs.temporal.io/workflows" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Model Context Protocol</strong>——跨框架的工具接入标准。<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E6%A1%86%E6%9E%B6%E5%AF%B9%E7%85%A7%E4%B8%8E%E8%BF%81%E7%A7%BB">推荐来源</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="durability.html"><span>上一篇</span><strong>长任务与可靠执行</strong></a><a class="next" href="frontier.html"><span>下一篇</span><strong>前沿与趋势</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

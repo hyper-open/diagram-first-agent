@@ -48,12 +48,17 @@
 <a class="nav-item" href="privacy.html">隐私与数据治理</a>
 <a class="nav-item" href="compliance.html">合规与法律</a></div>
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
 <div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
 <a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
 <a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
 <div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
 <a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
       <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
     </aside>
@@ -305,6 +310,9 @@ pin 具体版本；无法 pin 的，用每日评测集做“漂移检测”，�
 <p><strong>Q：灰度期间用户投诉怎么办？</strong>
 先按租户定位是否在新桶里，再决定是回滚还是补偿。没有按租户分桶，就只能全量回滚。</p>
 <h2 id="发布清单">发布清单</h2>
+<div class="custom-block tip"><p class="custom-block-title">可复制模板</p>
+<p>本章的清单有对应的结构化版本：<a href="../../examples/templates/release_record.json"><code>release_record.json</code></a>。全部模板见 <a href="../../examples/templates/README.md">examples/templates/README.md</a>。</p>
+</div>
 <ul>
 <li>[ ] 版本号覆盖代码/提示/模型/工具/策略/索引？</li>
 <li>[ ] 提示模板可 diff、可评审、可 pin？</li>
@@ -316,12 +324,32 @@ pin 具体版本；无法 pin 的，用每日评测集做“漂移检测”，�
 <li>[ ] schema 变更向前兼容，回滚不丢数据？</li>
 <li>[ ] 变更记录包含验证结果与回滚方式？</li>
 </ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Fowler, <strong>CanaryRelease / BlueGreenDeployment</strong>——灰度与蓝绿的模式定义。<a href="https://martinfowler.com/bliki/CanaryRelease.html" target="_blank" rel="noopener">链接</a></li>
+<li>Google, <strong>SRE Workbook：Canarying Releases</strong>——护栏指标与自动回滚的工程做法。<a href="https://sre.google/workbook/canarying-releases/" target="_blank" rel="noopener">链接</a></li>
+<li>OpenFeature, <strong>Feature Flag 规范</strong>——把“秒级开关”标准化的协议。<a href="https://openfeature.dev/specification/" target="_blank" rel="noopener">链接</a></li>
+<li>LaunchDarkly, <strong>Targeting 与稳定分桶</strong>——为什么按租户哈希分桶比随机分桶好。<a href="https://launchdarkly.com/blog/a-complete-guide-to-feature-flag-targeting/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#%E7%89%88%E6%9C%AC%E4%B8%8E%E5%8F%91%E5%B8%83">推荐来源</a>。</p>
 <h2 id="练习">练习</h2>
 <ol>
 <li>列出你系统的七类版本，看哪几类现在没有版本号。</li>
 <li>为一次“更换模型”设计发布路径：影子多久、灰度多大、看哪些指标。</li>
 <li>写一条回滚演练脚本：从告警到恢复，每一步谁执行、多久。</li>
 </ol>
+<details class="custom-block details"><summary>参考答案与自检</summary>
+<p><strong>1. 七类版本</strong>
+要点：代码 / 提示 / 模型 / 工具（schema）/ 策略 / 索引 / 评测集。缺任何一个，“回滚”都只能回一半。
+自检：如果评测集没有版本号，你无法说明“这次指标下降是因为系统变差，还是因为题变难了”。</p>
+<p><strong>2. 更换模型的发布路径</strong>
+要点：写清四个数字——影子流量持续时间、灰度比例阶梯（如 1% → 5% → 25% → 100%）、每档停留条件、护栏阈值（本章给了成功率 -3%、P95 +30%、成本 +20% 的参考值）。
+参考：本章第六节的护栏指标表。
+自检：如果没写“什么情况下自动回滚”，只有“观察一下”，不通过。</p>
+<p><strong>3. 回滚演练脚本</strong>
+要点：按“告警 → 判定 → 执行 → 验证 → 记录”写出每步的<strong>执行人与时限</strong>（秒/分钟），并注明哪一步不能自动化（如数据层回滚）。
+自检：如果脚本里没有“验证回滚后旧版本还能读到新写入的数据”这一步，演练等于走过场——本章第七节的 schema 向前兼容就是为它服务的。</p>
+</details>
 <p>下一步：<a href="security.html">安全与权限</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="evaluation.html"><span>上一篇</span><strong>评测与可观测性</strong></a><a class="next" href="security.html"><span>下一篇</span><strong>安全与权限</strong></a></nav>

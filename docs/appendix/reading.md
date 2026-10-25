@@ -230,3 +230,14 @@ Building Effective Agents
 ```
 
 读完之后，回到[实战](/practice/mini-agent)写一遍，再回来看这些材料，理解会完全不同。
+
+## 来源
+
+本章是一份**书单**，每条都带出处链接；这里只补充“怎么核对书单本身”的几个入口：
+
+- Papers with Code, **SOTA 与论文索引**——用它的任务榜单反查某篇论文是否仍具代表性。[链接](https://paperswithcode.com/)
+- ACL Anthology, **ACL/EMNLP 论文库**——NLP 方向论文的正式版本与引用信息。[链接](https://aclanthology.org/)
+- arXiv, **cs.AI / cs.CL 最新提交**——判断某方向是否还在推进。[链接](https://arxiv.org/list/cs.CL/recent)
+- OWASP, **Top 10 for LLM Applications**——安全类材料的权威索引。[链接](https://genai.owasp.org/llm-top-10/)
+
+完整清单见[推荐来源](/appendix/sources#延伸阅读)。

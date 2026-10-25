@@ -18,7 +18,7 @@ flowchart TB
   M --> O["账单 · 监控 · 审计"]
 ```
 
-<p class="diagram-caption"><strong>一图看懂</strong> · Model Gateway 把“鉴权、路由、配额、回退、计量”收拢到一个内部服务</p>
+<p class="diagram-caption"><strong>一图看懂</strong> · 模型网关（Model Gateway）把“鉴权、路由、配额、回退、计量”收拢到一个内部服务</p>
 
 <div class="flow-steps">
   <div class="flow-step"><b>1</b><strong>鉴权与配额</strong><p>这个请求属于谁？还有没有预算？</p></div>
@@ -111,6 +111,10 @@ sequenceDiagram
 
 ## 优化清单
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`usage_event.json`](../../examples/templates/usage_event.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 见**图 3**：
 
 ```mermaid
@@ -162,5 +166,28 @@ class ModelGateway:
 | 单模型、单团队、无计费 | 工具跨团队/跨网络 |
 | 模型调用点很少 | 需要统一工具鉴权、审计、沙箱路由 |
 | 不需要精细配额 | 需要按租户/用户限制工具调用 |
+
+## 来源
+
+- LiteLLM, **Router 文档**——多模型路由、回退、重试与预算的参考实现，本章骨架的对照物。[链接](https://docs.litellm.ai/docs/routing)
+- OpenRouter, **Provider Routing**——跨供应商路由的顺序定义与实际做法。[链接](https://openrouter.ai/docs/provider-routing)
+- OpenTelemetry, **GenAI 语义约定**——一次模型调用应记录哪些字段（模型、token、延迟）。[链接](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
+- Chen et al., **FrugalGPT**（2023）——级联路由的“成本/质量”权衡与实测收益。[链接](https://arxiv.org/abs/2305.05176)
+
+完整清单见[推荐来源](/appendix/sources#03-模型网关与路由)。
+
+::: details 参考答案与自检
+**1. 画出你当前系统的网关图**
+要点：图上要能回答三件事——哪些调用**不经过**网关（这是最大的风险点）、凭证从哪里来、失败时降级到什么。
+自检：如果画完发现所有模型调用都直连、密钥散落在各服务，那么这张图的价值就在于它暴露了问题，而不在乎画得多漂亮。
+
+**2. 找一条“模型能直接访问密钥”的路径**
+要点：常见路径是工具进程从环境变量读密钥、或网关把上游 key 透传给沙箱。修复方向是“凭证不进模型、不进沙箱，由网关按真实主体注入短期 token”（见[工具网关](/evolution/tool-gateway)）。
+自检：修复方案如果写成“在提示词里告诉模型不要泄露”，属于未通过。
+
+**3. fallback 应该对哪些错误生效**
+要点：只对 `429 / 5xx / 超时` 这类**可重试且与内容无关**的错误回退；对 `400 / 内容审核拒绝 / schema 不符` 回退，会把同一个坏请求重复打给多个供应商（既浪费钱又不解决问题）。
+自检：能说出“回退是换一个执行者，不是换一个问题”即达标。
+:::
 
 下一步：[阶段 4：工具网关](/evolution/tool-gateway)。

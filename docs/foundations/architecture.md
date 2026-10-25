@@ -142,6 +142,10 @@ Agent 系统看起来千差万别，但工程职责高度相似。把它拆成�
 
 ## 层间契约：比分层更重要
 
+::: tip 可复制模板
+本章的清单有对应的结构化版本：[`trace_step.json`](../../examples/templates/trace_step.json)、[`preflight_checklist.json`](../../examples/templates/preflight_checklist.json)。全部模板见 [examples/templates/README.md](../../examples/templates/README.md)。
+:::
+
 分层不是画框，而是定义**谁可以假设什么**。下面这些契约值得写进代码：
 
 | 从 → 到 | 契约 | 违约的后果 |
@@ -258,10 +262,33 @@ sequenceDiagram
 
 一个实用判断：**讨论“怎么部署、买什么组件”时用六层；讨论“这个 bug 该谁修”时用七层。**
 
+## 来源
+
+- Martin, **Clean Architecture**——依赖方向与“跨层只走契约”的思想来源。[链接](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- Brown, **C4 Model**——分层描述系统的工程惯例，本章画法与之对应。[链接](https://c4model.com/)
+- OpenTelemetry, **规范总览**——横切能力（观测）如何不占业务层的实例。[链接](https://opentelemetry.io/docs/specs/otel/overview/)
+- HumanLayer, **12-Factor Agents**——从职责切分角度看生产化缺口。[链接](https://github.com/humanlayer/12-factor-agents)
+
+完整清单见[推荐来源](/appendix/sources#七层职责模型)。
+
 ## 练习
 
 1. 画出你正在做的系统（或一个熟悉的 Agent 产品）的七层图，标注每层的输入/输出。
 2. 找出一条跨层调用，检查它是否有超时、错误类型和 trace 字段。
 3. 思考：如果把“记忆”合并进“上下文层”，会失去什么？如果把“运行时”合并进“工具层”，又会失去什么？
+
+::: details 参考答案与自检
+**1. 画出你系统的七层图并标注输入/输出**
+要点：每层至少写一对”输入 → 输出“，且**输出应当是下一层的输入**。画不出来通常说明这一层没有明确契约。
+自检：如果某一层的输出写了“处理后的数据”，等于没写——要具体到字段（如 `messages + tools + response schema`，参见本章表 1）。
+
+**2. 检查一条跨层调用**
+要点：同时具备三件事——超时、结构化错误类型、trace 字段（`request_id / step / tenant / latency`）。
+自检：如果这条调用只能抛出一个笼统的 `Exception`，上层就只能瞎猜，这正是本章结尾那句“只会抛 Exception，上层就只能瞎猜”的意思。
+
+**3. 合并层会失去什么**
+要点：把“记忆”并入“上下文层”，会失去**跨任务的持久化与遗忘策略**（上下文是视图，可以随时重建；记忆是资产，需要生命周期管理）；把“运行时”并入“工具层”，会失去**隔离边界**——工具是接口，运行时是副作用发生的地方，混淆后权限与资源限制无处安放。
+自检：答案里能区分“视图 / 资产”“接口 / 副作用发生地”这两组概念，即说明分层不是背下来的。
+:::
 
 下一步：[技术演进史](/foundations/evolution)。
