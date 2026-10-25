@@ -1,0 +1,115 @@
+name: CI
+
+# 部署文档站的工作流只关心站点能否构建；这份工作流关心**代码与镜像能否跑**。
+# 两者分开，是为了让代码回归在文档改动的 PR 上也能被看到。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The README claims Python 3.8+; this matrix is the evidence.
+        python-version: ["3.8", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: v1 eval
+        run: python3 -m examples.mini_agent.eval
+
+      - name: v2 eval
+        run: python3 -m examples.mini_agent_v2.eval
+
+      - name: v3 platform invariants
+        run: python3 -m examples.mini_agent_v3.cli --eval
+
+      - name: v3 crash/resume drill
+        run: python3 -m examples.mini_agent_v3.cli --resume-demo
+
+      - name: Fail fast on bad config
+        run: |
+          set +e
+          MINI_AGENT_PORT=abc python3 -m examples.mini_agent_v3.app
+          code=$?
+          if [ "$code" -ne 2 ]; then
+            echo "expected exit 2 for invalid config, got $code"
+            exit 1
+          fi
+
+  smoke:
+    # Boot the real service and hit the real endpoints.  This catches the class
+    # of bug unit tests cannot: bad wiring between config, app and server.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Boot and probe
+        run: |
+          MINI_AGENT_PORT=8791 MINI_AGENT_DATA_DIR=/tmp/agent-data \
+          TENANT_LIMITS="acme:5" TENANT_ALLOWLIST="acme" \
+            python3 -m examples.mini_agent_v3.app &
+          server_pid=$!
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8791/health >/dev/null; then break; fi
+            sleep 0.5
+          done
+          echo "--- health"; curl -sf http://127.0.0.1:8791/health
+          echo "--- allowed request"
+          curl -sf -X POST http://127.0.0.1:8791/v1/answer \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"订单 A1024 到哪了","tenant":"acme","user_id":"user:88"}'
+          echo "--- agent subject must be denied (expect 403)"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8791/v1/answer \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"订单 B2048 到哪了","tenant":"acme","user_id":"agent:support"}')
+          echo "status=$code"
+          test "$code" = "403"
+          echo "--- unknown tenant must be denied (expect 403)"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8791/v1/answer \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"hi","tenant":"evil","user_id":"user:1"}')
+          echo "status=$code"
+          test "$code" = "403"
+          kill "$server_pid"
+
+  image:
+    # Build the image in CI because local builds need Docker daemon access.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t mini-agent-v3:ci .
+
+      - name: Run container and probe
+        run: |
+          docker run -d --name agent -p 8000:8000 \
+            -e TENANT_LIMITS="acme:5" -e TENANT_ALLOWLIST="acme" \
+            mini-agent-v3:ci
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:8000/health >/dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:8000/health
+          docker inspect --format='{{.State.Health.Status}}' agent || true
+          docker logs agent
+          docker rm -f agent

@@ -29,7 +29,18 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - run: pnpm install --frozen-lockfile
+
+      # The docs promise runnable code, so the code gates the deploy.
+      - run: python3 -m unittest discover -s tests
+      - run: python3 -m examples.mini_agent.eval
+      - run: python3 -m examples.mini_agent_v2.eval
+      - run: python3 -m examples.mini_agent_v3.cli --eval
+      - run: python3 -m examples.mini_agent_v3.cli --resume-demo
 
       - run: pnpm docs:build
 

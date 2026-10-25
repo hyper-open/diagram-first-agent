@@ -1,0 +1,15 @@
+# 镜像里不需要的东西：文档、离线站、前端构建产物与本地数据
+docs/
+offline/
+node_modules/
+.pnpm-store/
+tools/
+tests/
+data/
+.data/
+*.log
+.git/
+.github/
+.DS_Store
+__pycache__/
+*.pyc

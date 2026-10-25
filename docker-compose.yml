@@ -1,0 +1,34 @@
+# 本地起两个租户的实例：一个读写、一个只读，用来验证部署开关真的生效。
+services:
+  api:
+    build: .
+    image: mini-agent-v3:local
+    ports:
+      - "8000:8000"
+    environment:
+      MINI_AGENT_ENV: staging
+      TENANT_LIMITS: "acme:5,globex:2"
+      TENANT_ALLOWLIST: "acme,globex"
+      DEFAULT_TENANT_LIMIT_USD: "1"
+      # 想接真实模型时取消注释（不要把 key 写进文件）
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - agent-data:/data
+    restart: unless-stopped
+
+  api-readonly:
+    build: .
+    image: mini-agent-v3:local
+    ports:
+      - "8001:8000"
+    environment:
+      MINI_AGENT_ENV: staging
+      MINI_AGENT_READONLY: "true"
+      TENANT_LIMITS: "acme:1"
+    volumes:
+      - agent-data-ro:/data
+    restart: unless-stopped
+
+volumes:
+  agent-data:
+  agent-data-ro:
