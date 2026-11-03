@@ -4,6 +4,8 @@
 
 **在线阅读：** <https://hyper-open.github.io/diagram-first-agent/>
 
+[![XERJ Corpus Hub: contributor](https://hub.xerj.org/contributors/kinghhp/badge.svg)](https://hub.xerj.org/corpus/hyper-open--diagram-first-agent)
+
 这不是又一份“Prompt 技巧合集”，也不是一张平铺的组件清单。它先给一张**架构分层总览**，再沿八级演进逐级加组件：
 
 ```text
@@ -218,6 +220,23 @@ Every chapter opens with one architecture diagram, then explains the arrows, the
 Start here: [docs/evolution/overview.md](docs/evolution/overview.md).
 
 Questions, bugs or collaboration: open an [issue](../../issues), or scan the WeChat QR code above.
+
+## 被收录
+
+本项目已被 [**XERJ Corpus Hub**](https://hub.xerj.org/) 收录为参考语料：
+
+- **语料页**：[hub.xerj.org/corpus/hyper-open--diagram-first-agent](https://hub.xerj.org/corpus/hyper-open--diagram-first-agent)
+- **收录快照**：commit [`e4f72d0`](https://github.com/hyper-open/diagram-first-agent/commit/e4f72d08228ce73bcd499841959c4948f4f62418)（v2/v3 代码提交），155 个文件 / 5.4 MB
+- **用途**：AI 编码代理在动手写代码前，可以检索这类参考实现，把本项目的 Python 源码当作带出处（文件与行号）的示例来复用。
+
+如果你也在用 XERJ，可以直接把下面这段提示词交给你的代理：
+
+```text
+Search the GitHub repository hyper-open/diagram-first-agent with XERJ
+(https://hub.xerj.org/corpus/hyper-open--diagram-first-agent).
+```
+
+XERJ 是一个面向 Agent 的检索引擎（Rust，支持 BM25 / 向量 / 混合检索）。
 
 ## License
 
