@@ -60,6 +60,7 @@ export const sidebar = [
       { text: 'v4：四种多 Agent 拓扑', link: '/practice/mini-agent-v4' },
       { text: 'v5：五种编排模式', link: '/practice/mini-agent-v5' },
       { text: 'v6：Arena 与 Swarm/Handoff', link: '/practice/mini-agent-v6' },
+      { text: '组合架构：真实售后平台', link: '/practice/composite-architecture' },
       { text: '部署形态：从能跑到能上线', link: '/practice/deployment' },
       { text: '真实案例拆解', link: '/practice/cases' },
       { text: '交互与信任设计', link: '/practice/ux' }

@@ -184,4 +184,4 @@ if target in visited:
 - [ ] 能解释为什么“转人工”在 Swarm 里是成功而不是失败。
 - [ ] 能说清 v4/v5/v6 三类结构各自解决什么问题、如何组合。
 
-下一步：[多 Agent](/evolution/multi-agent) 与 [编排层](/layers/orchestration) 讲理论，[v4](/practice/mini-agent-v4)、[v5](/practice/mini-agent-v5) 是另外 9 种结构的实现。
+下一步：[组合架构](/practice/composite-architecture) 把这些结构装进一个真实售后平台，看它们如何分层组合。理论见[多 Agent](/evolution/multi-agent)与[编排层](/layers/orchestration)。
