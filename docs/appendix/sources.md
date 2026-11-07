@@ -402,6 +402,15 @@ flowchart LR
 - Anthropic, **Building Effective Agents**——Orchestrator-Workers 模式。
   [anthropic.com/research/building-effective-agents](https://www.anthropic.com/research/building-effective-agents)
 
+### [Mini Agent v5：编排模式实现](/practice/mini-agent-v5)
+
+- Anthropic, **Building Effective Agents**——五种编排模式的原始描述（链式、路由、并行、编排者—工人、生成—评审）。
+  [anthropic.com/research/building-effective-agents](https://www.anthropic.com/research/building-effective-agents)
+- Madaan et al., **Self-Refine**（2023）——生成—评审的回环思想。
+  [arxiv.org/abs/2303.17651](https://arxiv.org/abs/2303.17651)
+- Shinn et al., **Reflexion**（2023）——把失败的反馈带回下一轮。
+  [arxiv.org/abs/2303.11366](https://arxiv.org/abs/2303.11366)
+
 ### [部署形态](/practice/deployment)
 
 - Docker, **Dockerfile reference**——`HEALTHCHECK`、`USER`、多阶段构建。

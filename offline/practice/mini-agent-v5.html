@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Agent v5：五种编排模式 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item active" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v5：五种编排模式</strong></div>
+        <article class="doc"><h1 id="mini-agent-v5五种编排模式五种控制流">Mini Agent v5：五种编排模式，五种控制流</h1>
+<h2 id="先分清两组分类">先分清两组分类</h2>
+<p>这本书里其实有<strong>两组不同的东西</strong>，很容易混：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>你在问什么</th>
+<th>看哪一章</th>
+<th>实现</th>
+<th>数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>控制流长什么样？</td>
+<td><a href="../layers/orchestration.html">编排层</a> §二</td>
+<td><strong>本章 v5</strong></td>
+<td>5 种模式</td>
+</tr>
+<tr>
+<td>多个 Agent 怎么站位？</td>
+<td><a href="../evolution/multi-agent.html">多 Agent</a></td>
+<td><a href="mini-agent-v4.html">v4</a></td>
+<td>4 种拓扑</td>
+</tr>
+</tbody>
+</table></div>
+<p>它们不是一回事：一个「主管 + 工人」的多 Agent 系统，其内部每个节点仍可能用链式或生成—评审。所以本章的 5 种模式是<strong>更底层</strong>的积木。</p>
+<div class="mermaid">flowchart TB
+  subgraph P[&quot;v5 五种编排模式：控制流形状&quot;]
+    C1[&quot;链式 A→B→C&quot;]
+    C2[&quot;路由 选一条&quot;]
+    C3[&quot;并行 扇出→合并&quot;]
+    C4[&quot;编排者 计划→派发→再计划&quot;]
+    C5[&quot;生成-评审 生成→评估→回到生成&quot;]
+  end
+  subgraph T[&quot;v4 四种拓扑：Agent 站位&quot;]
+    T1[&quot;主管&quot;]
+    T2[&quot;对等&quot;]
+    T3[&quot;分层&quot;]
+    T4[&quot;辩论&quot;]
+  end
+  P -.组合.-&gt; T
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 模式是控制流积木，拓扑是 Agent 站位；真实系统是两者组合</p>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --compare    # 五种模式跑同一任务并对比
+python3 -m examples.mini_agent_v5.cli --terminals  # 五种终止状态各演示一次
+python3 -m unittest tests.test_mini_agent_v5 -v    # 28 个测试
+</code></pre></div>
+<p>对比输出（注意：和 v4 不同，这里比的是<strong>控制流形状</strong>）：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>模式            ok    终止       阶段   tokens
+chaining      True  success    4      2400
+routing       True  success    1      600
+parallel      True  success    3      1800
+orchestrator  True  success    3      1800
+evaluator     True  success    6      3600
+</code></pre></div>
+<h2 id="lab-0五种终止状态一个都不能少">Lab 0：五种终止状态，一个都不能少</h2>
+<p><a href="../layers/orchestration.html">编排层</a>第六章说：编排层必须回答“什么时候停”，并列了五种终止状态。本章把它们做成 <code>StopReason</code> 枚举，<strong>每种模式都必须返回一个</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+<th>典型触发</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SUCCESS</code></td>
+<td>验证通过</td>
+<td>检查阶段通过</td>
+</tr>
+<tr>
+<td><code>PARTIAL</code></td>
+<td>有产出但不完整</td>
+<td>检查未过 / 预算耗尽 / 跑了最大轮次</td>
+</tr>
+<tr>
+<td><code>BLOCKED</code></td>
+<td>缺信息/缺权限</td>
+<td>路由识别了业务但缺订单号</td>
+</tr>
+<tr>
+<td><code>FAILED</code></td>
+<td>不可恢复错误</td>
+<td>所有分片都抛异常</td>
+</tr>
+<tr>
+<td><code>NEEDS_HUMAN</code></td>
+<td>高风险/低置信</td>
+<td>低置信且没有兜底分支</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --terminals
+</code></pre></div>
+<p>这里有个容易搞错的区分（本项目开发中踩过）：</p>
+<ul>
+<li><strong>PARTIAL 不是 FAILED</strong>。检查没通过、但已经有了初稿，应该返回 <code>PARTIAL</code> + 初稿，<strong>不是</strong>报错，也不是假装成功。</li>
+<li><strong>BLOCKED 不是 NEEDS_HUMAN</strong>。BLOCKED 是“知道该干什么、缺个输入”（缺订单号）；NEEDS_HUMAN 是“根本不知道该干什么”（低置信且无兜底）。两者都要有人介入，但前者系统自己还能继续，后者必须交人。</li>
+</ul>
+<h2 id="lab-1链式把检查变成流程">Lab 1：链式——把“检查”变成流程</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --pattern chaining
+</code></pre></div>
+<p>链式最朴素，但有两个关键设计：</p>
+<h3 id="检查阶段只裁决不改变内容">检查阶段只裁决，不改变内容</h3>
+<p>开发中踩的坑：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>错误：格式化输出：检查：初稿：写退款说明     ← 检查的输出被当成内容流下去了
+正确：格式化输出：修订后的终稿：写退款说明
+</code></pre></div>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 只有 transform 阶段更新 current；check 阶段只给 verdict
+if stage.role != &quot;check&quot;:
+    current = result.output
+</code></pre></div>
+<h3 id="检查失败-→-partial返回已有内容">检查失败 → PARTIAL，返回已有内容</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if result.passed is False:
+    return build_summary(..., stop_reason=StopReason.PARTIAL, answer=current)
+</code></pre></div>
+<p>这是全章最有价值的一条：<strong>不要让模型自己检查自己</strong>，而是把检查做成流程里的一个阶段，且检查失败有明确的退出语义。</p>
+<h2 id="lab-2路由一定要有中性兜底">Lab 2：路由——一定要有中性兜底</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --pattern routing --goal &quot;我要退款&quot;
+</code></pre></div>
+<p>路由的全部价值在「选错怎么办」。本项目踩的坑：最初把兜底设成了「投诉」分支，结果**「今天天气怎么样」被送进了投诉流程**——既不对也很贵。</p>
+<p>修正两条：</p>
+<ol>
+<li><strong>兜底必须是中性的低风险分支</strong>（这里是“转人工”），不能复用某个具体业务分支；</li>
+<li><strong>低置信且没有兜底 → <code>NEEDS_HUMAN</code></strong>，不是 <code>BLOCKED</code>，因为系统确实不知道该怎么办。</li>
+</ol>
+<p>还有一个细节：<strong>识别出业务但缺输入，是 <code>BLOCKED</code> 而非失败</strong>。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>missing = [k for k in branch.requires if k not in goal]
+if missing:
+    return build_summary(..., stop_reason=StopReason.BLOCKED,
+                         questions=[&quot;请提供：订单号&quot;])
+</code></pre></div>
+<p>「我要查订单」没有订单号，正确的响应是问一句，而不是选错流程或报错。</p>
+<h2 id="lab-3并行分片和投票是两件事">Lab 3：并行——分片和投票是两件事</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --pattern parallel
+</code></pre></div>
+<p>正文把并行分成两种用法，合并逻辑完全不同，所以代码里用 <code>mode</code> 区分：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>合并方式</th>
+<th>失败处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sharding</code>（分片）</td>
+<td>拼接</td>
+<td>缺哪个分片要<strong>说出来</strong> → PARTIAL</td>
+</tr>
+<tr>
+<td><code>perspectives</code>（多视角）</td>
+<td>投票/综合</td>
+<td>无多数时<strong>承认无多数</strong>，不硬凑</td>
+</tr>
+</tbody>
+</table></div>
+<p>两条防护：</p>
+<ul>
+<li><strong>失败分片不能静默消失</strong>：<code>（注意：1 个分片失败：bad）</code>；</li>
+<li><strong>无多数不假装共识</strong>：<code>多种方案，无多数：...</code>。</li>
+</ul>
+<p>还复用 v4 的预算不变量：<code>reserve</code> 决定能并行几个，<code>settle</code> 退还剩余，<strong>分片总消耗不超过父预算</strong>。</p>
+<div class="custom-block tip"><p class="custom-block-title">和 v4 Supervisor 的区别</p>
+<p>Supervisor 由<strong>主管动态决定</strong>拆几个；本章的并行是<strong>固定扇出</strong>（&quot;把这 N 份文档都处理了&quot;），没有规划者。这也是为什么两者都存在：一个需要决策，一个不需要。</p>
+</div>
+<h2 id="lab-4编排者工人会重新规划">Lab 4：编排者—工人——会重新规划</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --pattern orchestrator
+</code></pre></div>
+<p>和固定扇出的区别：<strong>编排者先规划，合并后可能发现计划不全，再规划一轮</strong>。研究型 Agent、Coding Agent 都是这个形状。</p>
+<p>两个必须有的上限：</p>
+<ul>
+<li><strong><code>max_rounds</code></strong>：重新规划本身可能再触发规划；</li>
+<li><strong>「无新产出就停」</strong>：一轮下来没有任何可用结果，再规划也不会变好，直接 <code>PARTIAL</code>。</li>
+</ul>
+<div class="code-block"><div class="code-lang">bash</div><pre><code># 规划器的两轮：第 0 轮 retrieve+read_code，第 1 轮 run_tests
+plan steps: [{'round': 0, 'planned': ['retrieve', 'read_code']},
+             {'round': 1, 'planned': ['run_tests']}]
+</code></pre></div>
+<div class="custom-block tip"><p class="custom-block-title">和 v4 Supervisor 的区别</p>
+<p>Supervisor <strong>拆一次</strong>；编排者<strong>边拆边看、可能再拆</strong>。契约相同，循环不同。</p>
+</div>
+<h2 id="lab-5生成评审带回环且必须喂回理由">Lab 5：生成—评审——带回环，且必须喂回“理由”</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v5.cli --pattern evaluator
+</code></pre></div>
+<p>这是唯一在<strong>质量层面</strong>有真实回环的模式：生成 → 评估 → 不通过就<strong>带着理由</strong>重来。</p>
+<p>三个关键点：</p>
+<h3 id="1-评审必须独立">1. 评审必须独立</h3>
+<p>生成器和评估器是<strong>两个阶段</strong>，不能是“模型自己说好不好”。这是本章反复强调的那句：评估必须独立，否则只会自我表扬。</p>
+<h3 id="2-必须把理由喂回去">2. 必须把“理由”喂回去</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>feedback = eval_result.reason or &quot;未满足要求&quot;
+gen_input = goal if not feedback else &quot;%s（上次未通过：%s）&quot; % (goal, feedback)
+</code></pre></div>
+<p>不带理由的重试只是<strong>再掷一次骰子</strong>；带上理由才是<strong>优化</strong>。</p>
+<h3 id="3-跑满轮次-→-partial">3. 跑满轮次 → PARTIAL</h3>
+<p>已经有草稿了，即使没通过评估，也是 <code>PARTIAL</code>（带着“仍未通过”的说明），不是 <code>FAILED</code>。</p>
+<div class="custom-block tip"><p class="custom-block-title">和 v4 Debate 的区别</p>
+<p>两者都有“评估者”，但控制流相反：</p>
+<ul>
+<li><strong>Debate</strong>：正反方立场对立，裁判<strong>一次性裁决</strong>；</li>
+<li><strong>Evaluator-Optimizer</strong>：一个生成一个把关，<strong>循环到通过为止</strong>。</li>
+</ul>
+</div>
+<h2 id="模式-vs-拓扑一张对照表">模式 vs 拓扑：一张对照表</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>你可能想问</th>
+<th>v5 模式</th>
+<th>v4 拓扑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤固定</td>
+<td>链式</td>
+<td>—</td>
+</tr>
+<tr>
+<td>按请求分派</td>
+<td>路由</td>
+<td>—</td>
+</tr>
+<tr>
+<td>独立子任务并行</td>
+<td>并行</td>
+<td>主管</td>
+</tr>
+<tr>
+<td>动态拆解</td>
+<td>编排者</td>
+<td>主管（拆一次）</td>
+</tr>
+<tr>
+<td>迭代提质</td>
+<td>生成—评审</td>
+<td>辩论（裁决一次）</td>
+</tr>
+<tr>
+<td>多个 Agent 各管一块</td>
+<td>—</td>
+<td>主管/分层</td>
+</tr>
+<tr>
+<td>多个 Agent 互相质询</td>
+<td>—</td>
+<td>对等/辩论</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>真实系统通常是组合</strong>：外层路由 → 某个分支里用编排者 → 编排者内部每个 worker 用链式 → 关键节点用生成—评审。模式是可嵌套的积木。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出五种终止状态，并各举一个触发场景。</li>
+<li>[ ] 能解释 PARTIAL 和 FAILED 的区别，以及为什么检查失败是 PARTIAL。</li>
+<li>[ ] 能说出路由为什么必须有<strong>中性</strong>兜底分支。</li>
+<li>[ ] 能区分 BLOCKED 与 NEEDS_HUMAN。</li>
+<li>[ ] 能说出并行两种模式在合并逻辑上的不同。</li>
+<li>[ ] 能解释“喂回理由”为什么让生成—评审变成优化而不是重试。</li>
+<li>[ ] 能说出 v5 的 <code>evaluator-optimizer</code> 和 v4 的 <code>debate</code> 在控制流上的区别。</li>
+</ul>
+<p>下一步：<a href="../layers/orchestration.html">编排层</a>讲选型与状态机，<a href="mini-agent-v4.html">Mini Agent v4</a> 是多 Agent 拓扑的可运行版本。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent-v4.html"><span>上一篇</span><strong>v4：四种多 Agent 拓扑</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

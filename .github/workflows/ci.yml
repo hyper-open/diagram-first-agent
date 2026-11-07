@@ -45,6 +45,9 @@ jobs:
       - name: v4 topologies
         run: python3 -m examples.mini_agent_v4.cli --compare
 
+      - name: v5 patterns
+        run: python3 -m examples.mini_agent_v5.cli --compare
+
       - name: Fail fast on bad config
         run: |
           set +e

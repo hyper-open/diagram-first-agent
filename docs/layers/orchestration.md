@@ -391,6 +391,6 @@ def build_graph():
 自检：三个例子都要能说出**多出来的那一跳带来了什么成本**（token、延迟还是错误传播），只列场景不给代价不算完成。
 :::
 
-四种拓扑的可运行实现见 [Mini Agent v4](/practice/mini-agent-v4)。
+本章第二节五种模式的可运行实现见 [Mini Agent v5](/practice/mini-agent-v5)；第四节的四种拓扑见 [Mini Agent v4](/practice/mini-agent-v4)。
 
 下一步：[运行时与沙箱](/layers/runtime)。

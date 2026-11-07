@@ -243,7 +243,7 @@ if debate_confidence < confidence_floor:
 - [ ] 能解释深度守卫防的是什么。
 - [ ] 能说出 debate 里“报异议”为什么比“给结论”更正确。
 
-下一步：[多 Agent](/evolution/multi-agent) 讲理论、[编排层](/layers/orchestration) 讲选型，本章是它们的可运行版本。
+下一步：[Mini Agent v5](/practice/mini-agent-v5) 实现五种**编排模式**（链式/路由/并行/编排者-工人/生成-评审）——那是比拓扑更底层的控制流积木；理论见[编排层](/layers/orchestration)。
 
 ## 来源
 
