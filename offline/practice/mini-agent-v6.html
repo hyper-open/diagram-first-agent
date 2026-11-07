@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Agent v6：Arena 与 Swarm/Handoff · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item active" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v6：Arena 与 Swarm/Handoff</strong></div>
+        <article class="doc"><h1 id="mini-agent-v6arena-与-swarmhandoff">Mini Agent v6：Arena 与 Swarm/Handoff</h1>
+<h2 id="为什么还有-v6">为什么还有 v6</h2>
+<p>前几轮已经实现了 9 种结构（v4 四拓扑 + v5 五模式）。但如果拿一份常见的「多 Agent 模式清单」对照，会发现还缺两个<strong>不属于任何既有分类</strong>的：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>常见清单里的名字</th>
+<th>本书对应</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supervisor</td>
+<td>v4 <code>supervisor</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Pipeline</td>
+<td>v5 <code>chaining</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Parallel</td>
+<td>v5 <code>parallel</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Hierarchical</td>
+<td>v4 <code>hierarchical</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Reviewer</td>
+<td>v5 <code>evaluator</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Debate</td>
+<td>v4 <code>debate</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Arena</strong></td>
+<td>——</td>
+<td>❌ 本章补</td>
+</tr>
+<tr>
+<td><strong>Swarm / Handoff</strong></td>
+<td>——</td>
+<td>❌ 本章补</td>
+</tr>
+</tbody>
+</table></div>
+<p>这两个都<strong>不能</strong>塞进既有分类，因为它们改变的是不同的东西：</p>
+<ul>
+<li><strong>Arena</strong> 改变的是<strong>输出形态</strong>：不是给一个答案，而是给一个<strong>排名</strong>；</li>
+<li><strong>Swarm</strong> 改变的是<strong>谁在执行</strong>：不是对话，而是<strong>控制权转移</strong>。</li>
+</ul>
+<div class="mermaid">flowchart TB
+  subgraph A[&quot;Arena：多候选 → 两两对战 → 排名&quot;]
+    A1[&quot;c1&quot;] &lt;--&gt; A2[&quot;c2&quot;]
+    A1 &lt;--&gt; A3[&quot;c3&quot;]
+    A2 &lt;--&gt; A3
+    A1 --&gt; R[&quot;排名 1..N&quot;]
+    A2 --&gt; R
+    A3 --&gt; R
+  end
+  subgraph S[&quot;Swarm：控制权转移&quot;]
+    S1[&quot;triage&quot;] --&gt;|handoff| S2[&quot;refund&quot;]
+    S2 --&gt;|handoff| S3[&quot;tech&quot;]
+    S3 --&gt;|answer| O[&quot;输出&quot;]
+  end
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · Arena 是“谁更好”的排名问题；Swarm 是“下一步谁来干”的移交问题</p>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v6.cli --arena      # 4 个候选两两对战
+python3 -m examples.mini_agent_v6.cli --swarm      # 移交链 + 环检测
+python3 -m examples.mini_agent_v6.cli --cycles     # 非传递性演示
+python3 -m unittest tests.test_mini_agent_v6 -v    # 20 个测试
+</code></pre></div>
+<h2 id="lab-1arena-不是-debate">Lab 1：Arena 不是 Debate</h2>
+<p>这是最容易混淆的一对。区别不在“有没有裁判”，而在这三点：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Debate（v4）</th>
+<th>Arena（v6）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参与者</td>
+<td>1 正 + 1 反</td>
+<td>N 个候选</td>
+</tr>
+<tr>
+<td>裁判</td>
+<td>裁决<strong>一次</strong>，选一方并给理由</td>
+<td>每对判一次，反复进行</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>一个答案 / 或“分歧”</td>
+<td><strong>一个排名</strong></td>
+</tr>
+<tr>
+<td>成本</td>
+<td>3 次调用</td>
+<td><strong>O(N²)</strong> 次</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v6.cli --arena
+</code></pre></div>
+<p>输出：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>「这笔超期订单能否批准退款？」竞技场排名：
+  1. [c3] 根据退款政策第七条…（3.0 分）
+  2. [c1] 这是直接把退款金额算出来的结论…（2.0 分）
+  3. [c4] 可以退。（1.0 分）
+  4. [c2] 可能会退款，也许需要审核…（0.0 分）
+</code></pre></div>
+<p>所以 Arena 适合<strong>评测与选优</strong>（哪个模型的回答更好、哪个 prompt 版本更优），不适合“给用户一个答案”的在线路径——除非你确实要展示多个选项。</p>
+<h2 id="lab-2arena-的两个硬问题">Lab 2：Arena 的两个硬问题</h2>
+<h3 id="问题一位置偏差">问题一：位置偏差</h3>
+<p>如果裁判只看一次「A vs B」，它会偏袒<strong>先出现</strong>的那个。本项目对每一对都<strong>正反各判一次</strong>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>forward = judge(a, b)    # a 在前
+reverse = judge(b, a)    # b 在前
+# 两序一致才算胜，否则记平局
+if forward_winner == reverse_winner and forward_winner != &quot;draw&quot;:
+    return Battle(..., consistency=True)
+return Battle(..., winner=&quot;draw&quot;, consistency=False)   # 不一致 → 平，不掷硬币
+</code></pre></div>
+<p>测试 <code>test_swap_orders_flags_inconsistency_as_draw</code> 用「永远偏袒第一个参数」的假裁判验证：结果必须是平局，而不是被偏袒者取胜。</p>
+<h3 id="问题二非传递性">问题二：非传递性</h3>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v6.cli --cycles
+</code></pre></div>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. [c] 答案 C（1.0 分）
+2. [b] 答案 B（1.0 分）
+3. [a] 答案 A（1.0 分）
+检测到非传递性（A&gt;B&gt;C&gt;A）：排名依赖对阵顺序，结论不可当作绝对优劣。
+</code></pre></div>
+<p>A 赢 B、B 赢 C、C 又赢 A——任何两两对战方法都会遇到。<strong>正确做法是如实检测并报告</strong>，而不是假装第一名毫无争议。本实现会找出三人环并写进结果。</p>
+<p><strong>练习</strong>：为什么加更多对战轮次<strong>不能</strong>消除非传递性？提示：它与“平局”不是一回事。</p>
+<h2 id="lab-3swarm没有主管的移交">Lab 3：Swarm——没有主管的移交</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v6.cli --swarm
+</code></pre></div>
+<p>和 Peer（v4）的区别，一句话：<strong>Peer 是所有人在对话；Swarm 是同一时刻只有一个活跃的 Agent，靠“移交”换人</strong>。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Peer</th>
+<th>Swarm / Handoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>谁活跃</td>
+<td>全员轮流发言</td>
+<td><strong>同一时刻一个</strong></td>
+</tr>
+<tr>
+<td>机制</td>
+<td>对话</td>
+<td>控制权转移</td>
+</tr>
+<tr>
+<td>结束</td>
+<td>内容收敛 / 轮数上限</td>
+<td>有人回答 或 到达终态</td>
+</tr>
+<tr>
+<td>风险</td>
+<td>livelock</td>
+<td><strong>移交环</strong>（A→B→A）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="必须有的守卫一禁止重访">必须有的守卫一：禁止重访</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if target in visited:
+    return self._finish(..., action=&quot;blocked&quot;,
+        detail=&quot;检测到移交环：%s 已经处理过，拒绝再次移交（避免 A→B→A）。&quot;)
+</code></pre></div>
+<p>默认 swarm 里我<strong>故意埋了一个环</strong>：<code>refund</code> 遇到信息不足会想退回 <code>triage</code>——“我要退款”（没有订单号）就会触发：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>路径: triage → refund
+结果: ok=False
+移交未能完成：检测到移交环：triage 已经处理过，拒绝再次移交（避免 A→B→A）。
+</code></pre></div>
+<p>没有这个守卫，这就是一个<strong>无限循环</strong>。这是去中心化架构最典型的故障。</p>
+<h3 id="必须有的守卫二跳数上限">必须有的守卫二：跳数上限</h3>
+<p>即使不重访，链也可以很长。<code>max_hops</code> 截断，超出即 <code>blocked</code>。</p>
+<h3 id="一个反直觉的结论转人工是成功">一个反直觉的结论：转人工是成功</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>请求: 我要投诉你们
+路径: triage
+结果: ok=True  escalated=True
+已移交人工处理（投诉需人工）。
+</code></pre></div>
+<p><code>escalated=True</code> 且 <code>ok=True</code>——因为<a href="../layers/orchestration.html">编排层</a>明确说过：<strong>升级不是失败，而是正确的系统行为</strong>。测试 <code>test_escalation_to_human_is_success</code> 和 <code>test_escalation_differs_from_failure</code> 分别守住这一点，以及它与“移交环导致 blocked”的区别。</p>
+<h2 id="六轮代码的全景">六轮代码的全景</h2>
+<p>到 v6 为止，这套代码覆盖了三类共 11 种结构：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>数量</th>
+<th>结构</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单 Agent 递进</td>
+<td>v1–v3</td>
+<td>循环 / RAG+路由+记忆 / 网关+账本+审计+持久化</td>
+</tr>
+<tr>
+<td>编排模式（控制流）</td>
+<td>v5</td>
+<td>链式、路由、并行、编排者-工人、生成-评审</td>
+</tr>
+<tr>
+<td>多 Agent 拓扑（站位）</td>
+<td>v4 + v6</td>
+<td>主管、对等、分层、辩论 + <strong>Arena、Swarm</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>三类的关系：<strong>拓扑决定谁和谁说话，模式决定控制流形状，两者可嵌套</strong>。一个「主管拓扑」里的每个 worker 内部可以用「链式」，而外层调度可以是「路由」。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出 Arena 和 Debate 的三个区别（参与者/裁决次数/输出形态）。</li>
+<li>[ ] 能解释为什么 Arena 要对每一对换顺序各判一次。</li>
+<li>[ ] 能说出非传递性是什么，以及为什么它无法用“多比几轮”消除。</li>
+<li>[ ] 能区分 Swarm 与 Peer：谁活跃、靠什么换人、风险是什么。</li>
+<li>[ ] 能说出移交环的两种守卫（禁止重访、跳数上限）。</li>
+<li>[ ] 能解释为什么“转人工”在 Swarm 里是成功而不是失败。</li>
+<li>[ ] 能说清 v4/v5/v6 三类结构各自解决什么问题、如何组合。</li>
+</ul>
+<p>下一步：<a href="../evolution/multi-agent.html">多 Agent</a> 与 <a href="../layers/orchestration.html">编排层</a> 讲理论，<a href="mini-agent-v4.html">v4</a>、<a href="mini-agent-v5.html">v5</a> 是另外 9 种结构的实现。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent-v5.html"><span>上一篇</span><strong>v5：五种编排模式</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

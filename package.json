@@ -16,6 +16,7 @@
     "eval:v3": "python3 -m examples.mini_agent_v3.cli --eval",
     "demo:v4": "python3 -m examples.mini_agent_v4.cli --compare",
     "demo:v5": "python3 -m examples.mini_agent_v5.cli --compare",
+    "demo:v6": "python3 -m examples.mini_agent_v6.cli --arena",
     "eval": "python3 -m examples.mini_agent.eval",
     "build:offline": "node tools/build-offline.mjs"
   },

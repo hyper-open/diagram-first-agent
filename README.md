@@ -32,7 +32,7 @@
 | **架构主线** | [架构总览](docs/evolution/overview.md) · [ReAct](docs/evolution/react.md) · [工具调用](docs/evolution/tool-calling.md) · [模型网关](docs/evolution/model-gateway.md) · [工具网关](docs/evolution/tool-gateway.md) · [RAG](docs/evolution/rag.md) · [意图识别](docs/evolution/intent.md) · [多 Agent](docs/evolution/multi-agent.md) · [平台化](docs/evolution/platform.md) | 一条从最小 Agent 到可运营平台的演进路径 |
 | 基础参考 | [核心循环](docs/foundations/loop.md) · [七层职责模型](docs/foundations/architecture.md) · [技术演进史](docs/foundations/evolution.md) | 职责视角与技术史背景 |
 | 分层深入 | [模型](docs/layers/model.md) · [模型适配](docs/layers/model-adaptation.md) · [多模态](docs/layers/multimodal.md) · [上下文](docs/layers/context.md) · [检索](docs/layers/retrieval.md) · [工具](docs/layers/tools.md) · [记忆](docs/layers/memory.md) · [编排](docs/layers/orchestration.md) · [运行时](docs/layers/runtime.md) · [测试](docs/layers/testing.md) · [评测](docs/layers/evaluation.md) · [版本发布](docs/layers/release.md) · [安全](docs/layers/security.md) · [内容安全](docs/layers/content-safety.md) · [隐私](docs/layers/privacy.md) · [合规](docs/layers/compliance.md) | 每层的技术、故障与优化 |
-| 动手 | [v1](docs/practice/mini-agent.md) · [v2](docs/practice/mini-agent-v2.md) · [v3](docs/practice/mini-agent-v3.md) · [v4 多 Agent 拓扑](docs/practice/mini-agent-v4.md) · [v5 编排模式](docs/practice/mini-agent-v5.md) · [部署形态](docs/practice/deployment.md) · [案例拆解](docs/practice/cases.md) · [交互设计](docs/practice/ux.md) | 可运行代码（五级递进）、4 种拓扑 + 5 种模式、可部署形态 |
+| 动手 | [v1](docs/practice/mini-agent.md) · [v2](docs/practice/mini-agent-v2.md) · [v3](docs/practice/mini-agent-v3.md) · [v4 多 Agent 拓扑](docs/practice/mini-agent-v4.md) · [v5 编排模式](docs/practice/mini-agent-v5.md) · [v6 Arena/Swarm](docs/practice/mini-agent-v6.md) · [部署形态](docs/practice/deployment.md) · [案例拆解](docs/practice/cases.md) · [交互设计](docs/practice/ux.md) | 可运行代码（六级递进）、6 种拓扑 + 5 种模式、可部署形态 |
 | 进阶 | [优化手册](docs/advanced/optimization.md) · [长任务](docs/advanced/durability.md) · [框架对照与迁移](docs/advanced/frameworks.md) · [前沿](docs/advanced/frontier.md) | 优化闭环、主流框架映射与迁移检查表 |
 | 附录 | [术语表](docs/appendix/glossary.md) · [推荐来源](docs/appendix/sources.md) · [延伸阅读](docs/appendix/reading.md) | 速查、逐章出处与继续深入 |
 
@@ -106,6 +106,11 @@ python3 -m examples.mini_agent_v4.cli --budget     # 预算封顶
 python3 -m examples.mini_agent_v5.cli --compare
 python3 -m examples.mini_agent_v5.cli --terminals  # 五种终止状态
 
+# v6：Arena（多候选对战排名）+ Swarm/Handoff（去中心化移交）
+python3 -m examples.mini_agent_v6.cli --arena
+python3 -m examples.mini_agent_v6.cli --swarm       # 含移交环检测
+python3 -m examples.mini_agent_v6.cli --cycles      # 非传递性
+
 # 起一个可部署的服务（零依赖，标准库 HTTP）
 MINI_AGENT_PORT=8000 TENANT_LIMITS="acme:5" python3 -m examples.mini_agent_v3.app
 curl -s http://127.0.0.1:8000/health
@@ -166,11 +171,12 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 │   ├── mini_agent_v3/          # v3：能力令牌 + 网关 + 账本 + 审计 + 持久化
 │   ├── mini_agent_v4/          # v4：四种多 Agent 拓扑（共用一套子 Agent 契约）
 │   ├── mini_agent_v5/          # v5：五种编排模式（链式/路由/并行/编排者/评审）
+│   ├── mini_agent_v6/          # v6：Arena（对战排名）+ Swarm/Handoff（移交）
 │   │   ├── config.py           # 环境变量 → 启动即校验
 │   │   ├── server.py           # 标准库 HTTP（/health /v1/answer /metrics）
 │   │   └── app.py              # 进程入口（SIGTERM 优雅退出）
 │   └── templates/              # 10 个可复制 JSON 模板（清单的结构化版本）
-├── tests/                      # 183 个测试（v1 26 + v2 32 + v3 43 + v4 26 + v5 28 + 部署 28）
+├── tests/                      # 203 个测试（v1 26 + v2 32 + v3 43 + v4 26 + v5 28 + v6 20 + 部署 28）
 └── package.json                # VitePress 站点脚本
 ```
 
@@ -207,7 +213,7 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 - 出处：38 章各有「来源」小节（每章 3–5 条），逐章完整清单汇总在[推荐来源](docs/appendix/sources.md)。
 - 练习：26 处「练习」均配「参考答案与自检」（可折叠），给出要点与判定标准而非标准答案。
 - 模板：`examples/templates/` 提供 10 个可复制 JSON（trace、usage event、评测用例、工具定义、能力令牌、任务包、发布记录、四张表、上线门禁、Mini Agent 配置），31 章的清单与之互引。
-- 代码：Mini Agent **v1（单循环）→ v2（RAG / 路由 / 记忆治理）→ v3（网关 / 账本 / 审计 / 持久化）→ v4（四种多 Agent 拓扑）→ v5（五种编排模式）→ 可部署服务**，**183 个测试**，Python 3.8+，零第三方运行时依赖；CI 在 3.8/3.11/3.12 上跑测试与评测，并构建镜像、冒烟探测 HTTP 端点。
+- 代码：Mini Agent **v1（单循环）→ v2（RAG / 路由 / 记忆治理）→ v3（网关 / 账本 / 审计 / 持久化）→ v4（四拓扑）→ v5（五模式）→ v6（Arena / Swarm）→ 可部署服务**，**203 个测试**，Python 3.8+，零第三方运行时依赖；CI 在 3.8/3.11/3.12 上跑测试与评测，并构建镜像、冒烟探测 HTTP 端点。
 - 站点：VitePress 1.x + Mermaid 图表；另提供 `offline/` 纯静态离线版。
 - 文档侧已补：每章来源、练习参考答案、可复制模板、主线与分层章的对照表、术语写法约定。
 

@@ -237,4 +237,4 @@ gen_input = goal if not feedback else "%s（上次未通过：%s）" % (goal, fe
 - [ ] 能解释“喂回理由”为什么让生成—评审变成优化而不是重试。
 - [ ] 能说出 v5 的 `evaluator-optimizer` 和 v4 的 `debate` 在控制流上的区别。
 
-下一步：[编排层](/layers/orchestration)讲选型与状态机，[Mini Agent v4](/practice/mini-agent-v4) 是多 Agent 拓扑的可运行版本。
+下一步：[Mini Agent v6](/practice/mini-agent-v6) 补齐两个常被漏掉的拓扑——Arena（多候选两两对战排名）与 Swarm/Handoff（去中心化移交）；[Mini Agent v4](/practice/mini-agent-v4) 是另外四种拓扑的实现。

@@ -48,6 +48,12 @@ jobs:
       - name: v5 patterns
         run: python3 -m examples.mini_agent_v5.cli --compare
 
+      - name: v6 arena and swarm
+        run: |
+          python3 -m examples.mini_agent_v6.cli --arena
+          python3 -m examples.mini_agent_v6.cli --swarm
+          python3 -m examples.mini_agent_v6.cli --cycles
+
       - name: Fail fast on bad config
         run: |
           set +e

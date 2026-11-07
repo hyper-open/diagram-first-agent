@@ -411,6 +411,12 @@ flowchart LR
 - Shinn et al., **Reflexion**（2023）——把失败的反馈带回下一轮。
   [arxiv.org/abs/2303.11366](https://arxiv.org/abs/2303.11366)
 
+### [Mini Agent v6：Arena 与 Swarm](/practice/mini-agent-v6)
+
+- Zheng et al., **Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena**（2023）——成对比较与竞技场排名的原始方法，也是位置偏差的实证。[链接](https://arxiv.org/abs/2306.05685)
+- Chiang et al., **Chatbot Arena: An Open Platform for Evaluating LLMs**（2024）——众包成对对战与 Elo/Bradley-Terry 排名。[链接](https://arxiv.org/abs/2403.04132)
+- OpenAI, **Swarm（实验性框架）**——去中心化 handoff 的参考实现。[链接](https://github.com/openai/swarm)
+
 ### [部署形态](/practice/deployment)
 
 - Docker, **Dockerfile reference**——`HEALTHCHECK`、`USER`、多阶段构建。

@@ -52,6 +52,7 @@
 <a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
 <a class="nav-item" href="../practice/mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
 <a class="nav-item" href="../practice/mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="../practice/mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
 <a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
@@ -278,7 +279,7 @@
 要点：三个具体例子可以从本章的错误传播图里找——(a) 子任务强依赖，拆开后要反复同步上下文；(b) 只有一个角色有真实权限，其余 Agent 只是转发，多一跳只增加延迟；(c) 任务本身可验证性弱，评审 Agent 和生成 Agent 共享同样的盲区，形成虚假共识。
 自检：能说出“多 Agent 增加的是边界，不是智能”——这是本章开头的原话，能用自己的例子复述它才算理解。</p>
 </details>
-<p>想看这四种拓扑的可运行实现，见 <a href="../practice/mini-agent-v4.html">Mini Agent v4</a>；它用同一套子 Agent 契约把四种控制流各写了一遍。</p>
+<p>想看这四种拓扑的可运行实现，见 <a href="../practice/mini-agent-v4.html">Mini Agent v4</a>；另外两种常见但不在本章四分类里的拓扑（Arena、Swarm/Handoff）见 <a href="../practice/mini-agent-v6.html">Mini Agent v6</a>。</p>
 <p>下一步：<a href="platform.html">阶段 8：平台化</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="intent.html"><span>上一篇</span><strong>06 意图识别与路由</strong></a><a class="next" href="platform.html"><span>下一篇</span><strong>08 平台化与治理</strong></a></nav>
