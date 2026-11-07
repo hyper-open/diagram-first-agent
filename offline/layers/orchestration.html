@@ -50,6 +50,7 @@
 <div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="../practice/mini-agent.html">从零实现 Mini Agent</a>
 <a class="nav-item" href="../practice/mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
 <a class="nav-item" href="../practice/mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="../practice/mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
 <a class="nav-item" href="../practice/deployment.html">部署形态：从能跑到能上线</a>
 <a class="nav-item" href="../practice/cases.html">真实案例拆解</a>
 <a class="nav-item" href="../practice/ux.html">交互与信任设计</a></div>
@@ -510,6 +511,7 @@ class State:
 要点：可从本章“不适合的场景”中取材——(a) 任务步骤强依赖、需要频繁共享细粒度状态；(b) 只有一个角色有实际权限，其余只是转发；(c) 子任务共享同一个盲区，评审变成自我确认。
 自检：三个例子都要能说出<strong>多出来的那一跳带来了什么成本</strong>（token、延迟还是错误传播），只列场景不给代价不算完成。</p>
 </details>
+<p>四种拓扑的可运行实现见 <a href="../practice/mini-agent-v4.html">Mini Agent v4</a>。</p>
 <p>下一步：<a href="runtime.html">运行时与沙箱</a>。</p>
 </article>
         <nav class="pager"><a class="prev" href="memory.html"><span>上一篇</span><strong>记忆层</strong></a><a class="next" href="runtime.html"><span>下一篇</span><strong>运行时与沙箱</strong></a></nav>

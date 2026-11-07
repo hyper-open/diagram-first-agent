@@ -125,7 +125,7 @@ features:
 <div class="arch-grid">
   <div class="arch-card">
     <h3>想把代码跑起来</h3>
-    <p><a href="practice/mini-agent">v1：一个循环</a> → <a href="practice/mini-agent-v2">v2：加 RAG、路由与记忆治理</a> → <a href="practice/mini-agent-v3">v3：网关、计费与持久化</a>，三级都可运行、可测试，并可[部署](/practice/deployment)。</p>
+    <p><a href="practice/mini-agent">v1：一个循环</a> → <a href="practice/mini-agent-v2">v2：加 RAG、路由与记忆治理</a> → <a href="practice/mini-agent-v3">v3：网关、计费与持久化</a> → <a href="practice/mini-agent-v4">v4：四种多 Agent 拓扑</a>，均可运行、可测试，并可[部署](/practice/deployment)。</p>
   </div>
   <div class="arch-card">
     <h3>第一次接触 Agent</h3>

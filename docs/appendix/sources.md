@@ -391,6 +391,17 @@ flowchart LR
 - Ruan et al., **OSWorld**（2024）——Computer Use 的可复现评测。
   [arxiv.org/abs/2404.07972](https://arxiv.org/abs/2404.07972)
 
+### [Mini Agent v4：多 Agent 拓扑实现](/practice/mini-agent-v4)
+
+- Cemri et al., **Why Do Multi-Agent LLM Systems Fail?**（2025）——失败分类。
+  [arxiv.org/abs/2503.13657](https://arxiv.org/abs/2503.13657)
+- Du et al., **Multiagent Debate**（2023）——辩论拓扑的原始论文。
+  [arxiv.org/abs/2305.14325](https://arxiv.org/abs/2305.14325)
+- Wu et al., **AutoGen**（2023）——对话式多 Agent。
+  [arxiv.org/abs/2308.08155](https://arxiv.org/abs/2308.08155)
+- Anthropic, **Building Effective Agents**——Orchestrator-Workers 模式。
+  [anthropic.com/research/building-effective-agents](https://www.anthropic.com/research/building-effective-agents)
+
 ### [部署形态](/practice/deployment)
 
 - Docker, **Dockerfile reference**——`HEALTHCHECK`、`USER`、多阶段构建。

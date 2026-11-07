@@ -57,6 +57,7 @@ export const sidebar = [
       { text: '从零实现 Mini Agent', link: '/practice/mini-agent' },
       { text: 'v2：加 RAG、路由与记忆治理', link: '/practice/mini-agent-v2' },
       { text: 'v3：工具网关、计费与持久化', link: '/practice/mini-agent-v3' },
+      { text: 'v4：四种多 Agent 拓扑', link: '/practice/mini-agent-v4' },
       { text: '部署形态：从能跑到能上线', link: '/practice/deployment' },
       { text: '真实案例拆解', link: '/practice/cases' },
       { text: '交互与信任设计', link: '/practice/ux' }

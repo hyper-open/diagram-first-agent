@@ -42,6 +42,9 @@ jobs:
       - name: v3 crash/resume drill
         run: python3 -m examples.mini_agent_v3.cli --resume-demo
 
+      - name: v4 topologies
+        run: python3 -m examples.mini_agent_v4.cli --compare
+
       - name: Fail fast on bad config
         run: |
           set +e

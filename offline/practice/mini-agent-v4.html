@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Agent v4：四种多 Agent 拓扑 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item active" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v4：四种多 Agent 拓扑</strong></div>
+        <article class="doc"><h1 id="mini-agent-v4四种多-agent-拓扑四种控制流">Mini Agent v4：四种多 Agent 拓扑，四种控制流</h1>
+<h2 id="为什么要把四种都写一遍">为什么要把四种都写一遍</h2>
+<p><a href="../evolution/multi-agent.html">多 Agent</a> 那一章给了四种拓扑，但只有图。<strong>看懂图不等于会实现</strong>——四种拓扑在脑子里很像，落到代码上差在三个地方：</p>
+<ol>
+<li><strong>谁决定下一步</strong>（一个 leader / 对话本身 / 上一级 / 固定三轮）；</li>
+<li><strong>谁负责合并</strong>（leader / 最后发言者 / 逐级 / 裁判）；</li>
+<li><strong>失败怎么传</strong>（部分失败可合并 / 全部失败才报错 / 每层拦一次 / 裁判说了算）。</li>
+</ol>
+<p>v4 把这三种差异写成四份代码。它们的<strong>子 Agent 契约完全相同</strong>，所以你能直接对比控制流，而不被不同的数据结构干扰。</p>
+<div class="mermaid">flowchart TB
+  subgraph S[&quot;1a Supervisor&quot;]
+    S1[&quot;Lead&quot;] --&gt; S2[&quot;Worker A&quot;]
+    S1 --&gt; S3[&quot;Worker B&quot;]
+    S2 --&gt; S1
+    S3 --&gt; S1
+  end
+  subgraph P[&quot;1b Peer&quot;]
+    P1[&quot;Agent A&quot;] &lt;--&gt; P2[&quot;Agent B&quot;]
+  end
+  subgraph H[&quot;1c Hierarchical&quot;]
+    H1[&quot;Lead&quot;] --&gt; H2[&quot;Sub-lead&quot;] --&gt; H3[&quot;Worker&quot;]
+  end
+  subgraph D[&quot;1d Debate&quot;]
+    D1[&quot;Proposer&quot;] --&gt; D3[&quot;Judge&quot;]
+    D2[&quot;Critic&quot;] --&gt; D3
+  end
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 四种拓扑，同一套子 Agent 契约，差别全在“谁决定下一步、谁合并、失败怎么传”</p>
+<h2 id="先跑起来">先跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --compare    # 同一任务跑四种拓扑并对比
+python3 -m examples.mini_agent_v4.cli --failures   # 错误传播：一个 worker 坏掉
+python3 -m examples.mini_agent_v4.cli --budget     # 预算封顶：fan-out 不能超支
+python3 -m unittest tests.test_mini_agent_v4 -v    # 26 个测试
+</code></pre></div>
+<p>对比输出是这样的（同一个任务，同一种结果结构）：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>拓扑           ok    置信度    子任务    tokens
+supervisor    True  0.70     3        2400
+peer          True  0.60     4        3200
+hierarchical  True  0.70     3        2400
+debate        True  0.70     3        2400
+</code></pre></div>
+<h2 id="代码结构">代码结构</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>examples/mini_agent_v4/
+├── contract.py      子任务包 / 结果信封 / 预算树 / 角色 / 合并规则
+├── supervisor.py    1a：一个主管拆分 + 汇总
+├── peer.py          1b：两个对等 Agent 轮流发言
+├── hierarchical.py  1c：lead → sub-lead → worker
+├── debate.py        1d：proposer + critic → judge
+└── cli.py           对比 / 错误传播 / 预算演示
+</code></pre></div>
+<p><code>contract.py</code> 是重点。四种拓扑共享它，所以你只要读一遍契约，再读四个 100 行左右的控制流就够了。</p>
+<h2 id="lab-1契约子-agent-只返回结论-证据-置信度">Lab 1：契约——子 Agent 只返回“结论 + 证据 + 置信度”</h2>
+<p><code>SubResult</code> 是四种拓扑唯一的返回值类型。关键设计：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@property
+def usable(self) -&gt; bool:
+    return self.ok and bool(self.summary.strip()) and self.confidence &gt; 0
+</code></pre></div>
+<p><strong>“可用”不等于“成功”</strong>。一个 worker 可能 <code>ok=True</code> 但返回空字符串还说自己很有信心——这种结果父 Agent 不能拿来合并。把这个判断做成属性，而不是散落在各处的 <code>if</code>，是让多 Agent 系统可调试的第一步。</p>
+<p>另一个刻意的选择：<strong>合并后的置信度取最小值，不取平均</strong>。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def merge_confidence(results):
+    usable = [r for r in results if r.usable]
+    return min(r.confidence for r in usable) if usable else 0.0
+</code></pre></div>
+<p>平均会让三个自信的 worker 掩盖一个“其实不知道”的 worker。合并的可信度只取决于<strong>最弱的那一环</strong>。</p>
+<h2 id="lab-2supervisor默认选择但要防两个坑">Lab 2：Supervisor——默认选择，但要防两个坑</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --topology supervisor
+</code></pre></div>
+<p>控制流最直白：主管拆 → 并行跑 → 合并。两个容易写错的地方这里都处理了。</p>
+<h3 id="坑一失败的-worker-必须是数据不是异常">坑一：失败的 worker 必须是数据，不是异常</h3>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --failures
+</code></pre></div>
+<p>输出：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>supervisor ok=True 置信度=0.70
+失败被记录而非抛出: ['analyzer/sub_97bd94a6: tool_timeout']
+仍然产出了答案: ...
+</code></pre></div>
+<p>如果某个 worker 抛异常把整个 supervisor 干掉，那&quot;3 个里坏 1 个&quot;就变成了&quot;全军覆没&quot;。正确做法是 worker <strong>总是返回 <code>SubResult</code></strong>，失败也是（<code>ok=False</code> + <code>reason</code>），由主管决定怎么处理。</p>
+<p>反例也演示了：<strong>全部失败时必须明确说“无法完成”</strong>，不能编一个答案。</p>
+<h3 id="坑二fan-out-不能花超过预算">坑二：fan-out 不能花超过预算</h3>
+<p>这是本项目开发中真实踩到的坑，也是 v4 最有价值的一段。最初的实现是：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>share = remaining // n          # 把池子切成 n 份
+</code></pre></div>
+<p>父预算 3000、10 个 worker，每份只有 300 tokens——而一次最小调用要 800。结果 10 个 worker <strong>全部因“token 超限”失败</strong>，而父级却报告消耗 0。</p>
+<p>修复用了三步（见 <code>BudgetTree</code>）：</p>
+<ol>
+<li><strong><code>reserve(n)</code> 先算“养得起几个”</strong>：<code>可养数 = 剩余 // 最小调用成本</code>，不够就不 spawn，而不是 spawn 一堆注定失败的；</li>
+<li><strong>真正从父池扣掉预留额度</strong>，避免父级“看起来没花钱”；</li>
+<li><strong><code>settle(child)</code> 退还未用完的部分</strong>，避免浪费。</li>
+</ol>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --budget
+# 计划 spawn: 10，实际 spawn: 3（预算只够这么多）
+# 实际消耗: 2400 tokens（上限 3000，未越界: True）
+</code></pre></div>
+<p>测试 <code>test_fanout_respects_budget_cap</code> 锁住这条不变量：<strong>子级总消耗 ≤ 父级上限</strong>。</p>
+<h2 id="lab-3peer最容易被误用的拓扑">Lab 3：Peer——最容易被误用的拓扑</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --topology peer
+</code></pre></div>
+<p>对等协商没有 leader，<strong>“对话本身就是控制流”</strong>。这正是它危险的地方：</p>
+<ul>
+<li>没人对目标负责 → 话题漂移；</li>
+<li>出错不知道是谁的锅；</li>
+<li>两个 Agent 可以把同一个问题推来推去（livelock）。</li>
+</ul>
+<p>所以这里加了两道<strong>必须加、但常被忘记</strong>的机制：</p>
+<h3 id="1-轮数上限">1. 轮数上限</h3>
+<p><code>max_rounds=3</code>。&quot;跑到收敛&quot;不是终止条件——收敛本身要先被定义。</p>
+<h3 id="2-基于实质的终止而不是礼貌">2. 基于实质的终止，而不是礼貌</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>new_evidence = {e for r in round_results for e in r.evidence} - seen_evidence
+if not new_evidence:
+    break   # 这一轮没有产生新证据，再聊就是空转
+</code></pre></div>
+<p>测试 <code>test_peer_has_explicit_termination_reason</code> 断言：<strong>每次停止都必须有明确理由</strong>（<code>no_new_evidence</code> / <code>restating_agreement</code> / <code>budget</code>）。</p>
+<p>开发中还修了一个 bug：最初把“上一轮发言”直接拼进下一轮的 goal 字符串，结果每轮都嵌套上一轮的话，token 爆炸。正确做法是把上下文放进 <code>task.constraints</code>（任务包的独立字段），而不是污染 goal。测试 <code>test_context_is_not_nested_into_goal</code> 守住它。</p>
+<p><strong>练习</strong>：如果两个 peer 一直同意但都是错的，上面哪个机制能发现？如果都不能，需要加什么？</p>
+<h2 id="lab-4hierarchical只为装不下而用">Lab 4：Hierarchical——只为“装不下”而用</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --topology hierarchical
+</code></pre></div>
+<p>分层拓扑适合单上下文放不下整个计划的超大任务。两个关键防护：</p>
+<h3 id="1-深度守卫">1. 深度守卫</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if subtask.depth &gt;= subtask.max_depth:
+    # 到顶了，自己干，不要再委派
+</code></pre></div>
+<p>没有 <code>max_depth</code>，每一层都能再拆，任务量指数膨胀。</p>
+<h3 id="2-证据不能被二次加工掉">2. 证据不能被“二次加工”掉</h3>
+<p>sub-lead 汇总子结果时，<strong>合并的是证据列表，不是重写一段话</strong>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>summary = &quot;%s：%s&quot; % (branch.lead.name, &quot;；&quot;.join(r.summary for r in usable))
+evidence = evidence  # 原样向上传递
+</code></pre></div>
+<p>这样顶层仍然能把一句结论追溯到具体干活的那个 worker。测试 <code>test_evidence_is_preserved_up_the_tree</code> 就是查这个。</p>
+<h2 id="lab-5debate昂贵且容易虚假共识">Lab 5：Debate——昂贵，且容易虚假共识</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v4.cli --topology debate
+</code></pre></div>
+<p>正反方 + 裁判，用于判断类任务（政策边界、风险分级）。两个机制针对“虚假共识”：</p>
+<h3 id="1-裁决必须有理由">1. 裁决必须有理由</h3>
+<p>没有理由的裁决不可复核，直接算失败。</p>
+<h3 id="2-分歧是合法输出">2. 分歧是合法输出</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>if debate_confidence &lt; confidence_floor:
+    return &quot;裁决：存在未解决的异议，不给出结论。异议：...&quot;
+</code></pre></div>
+<p>如果反方的异议压过了正方，<strong>报异议比给一个自信的错答案好</strong>。测试 <code>test_strong_objection_blocks_consensus</code> 覆盖这一点。</p>
+<p>成本提醒：至少 3 次调用（正 / 反 / 判），不要对每个请求都辩论——只辩那些“错一次代价高”的。</p>
+<h2 id="四种拓扑怎么选">四种拓扑怎么选</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>拓扑</th>
+<th>何时用</th>
+<th>主要代价</th>
+<th>本项目里最容易踩的坑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supervisor</td>
+<td>子任务独立，默认选择</td>
+<td>主管是瓶颈</td>
+<td>fan-out 超预算</td>
+</tr>
+<tr>
+<td>Peer</td>
+<td>需要来回质询、没有天然主管</td>
+<td>漂移 / livelock</td>
+<td>没有实质终止条件</td>
+</tr>
+<tr>
+<td>Hierarchical</td>
+<td>单个上下文装不下计划</td>
+<td>层级延迟叠加</td>
+<td>忘了深度上限</td>
+</tr>
+<tr>
+<td>Debate</td>
+<td>判断类、错一次代价高</td>
+<td>3× 调用成本</td>
+<td>把虚假共识当结论</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出四种拓扑在“谁决定下一步”上的区别。</li>
+<li>[ ] 能解释为什么合并置信度取最小值而不是平均。</li>
+<li>[ ] 能说出 fan-out 超预算的两种表现（全失败 / 父级报 0）。</li>
+<li>[ ] 能说出 peer 为什么必须有“基于实质”的终止条件。</li>
+<li>[ ] 能解释深度守卫防的是什么。</li>
+<li>[ ] 能说出 debate 里“报异议”为什么比“给结论”更正确。</li>
+</ul>
+<p>下一步：<a href="../evolution/multi-agent.html">多 Agent</a> 讲理论、<a href="../layers/orchestration.html">编排层</a> 讲选型，本章是它们的可运行版本。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Cemri et al., <strong>Why Do Multi-Agent LLM Systems Fail?</strong>（2025）——多 Agent 失败的实证分类（MAST），本章错误传播与失败模式的主要依据。<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">链接</a></li>
+<li>Wu et al., <strong>AutoGen</strong>（2023）——对话式多 Agent 编排，Peer 拓扑的工业来源。<a href="https://arxiv.org/abs/2308.08155" target="_blank" rel="noopener">链接</a></li>
+<li>Hong et al., <strong>MetaGPT</strong>（2023）——SOP 式分工，Hierarchical 拓扑的对照。<a href="https://arxiv.org/abs/2308.00352" target="_blank" rel="noopener">链接</a></li>
+<li>Du et al., <strong>Improving Factuality and Reasoning via Multiagent Debate</strong>（2023）——Debate 拓扑的原始论文。<a href="https://arxiv.org/abs/2305.14325" target="_blank" rel="noopener">链接</a></li>
+<li>Anthropic, <strong>Building Effective Agents</strong>——Orchestrator-Workers 模式的原始描述。<a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">链接</a></li>
+</ul>
+<p>完整清单见<a href="../appendix/sources.html#mini-agent-v4%E5%A4%9A-agent-%E6%8B%93%E6%89%91%E5%AE%9E%E7%8E%B0">推荐来源</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent-v3.html"><span>上一篇</span><strong>v3：工具网关、计费与持久化</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

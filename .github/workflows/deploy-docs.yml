@@ -41,6 +41,7 @@ jobs:
       - run: python3 -m examples.mini_agent_v2.eval
       - run: python3 -m examples.mini_agent_v3.cli --eval
       - run: python3 -m examples.mini_agent_v3.cli --resume-demo
+      - run: python3 -m examples.mini_agent_v4.cli --compare
 
       - run: pnpm docs:build
 

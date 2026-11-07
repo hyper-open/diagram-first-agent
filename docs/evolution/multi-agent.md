@@ -180,4 +180,6 @@ flowchart LR
 自检：能说出“多 Agent 增加的是边界，不是智能”——这是本章开头的原话，能用自己的例子复述它才算理解。
 :::
 
+想看这四种拓扑的可运行实现，见 [Mini Agent v4](/practice/mini-agent-v4)；它用同一套子 Agent 契约把四种控制流各写了一遍。
+
 下一步：[阶段 8：平台化](/evolution/platform)。

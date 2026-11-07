@@ -217,4 +217,4 @@ Gate("acl", "检索零 ACL 泄漏", lambda: acl_leak_count() == 0, "security")
 | 发布 | 无 | 无 | **门禁 + 发布记录** |
 | 测试 | 26 | 58 | **101** |
 
-下一步：[部署形态](/practice/deployment)——把 v3 装进容器、用环境变量配置、加上健康检查与 CI；再往后是[框架对照](/advanced/frameworks)，把这一套组件映射到主流框架上。
+下一步：[Mini Agent v4](/practice/mini-agent-v4) 用 v1–v3 的契约把四种多 Agent 拓扑各实现一遍；或者直接去[部署形态](/practice/deployment)把系统装进容器。
