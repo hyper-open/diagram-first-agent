@@ -24,6 +24,57 @@ description: 从单机示例到可运营平台：八层架构、控制面与数�
 
 <p class="diagram-caption"><strong>图 1</strong> · 八层 + 两个横切面：请求自上而下，控制面下发配置，可观测回流决策</p>
 
+## 技术栈总览（每层具体用什么）
+
+上面那张图只画了"层和职责"。下面这张标到**具体技术选型**——每格上半是能力，下半是落地技术。选型是**常见组合**，不是唯一答案；同一格通常有 2–3 个可替换选项。
+
+![企业级架构技术栈（每节点标注技术选型）](/images/enterprise-architecture-tech.png)
+
+<p class="diagram-caption"><strong>图 2</strong> · 每个节点标注了落地技术；开源与云服务混列，按团队现状替换</p>
+
+### 选型速查表
+
+| 层 | 节点 | 常见选型 | 选型要点 |
+| --- | --- | --- | --- |
+| ① 客户端 | Web/App | React · Vue · 小程序 | 首字延迟与流式渲染 |
+| ① | 开放 API | REST · gRPC · OpenAPI 3.1 | 契约先行，版本化 |
+| ② 接入 | WAF/DDoS | Cloudflare · AWS Shield | 在网关之前 |
+| ② | 负载均衡 | ALB · Nginx · Envoy | 多可用区 |
+| ② | API 网关 | Kong · APISIX · Envoy Gateway | 认证、限流、灰度分流 |
+| ② | 认证 | OAuth2 · OIDC · JWT | 租户与用户双身份 |
+| ③ 编排 | 意图路由 | 规则 + Embedding 分类（BGE-m3 / 小模型） | 先检索再看能不能答 |
+| ③ | 工作流引擎 | Temporal · 自研状态机 | 长任务持久化 |
+| ③ | 多 Agent 编排 | LangGraph · OpenAI Agents SDK | 契约优先于框架 |
+| ③ | 对抗编排 | Debate / Arena 自研 | 输出排名或裁决 |
+| ③ | RAG 管线 | LlamaIndex · bge-reranker | 检索决定上限 |
+| ③ | 记忆服务 | Redis · PostgreSQL | 来源、冲突、可删 |
+| ④ 能力 | 模型网关 | LiteLLM · OneAPI · 自研 | 路由/回退/计量 |
+| ④ | 工具网关 | MCP · 能力令牌（OAuth RFC8693） | 不得给超级账号 |
+| ④ | 沙箱 | Firecracker · gVisor · E2B | 无宿主凭证 |
+| ⑤ 数据 | 状态/检查点 | PostgreSQL · Redis | 可恢复 |
+| ⑤ | 向量库 | Milvus · Qdrant · pgvector | 按租户分区 |
+| ⑤ | 计量账本 | Kafka + ClickHouse | 只追加、幂等 |
+| ⑤ | 审计日志 | S3 Object Lock（WORM） | 不可篡改 |
+| ⑤ | PII 存储 | KMS 加密 · Presidio 脱敏 | 加密与脱敏分离 |
+| ⑥ 控制面 | 配置中心 | Nacos · Apollo | 下发缓存，不在请求路径回调 |
+| ⑥ | 功能开关 | OpenFeature · LaunchDarkly | 稳定哈希分桶 |
+| ⑥ | 策略引擎 | OPA / Rego | 确定性、可测试 |
+| ⑥ | 配额 | Redis 令牌桶 | 调用前检查 |
+| ⑥ | 版本与回滚 | GitOps · ArgoCD | 模型/prompt/工具独立版本 |
+| ⑥ | 评测门禁 | Ragas · DeepEval | 指标不降才放行 |
+| ⑦ 可观测 | Tracing | OpenTelemetry · Jaeger | trace_id 贯穿父子 |
+| ⑦ | 指标/日志 | Prometheus · Loki · Grafana | SLO 与告警 |
+| ⑦ | 内容/PII 审核 | Moderation API · Presidio | 输入输出双卡点 |
+| ⑦ | 安全评测 | Garak · 红队自研 | 进回归集 |
+| ⑧ 基础设施 | 容器编排 | Kubernetes 多可用区 | 健康检查与探针 |
+| ⑧ | 消息/异步 | Kafka · RabbitMQ | 长任务与背压 |
+| ⑧ | 密钥管理 | Vault · AWS KMS | 短期凭证、轮换 |
+| ⑧ | 灾备 | 跨区备份 · Velero | 演练过才算有 |
+
+::: warning 选型不是拼图
+表里每格都能替换，但**有几处不能随便省**：工具网关的能力令牌、审计的 WORM、控制面的配置缓存、数据层的租户分区。这几处省掉不会立刻出问题，只会在某次事故里一次性暴露。
+:::
+
 ## 八层各管什么
 
 ### ① 客户端 / 渠道

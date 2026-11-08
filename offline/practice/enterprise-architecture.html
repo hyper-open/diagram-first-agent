@@ -109,6 +109,230 @@
 <h2 id="一图看懂">一图看懂</h2>
 <p><img src="../assets/images/enterprise-architecture.png" alt="" loading="lazy"></p>
 <p class="diagram-caption"><strong>图 1</strong> · 八层 + 两个横切面：请求自上而下，控制面下发配置，可观测回流决策</p>
+<h2 id="技术栈总览每层具体用什么">技术栈总览（每层具体用什么）</h2>
+<p>上面那张图只画了&quot;层和职责&quot;。下面这张标到<strong>具体技术选型</strong>——每格上半是能力，下半是落地技术。选型是<strong>常见组合</strong>，不是唯一答案；同一格通常有 2–3 个可替换选项。</p>
+<p><img src="../assets/images/enterprise-architecture-tech.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 2</strong> · 每个节点标注了落地技术；开源与云服务混列，按团队现状替换</p>
+<h3 id="选型速查表">选型速查表</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>节点</th>
+<th>常见选型</th>
+<th>选型要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 客户端</td>
+<td>Web/App</td>
+<td>React · Vue · 小程序</td>
+<td>首字延迟与流式渲染</td>
+</tr>
+<tr>
+<td>①</td>
+<td>开放 API</td>
+<td>REST · gRPC · OpenAPI 3.1</td>
+<td>契约先行，版本化</td>
+</tr>
+<tr>
+<td>② 接入</td>
+<td>WAF/DDoS</td>
+<td>Cloudflare · AWS Shield</td>
+<td>在网关之前</td>
+</tr>
+<tr>
+<td>②</td>
+<td>负载均衡</td>
+<td>ALB · Nginx · Envoy</td>
+<td>多可用区</td>
+</tr>
+<tr>
+<td>②</td>
+<td>API 网关</td>
+<td>Kong · APISIX · Envoy Gateway</td>
+<td>认证、限流、灰度分流</td>
+</tr>
+<tr>
+<td>②</td>
+<td>认证</td>
+<td>OAuth2 · OIDC · JWT</td>
+<td>租户与用户双身份</td>
+</tr>
+<tr>
+<td>③ 编排</td>
+<td>意图路由</td>
+<td>规则 + Embedding 分类（BGE-m3 / 小模型）</td>
+<td>先检索再看能不能答</td>
+</tr>
+<tr>
+<td>③</td>
+<td>工作流引擎</td>
+<td>Temporal · 自研状态机</td>
+<td>长任务持久化</td>
+</tr>
+<tr>
+<td>③</td>
+<td>多 Agent 编排</td>
+<td>LangGraph · OpenAI Agents SDK</td>
+<td>契约优先于框架</td>
+</tr>
+<tr>
+<td>③</td>
+<td>对抗编排</td>
+<td>Debate / Arena 自研</td>
+<td>输出排名或裁决</td>
+</tr>
+<tr>
+<td>③</td>
+<td>RAG 管线</td>
+<td>LlamaIndex · bge-reranker</td>
+<td>检索决定上限</td>
+</tr>
+<tr>
+<td>③</td>
+<td>记忆服务</td>
+<td>Redis · PostgreSQL</td>
+<td>来源、冲突、可删</td>
+</tr>
+<tr>
+<td>④ 能力</td>
+<td>模型网关</td>
+<td>LiteLLM · OneAPI · 自研</td>
+<td>路由/回退/计量</td>
+</tr>
+<tr>
+<td>④</td>
+<td>工具网关</td>
+<td>MCP · 能力令牌（OAuth RFC8693）</td>
+<td>不得给超级账号</td>
+</tr>
+<tr>
+<td>④</td>
+<td>沙箱</td>
+<td>Firecracker · gVisor · E2B</td>
+<td>无宿主凭证</td>
+</tr>
+<tr>
+<td>⑤ 数据</td>
+<td>状态/检查点</td>
+<td>PostgreSQL · Redis</td>
+<td>可恢复</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>向量库</td>
+<td>Milvus · Qdrant · pgvector</td>
+<td>按租户分区</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>计量账本</td>
+<td>Kafka + ClickHouse</td>
+<td>只追加、幂等</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>审计日志</td>
+<td>S3 Object Lock（WORM）</td>
+<td>不可篡改</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>PII 存储</td>
+<td>KMS 加密 · Presidio 脱敏</td>
+<td>加密与脱敏分离</td>
+</tr>
+<tr>
+<td>⑥ 控制面</td>
+<td>配置中心</td>
+<td>Nacos · Apollo</td>
+<td>下发缓存，不在请求路径回调</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>功能开关</td>
+<td>OpenFeature · LaunchDarkly</td>
+<td>稳定哈希分桶</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>策略引擎</td>
+<td>OPA / Rego</td>
+<td>确定性、可测试</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>配额</td>
+<td>Redis 令牌桶</td>
+<td>调用前检查</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>版本与回滚</td>
+<td>GitOps · ArgoCD</td>
+<td>模型/prompt/工具独立版本</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>评测门禁</td>
+<td>Ragas · DeepEval</td>
+<td>指标不降才放行</td>
+</tr>
+<tr>
+<td>⑦ 可观测</td>
+<td>Tracing</td>
+<td>OpenTelemetry · Jaeger</td>
+<td>trace_id 贯穿父子</td>
+</tr>
+<tr>
+<td>⑦</td>
+<td>指标/日志</td>
+<td>Prometheus · Loki · Grafana</td>
+<td>SLO 与告警</td>
+</tr>
+<tr>
+<td>⑦</td>
+<td>内容/PII 审核</td>
+<td>Moderation API · Presidio</td>
+<td>输入输出双卡点</td>
+</tr>
+<tr>
+<td>⑦</td>
+<td>安全评测</td>
+<td>Garak · 红队自研</td>
+<td>进回归集</td>
+</tr>
+<tr>
+<td>⑧ 基础设施</td>
+<td>容器编排</td>
+<td>Kubernetes 多可用区</td>
+<td>健康检查与探针</td>
+</tr>
+<tr>
+<td>⑧</td>
+<td>消息/异步</td>
+<td>Kafka · RabbitMQ</td>
+<td>长任务与背压</td>
+</tr>
+<tr>
+<td>⑧</td>
+<td>密钥管理</td>
+<td>Vault · AWS KMS</td>
+<td>短期凭证、轮换</td>
+</tr>
+<tr>
+<td>⑧</td>
+<td>灾备</td>
+<td>跨区备份 · Velero</td>
+<td>演练过才算有</td>
+</tr>
+</tbody>
+</table></div>
+<div class="custom-block warning"><p class="custom-block-title">选型不是拼图</p>
+<p>表里每格都能替换，但<strong>有几处不能随便省</strong>：工具网关的能力令牌、审计的 WORM、控制面的配置缓存、数据层的租户分区。这几处省掉不会立刻出问题，只会在某次事故里一次性暴露。</p>
+</div>
 <h2 id="八层各管什么">八层各管什么</h2>
 <h3 id="①-客户端-渠道">① 客户端 / 渠道</h3>
 <p>Web、App、客服工作台、开放 API、IM/电话/工单。<strong>这一层决定 SLA 和接入形态</strong>：同步问答要秒级响应，工单可以异步。</p>
