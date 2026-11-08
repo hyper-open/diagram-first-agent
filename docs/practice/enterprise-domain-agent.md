@@ -111,4 +111,6 @@ description: 采用「意图路由 → 领域 Agent → 领域内处理」的两
 - [ ] 能判断一个业务该用 A、B 还是混合。
 - [ ] 能说出为什么领域隔离不能靠"每个领域自己调模型"。
 
+一个具体领域接入示例（研发/Coding）：见[把 Coding 能力接进平台](/practice/coding-platform)。
+
 相关：[企业级参考架构](/practice/enterprise-architecture)（A 方案视角与全量技术栈）、[范式选型指南](/practice/paradigm-selection)（领域 Agent 内部怎么选范式）、[多意图路由](/practice/multi-intent)（路由层如何拆多意图）。

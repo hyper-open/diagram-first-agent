@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>把 Coding 能力接进平台 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="enterprise-domain-agent.html">企业级架构（领域 Agent 版）</a>
+<a class="nav-item active" href="coding-platform.html">把 Coding 能力接进平台</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>把 Coding 能力接进平台</strong></div>
+        <article class="doc"><h1 id="把-coding-能力接进平台">把 Coding 能力接进平台</h1>
+<h2 id="先给结论">先给结论</h2>
+<p><strong>Coding 不是一种新范式，而是一个「领域 Agent」。</strong> 它按<a href="enterprise-domain-agent.html">领域 Agent 版架构</a>接入：意图路由判到&quot;研发领域&quot;，进入研发 Agent，研发 Agent 内部按任务选范式（探索-定位-修改-测试循环 = 编排者模式）。</p>
+<p>它和前文通用能力<strong>唯一的本质差异</strong>是：<strong>代码必须在专门沙箱里执行</strong>，而且要额外的<strong>仓库权限</strong>与<strong>分支保护</strong>。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<p><img src="../assets/images/coding-platform.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 1</strong> · 研发 Agent 作为领域接入：路由判领域 → 研发 Agent 选范式 → 代码沙箱执行 → 仓库权限与审计兜底</p>
+<h2 id="接入方式作为「研发领域」注册">接入方式：作为「研发领域」注册</h2>
+<p>在领域 Agent 层新增一个研发领域，和售后、技术支持并列：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code># 领域注册（伪代码，对应 enterprise-architecture 的 ④ 层）
+domains = {
+    &quot;after_sales&quot;: AfterSalesAgent(...),
+    &quot;tech_support&quot;: TechSupportAgent(...),
+    &quot;research_dev&quot;: ResearchDevAgent(     # ← 新增
+        coding=CodingAgent(...),
+        review=CodeReviewAgent(...),
+        repo_qa=RepoQAAgent(...),
+    ),
+}
+</code></pre></div>
+<p>路由只需在意图表里加一条：命中&quot;修 bug / 加功能 / 评审 / 仓库问答&quot;→ 研发领域。<strong>路由逻辑不增加复杂度</strong>，因为领域数从 3 变 4，不是组合数爆炸。</p>
+<h2 id="三个关键差异点">三个关键差异点</h2>
+<h3 id="1-代码沙箱最重要">1. 代码沙箱（最重要）</h3>
+<p>通用能力层已有沙箱，但<strong>代码场景对沙箱的要求更严</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>要求</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无宿主凭证</td>
+<td>仓库 token 不能进沙箱，否则 Agent 能推任意分支</td>
+</tr>
+<tr>
+<td>网络白名单</td>
+<td>只允许拉依赖的源，禁止外发（防数据外泄）</td>
+</tr>
+<tr>
+<td>资源限额</td>
+<td>编译/测试可能吃满 CPU 内存，必须硬限</td>
+</tr>
+<tr>
+<td>镜像 digest 固定</td>
+<td>同一个 issue 今天跑和明天跑结果要一致</td>
+</tr>
+<tr>
+<td>文件系统隔离</td>
+<td>只能看到被授权的仓库，看不到宿主机其他代码</td>
+</tr>
+</tbody>
+</table></div>
+<p>对应到图里的「代码沙箱」节点。<strong>这是研发能力区别于其他领域最硬的一处。</strong></p>
+<h3 id="2-仓库权限独立的「代码仓网关」">2. 仓库权限：独立的「代码仓网关」</h3>
+<p>代码类请求不能只过 API 网关，还要过一层<strong>代码仓网关</strong>：</p>
+<ul>
+<li><strong>仓库白名单</strong>：哪些仓库允许 Agent 动（不是所有仓都开放）</li>
+<li><strong>分支保护</strong>：禁止直推 main，只允许开 PR</li>
+<li><strong>最小权限</strong>：Agent 只能读被授权的仓库，写只能写自己开的 PR 分支</li>
+<li><strong>审计</strong>：每次读写了哪个仓、哪个分支、哪个 commit，全记录</li>
+</ul>
+<p><strong>反模式</strong>：给 Coding Agent 一个&quot;能访问所有仓库的 bot token&quot;。一旦被提示注入，它能改任意代码库。</p>
+<h3 id="3-评测用可验证的成功标准">3. 评测：用可验证的成功标准</h3>
+<p>Coding 是所有 Agent 场景里<strong>最幸运的</strong>——成功标准是客观的：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>测试通过 + 构建成功 + lint 干净 + 不回归
+</code></pre></div>
+<p>所以它的评测集就是<strong>真实 issue + 对应测试</strong>：</p>
+<ul>
+<li>公开基准：SWE-bench 类（判断模型能力）</li>
+<li>公司私有 bug 集：真实历史 issue（判断实际效果，必须有）</li>
+<li>回归集：改一个 bug 不能弄坏别的功能</li>
+</ul>
+<p><strong>没有私有评测集的 Coding Agent 不能上线</strong>——否则你不知道它是在修 bug 还是在制造 bug。</p>
+<h2 id="研发-agent-内部的范式选择">研发 Agent 内部的范式选择</h2>
+<p>研发 Agent 是&quot;领域主人&quot;，它按具体任务选范式：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>用法</th>
+<th>对应范式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>修一个 issue / 改多文件</td>
+<td>探索→定位→修改→测试→修复 循环</td>
+<td><strong>Orchestrator 编排者</strong></td>
+</tr>
+<tr>
+<td>大重构 / 跨模块</td>
+<td>拆子任务并行处理</td>
+<td><strong>Supervisor</strong></td>
+</tr>
+<tr>
+<td>代码审查</td>
+<td>独立 Reviewer 审 diff</td>
+<td><strong>Evaluator 生成-评审</strong></td>
+</tr>
+<tr>
+<td>仓库问答 / 定位代码</td>
+<td>检索代码库</td>
+<td><strong>RAG（代码检索）</strong></td>
+</tr>
+<tr>
+<td>两种改法选一个</td>
+<td>多方案对比</td>
+<td><strong>Arena</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>这就是为什么说&quot;Coding 不是新范式&quot;——它复用现有范式，只是换了个领域和一套更专用的执行环境。</p>
+<h2 id="一次-coding-请求的完整路径">一次 Coding 请求的完整路径</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 触发    开发者在 IDE / 在 issue 里 @agent / 提交 PR
+2. 接入    API 网关（租户配额）+ 代码仓网关（仓库白名单·分支保护）
+3. 路由    意图 = 研发领域
+4. 领域    研发 Agent 收到请求
+5. 选范式  任务=修 issue → 起&quot;探索-定位-修改-测试&quot;编排
+6. 执行    在代码沙箱里：读文件→改文件→跑测试（无宿主凭证·网络白名单）
+7. 能力    模型网关（强代码模型）+ 工具网关（文件/测试/git）
+8. 产出    生成 diff → 开 PR（不直推）→ 请求人工 review
+9. 横切    全程 trace；diff 可追溯；密钥扫描；越权检测
+10. 回流   失败 issue 进私有评测集 → 下次发布门禁
+</code></pre></div>
+<h2 id="平台化的收益为什么值得做成平台">平台化的收益（为什么值得做成平台）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>单点工具</th>
+<th>平台化后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每个团队各自接模型、自己管密钥</td>
+<td>统一走模型网关，密钥不落地</td>
+</tr>
+<tr>
+<td>用完不知道成本</td>
+<td>按仓库/团队归因到账本</td>
+</tr>
+<tr>
+<td>改了什么没人知道</td>
+<td>审计 WORM 可追溯</td>
+</tr>
+<tr>
+<td>各团队重复造沙箱</td>
+<td>共享沙箱池，统一安全基线</td>
+</tr>
+<tr>
+<td>效果无法衡量</td>
+<td>统一评测集与门禁</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>平台化的核心不是&quot;多一个大功能&quot;，而是把 Coding 从&quot;某个团队的脚本&quot;变成&quot;有权限、有账本、有审计、有门禁的服务&quot;。</strong></p>
+<h2 id="常见坑">常见坑</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>坑</th>
+<th>后果</th>
+<th>正确做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>给 Agent 全能 bot token</td>
+<td>提示注入可改任意仓库</td>
+<td>仓库白名单 + 最小权限</td>
+</tr>
+<tr>
+<td>允许直推 main</td>
+<td>一次错误改动直接影响生产</td>
+<td>只开 PR + 分支保护</td>
+</tr>
+<tr>
+<td>代码不在沙箱跑</td>
+<td>读到宿主密钥、污染环境</td>
+<td>专用沙箱 + 无宿主凭证</td>
+</tr>
+<tr>
+<td>只测公开 bench</td>
+<td>私有效果不明</td>
+<td>建公司私有 bug 集</td>
+</tr>
+<tr>
+<td>不记录 diff</td>
+<td>出问题查不到改了什么</td>
+<td>每步 diff 进审计</td>
+</tr>
+<tr>
+<td>无人工 review</td>
+<td>机械正确但语义错误的改动被合并</td>
+<td>PR 必须人审</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出 Coding 为什么是&quot;领域 Agent&quot;而不是&quot;新范式&quot;。</li>
+<li>[ ] 能说出代码沙箱与通用沙箱的三个额外要求。</li>
+<li>[ ] 能解释为什么需要独立的代码仓网关（而不是只有 API 网关）。</li>
+<li>[ ] 能说出 Coding 的成功标准为什么&quot;最可验证&quot;。</li>
+<li>[ ] 能列出平台化相对单点工具的至少三个收益。</li>
+<li>[ ] 能说出&quot;给 Agent 全能 token&quot;为什么会出事。</li>
+</ul>
+<p>相关：<a href="cases.html">真实案例拆解</a> 的 Coding Agent 案例、<a href="enterprise-domain-agent.html">领域 Agent 版架构</a>、<a href="../layers/runtime.html">运行时与沙箱</a>、<a href="paradigm-selection.html">范式选型指南</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="enterprise-domain-agent.html"><span>上一篇</span><strong>企业级架构（领域 Agent 版）</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>
