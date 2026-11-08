@@ -113,6 +113,55 @@
 <p>上面那张图只画了&quot;层和职责&quot;。下面这张标到<strong>具体技术选型</strong>——每格上半是能力，下半是落地技术。选型是<strong>常见组合</strong>，不是唯一答案；同一格通常有 2–3 个可替换选项。</p>
 <p><img src="../assets/images/enterprise-architecture-tech.png" alt="" loading="lazy"></p>
 <p class="diagram-caption"><strong>图 2</strong> · 每个节点标注了落地技术；开源与云服务混列，按团队现状替换</p>
+<h3 id="意图路由和编排层是怎么衔接的">意图路由和编排层是怎么衔接的</h3>
+<p>图 2 里 ③ 编排层已经画成了<strong>串联</strong>结构，这是关键，容易被误读成并列：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>③ 编排层
+  ┌───────────────────────────────────────────┐
+  │  意图路由（入口，只执行 1 次）              │
+  │    · 输入：用户文本                         │
+  │    · 输出：Route 标签（primary + secondary）│
+  │         │  选路                             │
+  │         ▼                                   │
+  │  执行单元（只走其中一条）                   │
+  │    · 固定工作流 / Supervisor / Debate / RAG │
+  └───────────────────────────────────────────┘
+</code></pre></div>
+<p>三条规则：</p>
+<ol>
+<li><strong>路由是编排层的入口，不是它的兄弟。</strong> 路由先跑一次，产出标签；编排消费标签去执行。</li>
+<li><strong>路由产出的只是标签，不执行任何业务逻辑。</strong> 真正干活的是被选中的那个执行单元。</li>
+<li><strong>执行单元内部可以再分派</strong>（Supervisor 把子任务分给不同 Worker），但那是<strong>任务分派</strong>，不是用户意图路由——两者层次不同、错了的后果也不同。</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>用户意图路由</th>
+<th>编排内任务分派</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>判断对象</td>
+<td>用户说了什么</td>
+<td>任务该给谁</td>
+</tr>
+<tr>
+<td>执行次数</td>
+<td>1 次</td>
+<td>每个子任务一次</td>
+</tr>
+<tr>
+<td>错了的后果</td>
+<td>走错业务线（体验事故）</td>
+<td>某个 Worker 选错（可重试）</td>
+</tr>
+</tbody>
+</table></div>
+<div class="custom-block warning"><p class="custom-block-title">两种常见错误接法</p>
+<p><strong>错误一</strong>：把路由塞进 Supervisor 当子任务——路由错在最外层下游无法修正，且简单请求也被迫先拆解再路由，成本翻倍。
+<strong>错误二</strong>：路由之后让编排器自己再判断一次意图——判断分散两处，改一条规则要改两个地方，调参无法归因。</p>
+</div>
 <h3 id="选型速查表">选型速查表</h3>
 <div class="table-wrap"><table>
 <thead>
