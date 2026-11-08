@@ -72,7 +72,7 @@ description: 从单机示例到可运营平台：八层架构、控制面与数�
 
 ![企业级架构：模块职责与技术栈](/images/enterprise-architecture-detail.png)
 
-<p class="diagram-caption"><strong>图 3</strong> · 每格三行：模块名 · 职责 · 技术选型；③ 编排层保持「入口路由 → 执行单元」串联</p>
+<p class="diagram-caption"><strong>图 3</strong> · 每格：模块 · 职责 · 技术；③ 编排层每个执行单元额外标注<b>适用场景</b>（它就是一种范式）</p>
 
 ### 选型速查表
 
