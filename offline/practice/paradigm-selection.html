@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>范式选型指南 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item active" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>范式选型指南</strong></div>
+        <article class="doc"><h1 id="范式选型指南什么业务用哪种范式">范式选型指南：什么业务用哪种范式</h1>
+<h2 id="先给结论选型的四个问题">先给结论：选型的四个问题</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>一个需求进来，按顺序问四句：
+
+1. 步骤能枚举吗？ ──── 能 ──→ 不用 Agent，固定工作流/链式
+       │ 不能
+2. 要拆成独立子任务吗？ ── 要 ──→ 主管 / 分层（还要看管不管得过来）
+       │ 不要
+3. 需要多视角对抗判断吗？ ─ 需要 ─→ 辩论 / 竞技
+       │ 不需要
+4. 任务是按技能接力吗？ ─── 是 ──→ 移交（Swarm）
+       │ 不是
+       └────────────────────→ 单 Agent + 工具/RAG（多数产品的真实答案）
+</code></pre></div>
+<p><strong>成本从低到高：固定工作流 &lt; 单 Agent &lt; 单 Agent+RAG &lt; 多 Agent &lt; 对抗编排，每上一级大约贵 2–3 倍。</strong> 能省则省。</p>
+<h2 id="图-1按业务场景选范式">图 1：按业务场景选范式</h2>
+<p><img src="../assets/images/paradigm-by-scenario.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 1</strong> · 左边是业务场景，右边是推荐范式、理由与「什么时候别用」</p>
+<h2 id="图-211-种范式横向对比">图 2：11 种范式横向对比</h2>
+<p><img src="../assets/images/paradigm-comparison.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 2</strong> · 成本/延迟/可控性/规模横向可比；可控性低不等于不好，只是更需要护栏</p>
+<h2 id="逐个说适用业务与反例">逐个说：适用业务与反例</h2>
+<h3 id="模式类控制流形状">模式类（控制流形状）</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>范式</th>
+<th>最适合</th>
+<th>典型业务</th>
+<th>反例（别用）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chaining 链式</strong></td>
+<td>步骤固定、每步可检查</td>
+<td>发票抽取→校验→入库；翻译→审校→排版</td>
+<td>步骤不确定的探索任务</td>
+</tr>
+<tr>
+<td><strong>Routing 路由</strong></td>
+<td>请求类型差异大</td>
+<td>客服分诊、意图分流</td>
+<td>所有请求都同质（白加一层）</td>
+</tr>
+<tr>
+<td><strong>Parallel 并行</strong></td>
+<td>子任务真正独立</td>
+<td>批量处理 N 份文档、多数据源汇总</td>
+<td>子任务有依赖（那是链式或编排者）</td>
+</tr>
+<tr>
+<td><strong>Orchestrator 编排者</strong></td>
+<td>无法提前枚举步骤</td>
+<td>Coding Agent、Deep Research</td>
+<td>步骤能写死（用链式更便宜）</td>
+</tr>
+<tr>
+<td><strong>Evaluator 生成-评审</strong></td>
+<td>有客观评价标准</td>
+<td>代码测试、格式校验、事实核查</td>
+<td>开放式写作（易自我表扬）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="拓扑类agent-站位">拓扑类（Agent 站位）</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>范式</th>
+<th>最适合</th>
+<th>典型业务</th>
+<th>反例（别用）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Supervisor 主管</strong></td>
+<td>子任务独立、需合并</td>
+<td>售后处理（政策/证据/方案/风险）</td>
+<td>线性任务（拆开只增加通信）</td>
+</tr>
+<tr>
+<td><strong>Hierarchical 分层</strong></td>
+<td>单个上下文装不下计划</td>
+<td>超大规模研究、多部门协作</td>
+<td>普通任务（层级延迟叠加）</td>
+</tr>
+<tr>
+<td><strong>Debate 辩论</strong></td>
+<td>判断类、错代价高</td>
+<td>风控决策、政策边界、医疗建议</td>
+<td>事实查询（3 倍成本不值）</td>
+</tr>
+<tr>
+<td><strong>Arena 竞技</strong></td>
+<td>要选最优方案</td>
+<td>选补偿方案、模型/回答评测</td>
+<td>只需一个好答案（O(N²) 太贵）</td>
+</tr>
+<tr>
+<td><strong>Swarm 移交</strong></td>
+<td>按技能接力</td>
+<td>客服分诊→退款/技术/人工</td>
+<td>需要统一裁决（无中心会跑偏）</td>
+</tr>
+<tr>
+<td><strong>Peer 对等</strong></td>
+<td>角色平等、需互查</td>
+<td>研究+评审互相质询</td>
+<td>责任要清晰的场景（易甩锅）</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="组合才是常态">组合才是常态</h2>
+<p>真实系统几乎不会只用一种。《<a href="composite-architecture.html">组合架构</a>》那张图就是一个例子：外层 Routing → 中间 Supervisor → 子任务里 Arena 选方案、Debate 评风险 → 收口 Evaluator。</p>
+<p><strong>组合时的三条经验：</strong></p>
+<ol>
+<li><strong>路由在最外层，只做一次</strong>——它的错误下游修不回来。</li>
+<li><strong>拓扑在中间层</strong>——决定&quot;谁和谁说话&quot;。</li>
+<li><strong>评审在收口</strong>——管质量底线，不参与生成，否则自我表扬。</li>
+</ol>
+<h2 id="常见的选型错误">常见的选型错误</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>错误</th>
+<th>表现</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>简单请求也上多 Agent</td>
+<td>查订单被拆成 3 个子任务</td>
+<td>成本 10 倍、延迟一个量级</td>
+</tr>
+<tr>
+<td>没有评测就上对抗编排</td>
+<td>Debate/Arena 结果没法比好坏</td>
+<td>花钱买噪声</td>
+</tr>
+<tr>
+<td>用 Agent 做固定流程</td>
+<td>发票抽取用自由循环</td>
+<td>不稳定、不可测</td>
+</tr>
+<tr>
+<td>所有请求都跑 RAG</td>
+<td>简单的&quot;你好&quot;也去检索</td>
+<td>慢且可能检索出无关内容</td>
+</tr>
+<tr>
+<td>多 Agent 但没有合并规则</td>
+<td>子结果互相矛盾</td>
+<td>用户收到自相矛盾的答复</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能按四个问题给一个需求快速定范式。</li>
+<li>[ ] 能说出&quot;固定工作流比多 Agent 好&quot;的三个场景。</li>
+<li>[ ] 能说出 Debate 和 Arena 的适用差别（裁决 vs 排名）。</li>
+<li>[ ] 能说出 Supervisor 和 Orchestrator 的适用差别（拆一次 vs 边拆边看）。</li>
+<li>[ ] 能举一个&quot;选了昂贵范式却不划算&quot;的例子。</li>
+<li>[ ] 能说出组合时&quot;路由在外、拓扑在中、评审收口&quot;的理由。</li>
+</ul>
+<p>相关：<a href="composite-architecture.html">组合架构</a> 看组合实例、<a href="enterprise-architecture.html">企业级架构</a> 看这些范式如何落地到产线、<a href="../layers/orchestration.html">编排层</a> 讲理论与选型依据。</p>
+</article>
+        <nav class="pager"><a class="prev" href="multi-intent.html"><span>上一篇</span><strong>多意图路由</strong></a><a class="next" href="enterprise-architecture.html"><span>下一篇</span><strong>企业级参考架构</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

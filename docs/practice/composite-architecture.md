@@ -165,6 +165,6 @@ L5 编排层
 
 路由遇上一句话多个诉求怎么处理，见[多意图路由](/practice/multi-intent)。
 
-要上线运营，还需要多租户、控制面、可观测与灾备，见[企业级参考架构](/practice/enterprise-architecture)。
+不确定某个业务该用哪种范式，见[范式选型指南](/practice/paradigm-selection)；要上线运营，见[企业级参考架构](/practice/enterprise-architecture)。
 
 相关实现：[Mini Agent v4](/practice/mini-agent-v4)（拓扑）、[v5](/practice/mini-agent-v5)（模式）、[v6](/practice/mini-agent-v6)（Arena/Swarm）、[部署形态](/practice/deployment)（如何上线）。
