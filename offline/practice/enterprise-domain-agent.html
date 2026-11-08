@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>企业级架构（领域 Agent 版） · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item active" href="enterprise-domain-agent.html">企业级架构（领域 Agent 版）</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>企业级架构（领域 Agent 版）</strong></div>
+        <article class="doc"><h1 id="企业级架构领域-agent-版b-方案">企业级架构：领域 Agent 版（B 方案）</h1>
+<h2 id="为什么选这个架构">为什么选这个架构</h2>
+<p>意图路由有两种典型接法：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>路由目标</th>
+<th>跳数</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A 直连处理</strong></td>
+<td>处理方式（RAG/工作流/Agent）</td>
+<td>1</td>
+<td>领域简单、处理方式统一</td>
+</tr>
+<tr>
+<td><strong>B 领域 Agent</strong>（本章）</td>
+<td>领域（售后/技术/账务/售前）</td>
+<td>2</td>
+<td>领域多、领域内处理差异大、需独立演进</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>B 更合理的地方</strong>在于把&quot;两层判断&quot;拆开，每层都变简单：</p>
+<ul>
+<li><strong>意图路由只判&quot;哪个领域&quot;</strong>——粗粒度、更准、更好维护；</li>
+<li><strong>领域内的细分判断交给领域 Agent</strong>——它有领域上下文、自己的工具与策略。</li>
+</ul>
+<p>代价是多一跳（多一次模型调用），所以<strong>只在复杂领域用 B，简单请求仍可短路直连</strong>。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<p><img src="../assets/images/enterprise-architecture-domain.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 1</strong> · 九层：意图路由判领域 → 领域 Agent 自主决定用 RAG/工作流/编排 → 统一能力层出口</p>
+<h2 id="关键设计">关键设计</h2>
+<h3 id="1-意图路由只判领域不判处理方式">1. 意图路由只判领域，不判处理方式</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>「我要退款，另外查下订单到哪了」
+  → 多意图拆句：退款 + 查单
+  → 两个诉求都属&quot;售后领域&quot;
+  → 路由输出：售后领域（+ 高风险标记若有）
+</code></pre></div>
+<p>路由<strong>不关心</strong>退款要走工作流还是 RAG——那是售后领域 Agent 的事。这样路由的规则从 <code>领域 × 处理方式</code> 降为 <code>领域</code>，组合数大幅减少。</p>
+<h3 id="2-领域-agent-是领域主人">2. 领域 Agent 是&quot;领域主人&quot;</h3>
+<p>每个领域 Agent 拥有：</p>
+<ul>
+<li><strong>自己的工具集</strong>（售后：退款、换货；技术：日志查询、工单）</li>
+<li><strong>自己的知识库</strong>（售后的退款政策 vs 技术的故障手册，互不干扰）</li>
+<li><strong>自己的策略</strong>（退款审批线、技术升级规则）</li>
+<li><strong>自己的记忆</strong>（用户在该领域的偏好与历史）</li>
+</ul>
+<p>这是 B 的核心价值：<strong>领域知识不堆在一个巨石 Agent 里，而是各自演进。</strong></p>
+<h3 id="3-领域-agent-内部再选处理方式">3. 领域 Agent 内部再选处理方式</h3>
+<p>领域 Agent 拿到请求后，自己决定：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>售后领域 Agent
+  ├─ 政策咨询 → RAG（查退款政策）
+  ├─ 查单/改址 → 固定工作流（工具调用）
+  ├─ 复杂退款 → Supervisor 多 Agent（政策/证据/方案/风险）
+  └─ 补偿方案 → Arena 选优
+</code></pre></div>
+<p><strong>注意：这里才是范式选型真正生效的地方</strong>——不是路由决定用哪种范式，是领域 Agent 按具体任务决定。</p>
+<h3 id="4-高风险可以从两处升级">4. 高风险可以从两处升级</h3>
+<ul>
+<li><strong>意图路由</strong>层：识别到投诉/法律威胁 → 直接转人工（不进领域 Agent）</li>
+<li><strong>领域 Agent</strong>层：处理中发现低置信/超权限 → 升级转人工</li>
+</ul>
+<p>这就是图最底部那个红色出口。<strong>升级不是失败，是正确行为。</strong></p>
+<h3 id="5-能力层仍是统一出口">5. 能力层仍是统一出口</h3>
+<p>不管哪个领域 Agent，模型/工具访问都走模型网关、工具网关、沙箱。<strong>领域隔离不能靠&quot;每个领域自己调模型&quot;</strong>，否则计量、审计、限流全散掉。</p>
+<h2 id="一次请求的完整路径">一次请求的完整路径</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 接入      WAF → LB → API 网关：认证、租户配额、限流
+2. 路由      意图路由：多意图拆句 → 判领域 → 置信度门控 → 高风险提级
+3. 领域      进入&quot;售后领域 Agent&quot;
+4. 领域内    售后 Agent 判断：这是政策咨询 → 走 RAG
+             或：这是复杂退款 → 起 Supervisor 拆子任务
+5. 能力      RAG/编排 经由 模型网关 + 工具网关（能力令牌）
+6. 数据      状态入检查点、向量按租户、用量入账本、审计落 WORM
+7. 横切      全程 trace；输入输出内容/PII 双审核
+8. 回流      trace 与失败样本回到控制面 → 评测集 → 发布门禁
+</code></pre></div>
+<h2 id="a-方案-vs-b-方案怎么取舍">A 方案 vs B 方案：怎么取舍</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>A 直连处理</th>
+<th>B 领域 Agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>路由组合数</td>
+<td>领域×处理方式（多）</td>
+<td>仅领域（少）</td>
+</tr>
+<tr>
+<td>延迟</td>
+<td>低（1 跳）</td>
+<td>高（2 跳）</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>低</td>
+<td>高（多一次模型调用）</td>
+</tr>
+<tr>
+<td>领域知识隔离</td>
+<td>弱（散在各 handler）</td>
+<td>强（每个 Agent 自己管）</td>
+</tr>
+<tr>
+<td>领域独立演进</td>
+<td>难</td>
+<td>易（改一个领域不影响别的）</td>
+</tr>
+<tr>
+<td>适合规模</td>
+<td>小、领域单一</td>
+<td>大、多领域、长期演进</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>实践建议：混合。</strong> 简单请求（FAQ/查单）路由后直连处理（A，短路）；复杂领域（售后、技术）进领域 Agent（B）。不要为了统一而全部走 B——那是拿延迟和成本换一致性，通常不划算。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出意图路由在 B 方案里&quot;只判什么、不判什么&quot;。</li>
+<li>[ ] 能解释领域 Agent 的四个&quot;自己的&quot;（工具/知识/策略/记忆）。</li>
+<li>[ ] 能说出范式选型在 B 方案里发生在哪一层（领域 Agent 内部）。</li>
+<li>[ ] 能说出高风险可以从哪两处升级转人工。</li>
+<li>[ ] 能判断一个业务该用 A、B 还是混合。</li>
+<li>[ ] 能说出为什么领域隔离不能靠&quot;每个领域自己调模型&quot;。</li>
+</ul>
+<p>相关：<a href="enterprise-architecture.html">企业级参考架构</a>（A 方案视角与全量技术栈）、<a href="paradigm-selection.html">范式选型指南</a>（领域 Agent 内部怎么选范式）、<a href="multi-intent.html">多意图路由</a>（路由层如何拆多意图）。</p>
+</article>
+        <nav class="pager"><a class="prev" href="enterprise-architecture.html"><span>上一篇</span><strong>企业级参考架构</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

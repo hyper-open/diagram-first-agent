@@ -220,4 +220,6 @@ K8s 多可用区、消息队列（异步任务与长任务）、KMS 密钥管理
 - [ ] 能说出可观测层如何回流到发布门禁，形成闭环。
 - [ ] 能对照差距清单，判断自己系统离企业级还差哪几项。
 
+另一种接法：把「领域 Agent」作为显式一层（意图路由 → 领域 Agent → 领域内处理），见[企业级架构（领域 Agent 版）](/practice/enterprise-domain-agent)。
+
 相关：[平台化](/evolution/platform) 讲计费与治理、[部署形态](/practice/deployment) 讲如何起一个可部署实例、[组合架构](/practice/composite-architecture) 讲业务内模式组合。

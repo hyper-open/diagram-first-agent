@@ -65,6 +65,7 @@ export const sidebar = [
       { text: '多意图路由', link: '/practice/multi-intent' },
       { text: '范式选型指南', link: '/practice/paradigm-selection' },
       { text: '企业级参考架构', link: '/practice/enterprise-architecture' },
+      { text: '企业级架构（领域 Agent 版）', link: '/practice/enterprise-domain-agent' },
       { text: '部署形态：从能跑到能上线', link: '/practice/deployment' },
       { text: '真实案例拆解', link: '/practice/cases' },
       { text: '交互与信任设计', link: '/practice/ux' }
