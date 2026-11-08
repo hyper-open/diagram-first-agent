@@ -78,6 +78,60 @@
 <li>全部交给多 Agent → 成本爆炸，还容易错误传播。</li>
 </ul>
 <p><strong>真实系统是分层的</strong>：外层做路由，中间做编排，内层做拓扑，关键节点加评审，所有动作都过网关。本章把这些组合成一个具体场景，并说明每一层为什么存在。</p>
+<h2 id="先纠正一个误解主-agent-不一定用主管模式">先纠正一个误解：主 Agent 不一定用主管模式</h2>
+<p>看到图 1、图 2 容易产生一个错觉——「主 Agent 就是主管」。<strong>不是。</strong> 主管只是「需要拆解」时的默认选择。主 Agent 用什么拓扑，由任务的形态决定：</p>
+<p><img src="../assets/images/master-agent-selection.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 0</strong> · 先判断“要不要 Agent”，再判断“要拆解、要对抗、还是接力”，主管只是四种多 Agent 选择之一</p>
+<p>按从上往下的顺序判断：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>判断</th>
+<th>结论</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤可枚举、路径固定</td>
+<td><strong>不用 Agent</strong>，固定工作流 / 链式</td>
+<td>最稳、最便宜</td>
+</tr>
+<tr>
+<td>不需要拆解，一个上下文装得下</td>
+<td><strong>单 Agent + 工具 / RAG</strong></td>
+<td>多数产品的真实选择</td>
+</tr>
+<tr>
+<td>要拆成独立子任务、管得过来</td>
+<td><strong>Supervisor 主管</strong></td>
+<td>最常见的多 Agent 默认值</td>
+</tr>
+<tr>
+<td>要拆解但计划大到装不下</td>
+<td><strong>Hierarchical 分层</strong></td>
+<td>主管也管不过来时才加层</td>
+</tr>
+<tr>
+<td>需要多视角对抗性判断</td>
+<td><strong>Debate / Arena</strong></td>
+<td>靠裁决，不靠指挥</td>
+</tr>
+<tr>
+<td>任务按技能接力</td>
+<td><strong>Swarm / Handoff</strong></td>
+<td>换人，不是拆解</td>
+</tr>
+<tr>
+<td>高风险 / 低置信</td>
+<td><strong>转人工</strong></td>
+<td>正确行为，不是失败</td>
+</tr>
+</tbody>
+</table></div>
+<div class="custom-block warning"><p class="custom-block-title">别让「主管」成为默认答案</p>
+<p>把「查订单到哪了」交给主管，它会拆成三个子任务、跑三次模型、延迟八秒，最后说一句「已发货，明天到」。而固定工作流一次工具调用 200ms 就完成。<strong>拓扑选错的代价是 10 倍成本 + 一个量级的延迟。</strong></p>
+</div>
 <h2 id="场景电商售后-agent-平台">场景：电商售后 Agent 平台</h2>
 <p>一个真实请求是这样的：</p>
 <blockquote>
