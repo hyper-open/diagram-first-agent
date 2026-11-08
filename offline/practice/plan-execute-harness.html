@@ -124,6 +124,85 @@ class PlanExecuteHarness:   # ← 内核
 <li>该重规划还是该停；</li>
 <li>记录什么。</li>
 </ul>
+<h2 id="补强harness-的「统一管理」也包括统一管配置">补强：harness 的「统一管理」也包括统一管配置</h2>
+<p>既然 harness 统一管预算/重试/终止，那这些<strong>参数本身从哪来</strong>？</p>
+<p>上一版把它们写死在构造函数里（<code>max_replans=2</code>），这是缺陷——改一个参数要改代码、重新部署。补强后，<strong>所有控制参数都来自 <code>HarnessConfig</code></strong>，harness 在<strong>一个地方</strong>读取，没有魔数散落在循环里。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>@dataclass
+class HarnessConfig:
+    max_steps: int = 16
+    max_tool_calls: int = 16
+    max_tokens: int = 60_000
+    max_seconds: float = 60.0
+    max_replans: int = 2
+    max_attempts_per_step: int = 2
+    early_stop: bool = True        # 验证一过就停
+    trace_enabled: bool = True
+    profile: str = &quot;default&quot;
+</code></pre></div>
+<p>配置有三个来源，对应真实企业级的不同场景：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>来源</th>
+<th>用途</th>
+<th>方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>环境变量</td>
+<td>部署时注入（容器/控制面下发）</td>
+<td><code>HarnessConfig.from_env()</code></td>
+</tr>
+<tr>
+<td>字典/JSON</td>
+<td>从配置文件或控制面 API 拉取</td>
+<td><code>HarnessConfig.from_dict()</code></td>
+</tr>
+<tr>
+<td>命名 profile</td>
+<td>不同任务类型预设不同策略</td>
+<td><code>for_scenario(&quot;interactive&quot;)</code></td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v7.cli --config       # 同一 harness，不同 profile
+python3 -m examples.mini_agent_v7.cli --config-env   # 从环境变量读
+</code></pre></div>
+<p><code>--config</code> 的输出直接证明<strong>harness 代码一行没改，行为却变了</strong>：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>profile=default      early_stop=True  steps=1  status=success  ['a']
+profile=interactive  early_stop=True  steps=1  status=success  ['a']
+profile=strict       early_stop=False steps=4  status=success  ['a','b','c','d']
+profile=batch        early_stop=True  steps=1  status=success  ['a']
+</code></pre></div>
+<p>三个内置 profile 对应三种任务气质：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>profile</th>
+<th>特点</th>
+<th>用于</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>interactive</code></td>
+<td>快、便宜、少重试</td>
+<td>在线交互，秒级响应</td>
+</tr>
+<tr>
+<td><code>batch</code></td>
+<td>预算大、耐心足</td>
+<td>离线批处理、长任务</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>少重试、不早停</td>
+<td>高风险，必须完整验证</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>配置校验同样「启动即失败」</strong>：<code>HARNESS_MAX_STEPS=abc</code> 会报 <code>ConfigError</code> 并带变量名，未知配置项也会被拒绝。这和 v3 的 <code>Settings</code> 是同一套纪律。</p>
 <h2 id="跑起来">跑起来</h2>
 <div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v7.cli --demo        # 一次完整规划-执行-验证
 python3 -m examples.mini_agent_v7.cli --scenarios   # 四种终止路径
@@ -256,6 +335,8 @@ python3 -m unittest tests.test_mini_agent_v7 -v     # 15 个测试
 <li>[ ] 能解释为什么执行步骤也要计入 step 预算。</li>
 <li>[ ] 能说出换 planner 时为什么不用改主循环。</li>
 <li>[ ] 能说出这个 harness 和 ReAct 循环的相同点与不同点。</li>
+<li>[ ] 能说出 harness 的控制参数从哪三个来源来，以及为什么要「启动即校验」。</li>
+<li>[ ] 能解释 profile 的意义（同一 harness 不同任务用不同策略）。</li>
 </ul>
 <p>相关：<a href="../layers/orchestration.html">编排层</a> 的规划一节、<a href="mini-agent-v5.html">Mini Agent v5</a> 的 Orchestrator 模式、<a href="paradigm-selection.html">范式选型指南</a>。</p>
 </article>

@@ -49,7 +49,9 @@ jobs:
         run: python3 -m examples.mini_agent_v5.cli --compare
 
       - name: v7 plan-execute harness
-        run: python3 -m examples.mini_agent_v7.cli --scenarios
+        run: |
+          python3 -m examples.mini_agent_v7.cli --scenarios
+          python3 -m examples.mini_agent_v7.cli --config
 
       - name: v6 arena and swarm
         run: |

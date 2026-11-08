@@ -4,6 +4,7 @@ The harness owns the loop, budget, retries, termination and tracing; the
 planner, executor and verifier are injected. Same skeleton as ReAct, different
 inner contract: plan a list of steps, then execute them, then verify.
 """
+from .config import HarnessConfig, ConfigError, PROFILES, for_scenario
 from .plan_execute import (
     PlanExecuteHarness,
     Plan,
@@ -17,6 +18,10 @@ from .plan_execute import (
 )
 
 __all__ = [
+    "HarnessConfig",
+    "ConfigError",
+    "PROFILES",
+    "for_scenario",
     "PlanExecuteHarness",
     "Plan",
     "Step",

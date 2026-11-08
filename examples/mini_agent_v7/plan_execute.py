@@ -46,6 +46,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..mini_agent.types import Budget, BudgetExceeded
+from .config import HarnessConfig
 
 
 # ---------------------------------------------------------------------------
@@ -157,16 +158,29 @@ class PlanExecuteHarness:
         executor: Executor,
         verifier: Optional[Verifier] = None,
         *,
+        config: Optional[HarnessConfig] = None,
         budget: Optional[Budget] = None,
-        max_replans: int = 2,
-        max_attempts_per_step: int = 2,
     ):
+        # All control knobs come from config — one place to read, no magic
+        # numbers scattered in the loop.  Callers may still inject a pre-built
+        # Budget (e.g. a shared quota ledger); otherwise it is built from config.
+        self.config = config or HarnessConfig()
+        self.config.validate()
         self.planner = planner
         self.executor = executor
         self.verifier = verifier or (lambda draft, done: VerifyResult(True))
-        self.budget = budget or Budget(max_steps=16, max_tool_calls=16, max_tokens=60_000)
-        self.max_replans = max_replans
-        self.max_attempts_per_step = max_attempts_per_step
+        c = self.config
+        self.budget = budget or Budget(
+            max_steps=c.max_steps,
+            max_tool_calls=c.max_tool_calls,
+            max_tokens=c.max_tokens,
+            max_seconds=c.max_seconds,
+        )
+        # Mirror config onto attributes the loop already uses.
+        self.max_replans = c.max_replans
+        self.max_attempts_per_step = c.max_attempts_per_step
+        self.early_stop = c.early_stop
+        self.trace_enabled = c.trace_enabled
 
     # ------------------------------------------------------------------
 
@@ -190,7 +204,7 @@ class PlanExecuteHarness:
                 return self._finish("partial", outputs, done, rounds, trace, started,
                                     error=str(exc))
             plan = self.planner(goal, done, rounds)
-            trace.append({"phase": "plan", "round": rounds, "steps": [s.name for s in plan.steps],
+            self._trace(trace, {"phase": "plan", "round": rounds, "steps": [s.name for s in plan.steps],
                           "reason": plan.reason})
             if not plan.steps:
                 # Nothing more to do: verify what we have.
@@ -220,8 +234,8 @@ class PlanExecuteHarness:
                 # 3. Cheap check after each step: if the verifier already passes,
                 #    we can stop early instead of running the rest of the plan.
                 verify = self._verify(goal, outputs, done, trace, record=False)
-                if verify.passed:
-                    trace.append({"phase": "early_stop", "after": step.name,
+                if verify.passed and self.early_stop:
+                    self._trace(trace, {"phase": "early_stop", "after": step.name,
                                   "reason": verify.reason})
                     return self._finish("success", outputs, done, rounds, trace, started)
 
@@ -233,7 +247,7 @@ class PlanExecuteHarness:
             if rounds > self.max_replans:
                 return self._finish("partial", outputs, done, rounds, trace, started,
                                     error="verify_failed: %s" % reparse_feedback)
-            trace.append({"phase": "replan", "round": rounds, "reason": reparse_feedback})
+            self._trace(trace, {"phase": "replan", "round": rounds, "reason": reparse_feedback})
             # Give the planner a chance to add corrective steps next round.
 
     # ------------------------------------------------------------------
@@ -257,7 +271,7 @@ class PlanExecuteHarness:
                 return None
             result = self.executor(step)
             self._charge_tokens(result.tokens)
-            trace.append({
+            self._trace(trace, {
                 "phase": "execute", "step": step.name, "attempt": attempt,
                 "ok": result.ok, "retryable": result.retryable,
                 "error": result.error, "tokens": result.tokens,
@@ -285,9 +299,18 @@ class PlanExecuteHarness:
         draft = "\n".join(outputs)
         verdict = self.verifier(draft, done)
         if record:
-            trace.append({"phase": "verify", "passed": verdict.passed,
+            self._trace(trace, {"phase": "verify", "passed": verdict.passed,
                           "reason": verdict.reason})
         return verdict
+
+    def _trace(self, trace: List[Dict[str, Any]], event: Dict[str, Any]) -> None:
+        """Single write path for trace events, gated by config.
+
+        Every phase goes through here so ``trace_enabled`` is honoured in one
+        place rather than sprinkled as ``if`` checks around the loop.
+        """
+        if self.trace_enabled:
+            trace.append(event)
 
     def _charge_tokens(self, tokens: int) -> None:
         if tokens:

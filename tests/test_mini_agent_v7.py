@@ -22,12 +22,32 @@ from examples.mini_agent_v7 import (
 
 
 def harness(planner, executor, verifier=None, **kw):
+    """Test helper.  Old tests may pass max_replans/max_attempts_per_step/budget;
+    translate them into a HarnessConfig so they exercise the config path too."""
+    from examples.mini_agent_v7 import HarnessConfig
+
+    config = kw.pop("config", None)
+    budget = kw.pop("budget", None)
+    if config is None:
+        config = HarnessConfig(
+            max_steps=16, max_tool_calls=16, max_tokens=10000,
+            max_replans=kw.pop("max_replans", 2),
+            max_attempts_per_step=kw.pop("max_attempts_per_step", 2),
+        )
+    if budget is not None:
+        # Caller wants an explicit budget (e.g. to test exhaustion); reflect its
+        # limits into config so harness reads consistent values.
+        config = HarnessConfig(
+            max_steps=budget.max_steps, max_tool_calls=budget.max_tool_calls,
+            max_tokens=budget.max_tokens,
+            max_replans=config.max_replans,
+            max_attempts_per_step=config.max_attempts_per_step,
+        )
+    if kw:
+        raise TypeError("unexpected kwargs: %s" % list(kw))
     return PlanExecuteHarness(
-        planner=planner,
-        executor=executor,
-        verifier=verifier,
-        budget=kw.pop("budget", Budget(max_steps=16, max_tool_calls=16, max_tokens=10000)),
-        **kw,
+        planner=planner, executor=executor, verifier=verifier,
+        config=config, budget=budget,
     )
 
 
@@ -199,3 +219,124 @@ class ContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# Configuration: the harness must read its knobs from config, not hard-code them
+# ---------------------------------------------------------------------------
+
+
+class ConfigTests(unittest.TestCase):
+    def test_defaults_are_valid(self):
+        from examples.mini_agent_v7 import HarnessConfig
+
+        cfg = HarnessConfig()
+        cfg.validate()  # should not raise
+        self.assertEqual(cfg.max_steps, 16)
+
+    def test_env_parsing(self):
+        from examples.mini_agent_v7 import HarnessConfig
+
+        cfg = HarnessConfig.from_env({
+            "HARNESS_MAX_STEPS": "5",
+            "HARNESS_MAX_REPLANS": "0",
+            "HARNESS_EARLY_STOP": "false",
+            "HARNESS_PROFILE": "test",
+        })
+        self.assertEqual(cfg.max_steps, 5)
+        self.assertEqual(cfg.max_replans, 0)
+        self.assertFalse(cfg.early_stop)
+        self.assertEqual(cfg.profile, "test")
+
+    def test_bad_int_names_the_variable(self):
+        from examples.mini_agent_v7 import ConfigError, HarnessConfig
+
+        with self.assertRaises(ConfigError) as ctx:
+            HarnessConfig.from_env({"HARNESS_MAX_STEPS": "abc"})
+        self.assertIn("HARNESS_MAX_STEPS", str(ctx.exception))
+
+    def test_bad_bool_is_rejected(self):
+        from examples.mini_agent_v7 import ConfigError, HarnessConfig
+
+        with self.assertRaises(ConfigError):
+            HarnessConfig.from_env({"HARNESS_EARLY_STOP": "maybe"})
+
+    def test_validate_rejects_impossible_values(self):
+        from examples.mini_agent_v7 import ConfigError, HarnessConfig
+
+        with self.assertRaises(ConfigError):
+            HarnessConfig(max_steps=0).validate()
+        with self.assertRaises(ConfigError):
+            HarnessConfig(max_attempts_per_step=0).validate()
+
+    def test_from_dict_rejects_unknown_keys(self):
+        from examples.mini_agent_v7 import ConfigError, HarnessConfig
+
+        with self.assertRaises(ConfigError) as ctx:
+            HarnessConfig.from_dict({"max_steps": 3, "typo_key": 1})
+        self.assertIn("typo_key", str(ctx.exception))
+
+    def test_profiles_exist_and_are_copied(self):
+        from examples.mini_agent_v7 import PROFILES, for_scenario
+
+        self.assertIn("interactive", PROFILES)
+        a = for_scenario("batch")
+        a.max_steps = 999  # mutate the copy
+        b = for_scenario("batch")
+        self.assertNotEqual(b.max_steps, 999)  # shared profile not corrupted
+
+    def test_unknown_profile_is_rejected(self):
+        from examples.mini_agent_v7 import ConfigError, for_scenario
+
+        with self.assertRaises(ConfigError):
+            for_scenario("nope")
+
+    def test_early_stop_flag_controls_behaviour(self):
+        # This is the whole point: the SAME harness behaves differently because
+        # config says so — not because code branches on a hard-coded constant.
+        from examples.mini_agent_v7 import HarnessConfig
+
+        plan = [Step("a"), Step("b"), Step("c"), Step("d")]
+        execs = {k: ExecResult(True, k, tokens=10) for k in "abcd"}
+
+        fast = harness(list_planner(plan), dict_executor(execs),
+                       contains_verifier(["a"]),
+                       config=HarnessConfig(early_stop=True)).run("g")
+        full = harness(list_planner(plan), dict_executor(execs),
+                       contains_verifier(["a"]),
+                       config=HarnessConfig(early_stop=False)).run("g")
+        self.assertEqual(fast.steps_done, ["a"])
+        self.assertEqual(full.steps_done, ["a", "b", "c", "d"])
+
+    def test_max_replans_comes_from_config(self):
+        from examples.mini_agent_v7 import HarnessConfig
+
+        cfg = HarnessConfig(max_steps=50, max_replans=1)
+        result = harness(
+            lambda g, d, r: Plan([Step("x%d" % r)], "loop"),
+            lambda s: ExecResult(True, "never", tokens=1),
+            contains_verifier(["impossible"]),
+            config=cfg,
+        ).run("g")
+        # initial round + 1 replan = 2 rounds, then stop
+        self.assertEqual(result.rounds, 2)
+        self.assertEqual(result.status, "partial")
+
+    def test_trace_can_be_disabled(self):
+        from examples.mini_agent_v7 import HarnessConfig
+
+        result = harness(list_planner([Step("a")]),
+                         dict_executor({"a": ExecResult(True, "x")}),
+                         contains_verifier(["x"]),
+                         config=HarnessConfig(trace_enabled=False)).run("g")
+        self.assertEqual(result.trace, [])
+        self.assertEqual(result.status, "success")  # still works, just no trace
+
+    def test_budget_built_from_config(self):
+        from examples.mini_agent_v7 import HarnessConfig
+
+        cfg = HarnessConfig(max_steps=3)
+        h = harness(list_planner([Step("a")]),
+                    dict_executor({"a": ExecResult(True, "x")}),
+                    config=cfg)
+        self.assertEqual(h.budget.max_steps, 3)

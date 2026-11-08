@@ -12,6 +12,7 @@ import sys
 from typing import Dict, List
 
 from ..mini_agent.types import Budget
+from .config import HarnessConfig, PROFILES, for_scenario
 from .plan_execute import (
     ExecResult,
     Plan,
@@ -23,7 +24,7 @@ from .plan_execute import (
 )
 
 
-def run_demo(show_trace: bool) -> int:
+def run_demo(show_trace: bool, profile: str = "default") -> int:
     goal = "处理退款请求 A1024：查政策、查订单、起草答复"
     plan = [Step("lookup_policy", "退款政策"), Step("lookup_order", "A1024"), Step("draft", "答复")]
     execs = {
@@ -35,12 +36,13 @@ def run_demo(show_trace: bool) -> int:
         planner=list_planner(plan),
         executor=dict_executor(execs),
         verifier=contains_verifier(["7 天", "A1024", "可退"]),
-        budget=Budget(max_steps=20, max_tool_calls=20, max_tokens=10000),
+        config=for_scenario(profile),
     )
     result = h.run(goal)
 
     print("=" * 74)
     print("Plan-Execute Harness（规划·执行·验证 都由 harness 管）")
+    print("profile=%s  config=%s" % (profile, h.config.public_dict()))
     print("=" * 74)
     print("目标:", goal)
     print("计划:", [s.name for s in plan])
@@ -70,6 +72,49 @@ def run_demo(show_trace: bool) -> int:
     print("  1. 循环骨架和 ReAct 一样，只是内层从'想一步做一步'变成'先规划一批再执行'。")
     print("  2. 预算/trace/终止/重试全在 harness；planner/executor/verifier 是可替换的注入。")
     print("  3. 验证一过就早停，不多跑剩下的步骤——省成本。")
+    return 0
+
+
+def run_config() -> int:
+    """Show that the SAME harness behaves differently purely because config says so."""
+    plan = [Step("a"), Step("b"), Step("c"), Step("d")]
+    execs = {k: ExecResult(True, k, tokens=100) for k in "abcd"}
+
+    print("=" * 74)
+    print("配置驱动：同一副 harness，不同 profile 行为不同（不是改代码）")
+    print("=" * 74)
+    for profile in ("default", "interactive", "strict", "batch"):
+        cfg = for_scenario(profile)
+        h = PlanExecuteHarness(
+            planner=list_planner(plan),
+            executor=dict_executor(execs),
+            verifier=contains_verifier(["a"]),
+            config=cfg,
+        )
+        r = h.run("g")
+        print("  profile=%-12s early_stop=%-5s steps=%-2d status=%-8s %s"
+              % (profile, cfg.early_stop, len(r.steps_done), r.status, r.steps_done))
+    print()
+    print("说明：")
+    print("  · early_stop=True  → 验证一过就停（default/interactive/batch）")
+    print("  · early_stop=False → 强制跑完全部步骤再验证（strict，高风险场景）")
+    print("  · 这些差异来自 HarnessConfig，harness 代码一行没改。")
+    return 0
+
+
+def run_config_env() -> int:
+    """Read config from environment, like a control-plane downlink would push."""
+    import os
+    env = {
+        "HARNESS_PROFILE": "from-env",
+        "HARNESS_MAX_STEPS": "3",
+        "HARNESS_EARLY_STOP": "false",
+        "HARNESS_MAX_REPLANS": "0",
+    }
+    cfg = HarnessConfig.from_env(env)
+    print("从环境变量读取的配置：")
+    import json
+    print(json.dumps(cfg.public_dict(), ensure_ascii=False, indent=2))
     return 0
 
 
@@ -132,11 +177,18 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Plan-Execute Harness")
     parser.add_argument("--demo", action="store_true")
     parser.add_argument("--scenarios", action="store_true")
+    parser.add_argument("--config", action="store_true", help="演示配置驱动")
+    parser.add_argument("--config-env", action="store_true", help="演示从环境变量读配置")
+    parser.add_argument("--profile", default="default", choices=["default","interactive","strict","batch"])
     parser.add_argument("--trace", action="store_true")
     args = parser.parse_args(argv)
     if args.scenarios:
         return run_scenarios()
-    return run_demo(show_trace=args.trace)
+    if args.config:
+        return run_config()
+    if args.config_env:
+        return run_config_env()
+    return run_demo(show_trace=args.trace, profile=args.profile)
 
 
 if __name__ == "__main__":

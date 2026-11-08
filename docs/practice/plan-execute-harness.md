@@ -60,6 +60,58 @@ class PlanExecuteHarness:   # ← 内核
 - 该重规划还是该停；
 - 记录什么。
 
+## 补强：harness 的「统一管理」也包括统一管配置
+
+既然 harness 统一管预算/重试/终止，那这些**参数本身从哪来**？
+
+上一版把它们写死在构造函数里（`max_replans=2`），这是缺陷——改一个参数要改代码、重新部署。补强后，**所有控制参数都来自 `HarnessConfig`**，harness 在**一个地方**读取，没有魔数散落在循环里。
+
+```python
+@dataclass
+class HarnessConfig:
+    max_steps: int = 16
+    max_tool_calls: int = 16
+    max_tokens: int = 60_000
+    max_seconds: float = 60.0
+    max_replans: int = 2
+    max_attempts_per_step: int = 2
+    early_stop: bool = True        # 验证一过就停
+    trace_enabled: bool = True
+    profile: str = "default"
+```
+
+配置有三个来源，对应真实企业级的不同场景：
+
+| 来源 | 用途 | 方法 |
+| --- | --- | --- |
+| 环境变量 | 部署时注入（容器/控制面下发） | `HarnessConfig.from_env()` |
+| 字典/JSON | 从配置文件或控制面 API 拉取 | `HarnessConfig.from_dict()` |
+| 命名 profile | 不同任务类型预设不同策略 | `for_scenario("interactive")` |
+
+```bash
+python3 -m examples.mini_agent_v7.cli --config       # 同一 harness，不同 profile
+python3 -m examples.mini_agent_v7.cli --config-env   # 从环境变量读
+```
+
+`--config` 的输出直接证明**harness 代码一行没改，行为却变了**：
+
+```text
+profile=default      early_stop=True  steps=1  status=success  ['a']
+profile=interactive  early_stop=True  steps=1  status=success  ['a']
+profile=strict       early_stop=False steps=4  status=success  ['a','b','c','d']
+profile=batch        early_stop=True  steps=1  status=success  ['a']
+```
+
+三个内置 profile 对应三种任务气质：
+
+| profile | 特点 | 用于 |
+| --- | --- | --- |
+| `interactive` | 快、便宜、少重试 | 在线交互，秒级响应 |
+| `batch` | 预算大、耐心足 | 离线批处理、长任务 |
+| `strict` | 少重试、不早停 | 高风险，必须完整验证 |
+
+**配置校验同样「启动即失败」**：`HARNESS_MAX_STEPS=abc` 会报 `ConfigError` 并带变量名，未知配置项也会被拒绝。这和 v3 的 `Settings` 是同一套纪律。
+
 ## 跑起来
 
 ```bash
@@ -163,5 +215,7 @@ def run(self, goal):
 - [ ] 能解释为什么执行步骤也要计入 step 预算。
 - [ ] 能说出换 planner 时为什么不用改主循环。
 - [ ] 能说出这个 harness 和 ReAct 循环的相同点与不同点。
+- [ ] 能说出 harness 的控制参数从哪三个来源来，以及为什么要「启动即校验」。
+- [ ] 能解释 profile 的意义（同一 harness 不同任务用不同策略）。
 
 相关：[编排层](/layers/orchestration) 的规划一节、[Mini Agent v5](/practice/mini-agent-v5) 的 Orchestrator 模式、[范式选型指南](/practice/paradigm-selection)。
