@@ -218,4 +218,6 @@ flowchart LR
 自检：清单里如果有组件说不出它对应哪个已发生的问题，就删掉它。
 :::
 
+完整的企业级参考架构（八层 + 控制面/可观测横切 + 灾备合规）见[企业级参考架构](/practice/enterprise-architecture)。
+
 下一步：回到[架构总览](/evolution/overview)复盘整张图，或进入[优化手册](/advanced/optimization)。

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>企业级参考架构 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item active" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>企业级参考架构</strong></div>
+        <article class="doc"><h1 id="企业级参考架构">企业级参考架构</h1>
+<h2 id="这张图和「组合架构」的区别">这张图和「组合架构」的区别</h2>
+<p><a href="composite-architecture.html">组合架构</a> 讲的是<strong>一个业务场景里模式怎么组合</strong>；这张图讲的是<strong>一个企业要上线运营，系统必须长成什么样</strong>。</p>
+<p>两者的差别不在于画得更复杂，而在于多了四类生产必需品：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>生产必需品</th>
+<th>组合架构</th>
+<th>企业级</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多租户与配额</td>
+<td>隐含</td>
+<td><strong>显式：网关配额 + 账本归因 + 数据分区</strong></td>
+</tr>
+<tr>
+<td>控制面 / 数据面分离</td>
+<td>混在一起</td>
+<td><strong>分离：配置下发，不跑业务流量</strong></td>
+</tr>
+<tr>
+<td>可观测与安全</td>
+<td>事后补</td>
+<td><strong>横切：trace、SLO、PII、红队</strong></td>
+</tr>
+<tr>
+<td>灾备与合规</td>
+<td>无</td>
+<td><strong>多可用区、备份、WORM 审计</strong></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="一图看懂">一图看懂</h2>
+<p><img src="../assets/images/enterprise-architecture.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>图 1</strong> · 八层 + 两个横切面：请求自上而下，控制面下发配置，可观测回流决策</p>
+<h2 id="八层各管什么">八层各管什么</h2>
+<h3 id="①-客户端-渠道">① 客户端 / 渠道</h3>
+<p>Web、App、客服工作台、开放 API、IM/电话/工单。<strong>这一层决定 SLA 和接入形态</strong>：同步问答要秒级响应，工单可以异步。</p>
+<h3 id="②-接入与流量治理">② 接入与流量治理</h3>
+<p><code>WAF → 负载均衡 → API 网关</code>。企业级的重点是<strong>网关做三件事</strong>：认证、限流配额、版本路由（灰度时按租户分流）。这三件事<strong>不能下沉到业务代码里做</strong>，否则每个服务都要重写一遍。</p>
+<h3 id="③-编排层">③ 编排层</h3>
+<p>意图路由（多意图 + 低置信兜底）→ 四条路径：固定工作流 / 多 Agent / 对抗编排 / RAG，再加记忆服务。这是<a href="composite-architecture.html">组合架构</a>那张图展开的内容。</p>
+<h3 id="④-能力层统一出口">④ 能力层（统一出口）</h3>
+<p><strong>所有对外部世界的访问只从这里出去</strong>：</p>
+<ul>
+<li><strong>模型网关</strong>：路由、回退、缓存、计量</li>
+<li><strong>工具网关</strong>：能力令牌、幂等、审计</li>
+<li><strong>沙箱</strong>：代码/浏览器执行，无宿主凭证</li>
+</ul>
+<p>这条&quot;统一出口&quot;是安全底线。任何绕过能力层的调用（直连模型、直连工具）都是<strong>后门</strong>。</p>
+<h3 id="⑤-数据层按租户分区">⑤ 数据层（按租户分区）</h3>
+<p>会话状态、向量库、计量账本、审计日志（WORM，一次写入不可改）、PII 脱敏存储。</p>
+<p><strong>按租户分区不是性能优化，是隔离要求</strong>：一个租户的数据/向量/账本不能和另一个混在一起，否则删除、审计、跨租户泄露全都做不了。</p>
+<h3 id="⑥-控制面横切">⑥ 控制面（横切）</h3>
+<p>模型目录、路由/灰度开关、策略引擎、配额预算、版本回滚、评测门禁。</p>
+<p><strong>控制面的关键定义：它只下发配置，不处理业务流量。</strong> 请求路径上只读控制面下发的配置（本地缓存），不能在每次请求时回调控制面——否则控制面挂掉，业务全挂。</p>
+<h3 id="⑦-可观测与安全横切">⑦ 可观测与安全（横切）</h3>
+<p>Trace/Metrics/Logs、告警与 SLO、PII 扫描与内容审核、红队评测。</p>
+<p>这一层<strong>向控制面回流数据</strong>：线上失败样本 → 评测集 → 发布门禁，形成闭环。</p>
+<h3 id="⑧-基础设施">⑧ 基础设施</h3>
+<p>K8s 多可用区、消息队列（异步任务与长任务）、KMS 密钥管理、备份灾备。</p>
+<h2 id="三条不能违反的原则">三条不能违反的原则</h2>
+<h3 id="原则一控制面与数据面分离">原则一：控制面与数据面分离</h3>
+<div class="code-block"><div class="code-lang">text</div><pre><code>数据面：客户端 → 网关 → 编排 → 能力 → 数据      （处理一次请求）
+控制面：配置/策略/配额/版本 → 下发给数据面        （管所有请求按什么规则做）
+</code></pre></div>
+<p><strong>违反的后果</strong>：把策略判断写进业务代码 → 改一条规则要发布所有服务；把配额检查做成同步 RPC → 控制面抖动导致全站限流。</p>
+<h3 id="原则二所有外部访问走能力层">原则二：所有外部访问走能力层</h3>
+<p>模型和工具<strong>只能经由网关</strong>调用。这一条对应<a href="../evolution/tool-gateway.html">工具网关</a>章的核心：Agent 不能拿超级账号直连。</p>
+<p><strong>违反的后果</strong>：某个服务为了快直接调模型 → 计量漏记、密钥散落、无法审计、无法限流。</p>
+<h3 id="原则三多租户隔离贯穿五处">原则三：多租户隔离贯穿五处</h3>
+<p>租户 ID 要出现在：<strong>网关配额、编排上下文、模型/工具调用、数据分区、账本归因</strong>。少一处，就会出现&quot;某租户看到了别人的数据&quot;或&quot;成本算到了别人头上&quot;。</p>
+<h2 id="一次请求的完整路径含横切">一次请求的完整路径（含横切）</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>1. 渠道        用户从 App 发起
+2. 接入        WAF → LB → 网关：认证、租户配额、限流
+3. 编排        意图路由（多意图）→ 选定路径
+4. 能力        模型网关（路由/回退/缓存）+ 工具网关（令牌/幂等）
+5. 执行        沙箱内跑代码/浏览器，无宿主凭证
+6. 数据        状态写检查点、向量按租户、计量入账本、审计落 WORM
+7. 横切        全程 trace；内容/PII 在输入与输出两侧审核
+8. 回流        trace 与失败样本回到控制面，进评测集与门禁
+</code></pre></div>
+<h2 id="从本项目迁到企业级的差距清单">从本项目迁到企业级的差距清单</h2>
+<p>诚实列出本项目（v1–v6）到这张图还差什么：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>企业级要素</th>
+<th>本项目现状</th>
+<th>生产怎么做</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多租户分区</td>
+<td>内存 Store，单租户演示</td>
+<td>每租户独立 schema/前缀 + 行级隔离</td>
+</tr>
+<tr>
+<td>控制面</td>
+<td>配置类硬编码</td>
+<td>独立配置服务 + 下发缓存 + 变更审计</td>
+</tr>
+<tr>
+<td>高可用</td>
+<td>单进程 http.server</td>
+<td>多副本 + K8s + 健康检查 + 多可用区</td>
+</tr>
+<tr>
+<td>长任务</td>
+<td>检查点 + 租约（教学版）</td>
+<td>消息队列 / Temporal 类持久执行</td>
+</tr>
+<tr>
+<td>可观测</td>
+<td>进程内 Trace 对象</td>
+<td>OpenTelemetry 导出 + 集中存储 + SLO 看板</td>
+</tr>
+<tr>
+<td>审计</td>
+<td>JSONL 文件</td>
+<td>WORM 存储 + 不可篡改 + 留存期管理</td>
+</tr>
+<tr>
+<td>灾备</td>
+<td>无</td>
+<td>跨区备份 + 恢复演练 + RPO/RTO 指标</td>
+</tr>
+<tr>
+<td>合规</td>
+<td>文档说明</td>
+<td>数据分级、出境评估、标识留痕</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出控制面和数据面的分工，以及混在一起会出什么问题。</li>
+<li>[ ] 能解释为什么所有模型/工具访问必须走能力层。</li>
+<li>[ ] 能说出租户隔离必须出现在哪五个地方。</li>
+<li>[ ] 能解释数据层&quot;按租户分区&quot;是隔离要求而非性能优化。</li>
+<li>[ ] 能说出可观测层如何回流到发布门禁，形成闭环。</li>
+<li>[ ] 能对照差距清单，判断自己系统离企业级还差哪几项。</li>
+</ul>
+<p>相关：<a href="../evolution/platform.html">平台化</a> 讲计费与治理、<a href="deployment.html">部署形态</a> 讲如何起一个可部署实例、<a href="composite-architecture.html">组合架构</a> 讲业务内模式组合。</p>
+</article>
+        <nav class="pager"><a class="prev" href="multi-intent.html"><span>上一篇</span><strong>多意图路由</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>
