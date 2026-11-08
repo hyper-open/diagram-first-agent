@@ -323,6 +323,19 @@ function build() {
     }
   }
 
+  // 文档里的图片（/images/xxx.png）在离线版指向 assets/images/xxx.png。
+  // 之前只复制了 docs/public，漏了 docs/images，导致正文图片 404。
+  const imagesDir = path.join(docsDir, 'images');
+  if (fs.existsSync(imagesDir)) {
+    const outImages = path.join(outDir, 'assets', 'images');
+    fs.mkdirSync(outImages, { recursive: true });
+    for (const entry of fs.readdirSync(imagesDir, { withFileTypes: true })) {
+      if (entry.isFile()) {
+        fs.copyFileSync(path.join(imagesDir, entry.name), path.join(outImages, entry.name));
+      }
+    }
+  }
+
   for (const page of pages) {
     const { meta, body } = readPage(page.link);
     const html = renderMarkdown(body, page.file);

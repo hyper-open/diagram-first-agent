@@ -25,61 +25,7 @@ description: 把路由、主管、Arena、评审、工具网关、RAG、审计�
 
 ## 一图看懂：整体分层
 
-```mermaid
-flowchart TB
-  subgraph ACCESS["L6 接入层"]
-    U["用户 / 客服工单 / App"]
-    GW["API 网关<br/>身份 · 租户 · 限流 · WAF"]
-  end
-
-  subgraph ORCH["L5 编排层"]
-    RT["意图路由<br/>（Routing 模式）"]
-    WF["固定工作流<br/>查单 / 改址"]
-    SUP["售后主管<br/>（Supervisor 拓扑）"]
-    EVAL["终稿评审<br/>（Evaluator-Optimizer）"]
-  end
-
-  subgraph CAP["L4 能力层"]
-    MG["模型网关<br/>路由 · 回退 · 配额"]
-    TG["工具网关<br/>能力令牌 · 幂等 · 审计"]
-    RAG["RAG 检索<br/>ACL 前置过滤"]
-    MEM["记忆<br/>偏好 · 历史"]
-  end
-
-  subgraph EXEC["L3 执行层"]
-    SB["沙箱<br/>代码 / 浏览器"]
-  end
-
-  subgraph DATA["L2 / L1 数据与治理"]
-    ST[("运行状态<br/>检查点")]
-    LED[("计量账本")]
-    AUD[("审计日志")]
-    VEC[("向量库")]
-  end
-
-  U --> GW --> RT
-  RT -->|"简单·FAQ"| WF
-  RT -->|"复杂售后"| SUP
-  RT -->|"高风险投诉"| HUMAN["人工坐席"]
-  WF --> MG
-  SUP --> MG
-  SUP --> TG
-  SUP --> RAG
-  SUP --> MEM
-  TG --> SB
-  SUP --> EVAL
-  EVAL -->|"不通过·退回"| SUP
-  EVAL --> MG
-  RAG --> VEC
-  MG -->|"用量"| LED
-  TG -->|"调用记录"| AUD
-  SUP -->|"检查点"| ST
-  WF --> LED
-  SUP -.->|"trace"| AUD
-  LED -.->|"配额"| MG
-  AUD -.->|"策略"| TG
-  RT -.->|"低置信转人工"| HUMAN
-```
+![整体分层架构：一个请求穿过六层](/images/composite-arch-layers.png)
 
 <p class="diagram-caption"><strong>图 1</strong> · 一个请求自上而下穿过六层；治理面（右下方虚线）横向约束每一层，而不是某一层</p>
 
@@ -87,39 +33,7 @@ flowchart TB
 
 真正的复杂度在图 1 的「售后主管」这个盒子里。展开它：
 
-```mermaid
-flowchart TB
-  REQ["售后请求：<br/>『我买的耳机拆了用了两周，左耳没声，<br/>订单 A1024，要退款+赔偿，不然投诉』"]
-
-  REQ --> SUP["售后主管 Supervisor<br/>拆解 + 合并 + 裁决"]
-
-  SUP -->|"子任务1"| W1["政策与权限<br/>（Worker）"]
-  SUP -->|"子任务2"| W2["订单与证据<br/>（Worker）"]
-  SUP -->|"子任务3"| W3["方案生成<br/>（Arena 多候选）"]
-  SUP -->|"子任务4"| W4["风险与合规<br/>（Reviewer）"]
-
-  W1 --> RAG1["RAG：退款政策<br/>ACL：当前用户可见"]
-  W1 --> MEM1["记忆：会员等级"]
-
-  W2 --> TG2["工具网关<br/>order.lookup"]
-  TG2 --> CAP2["能力令牌<br/>user:88 → order:A1024"]
-
-  W3 --> A["候选A：退货退款"]
-  W3 --> B["候选B：换新"]
-  W3 --> C["候选C：部分补偿"]
-  A --> JUDGE["成对裁决<br/>正反各判一次"]
-  B --> JUDGE
-  C --> JUDGE
-
-  W4 --> D1["Debate：<br/>正方的补偿方案 vs 反方的合规风险"]
-  W4 --> D2["裁判：是否触达审批线"]
-
-  SUP --> MERGE["主管合并<br/>结论 + 证据 + 置信度"]
-  MERGE --> EVAL["生成-评审<br/>终稿是否可发"]
-  EVAL -->|"通过"| OUT["回复用户 + 引用 + 工单"]
-  EVAL -->|"不通过·带回理由"| MERGE
-  MERGE -->|"置信度低 / 高风险"| HUMAN2["转人工<br/>带上下文包"]
-```
+![主管内部：Worker、Arena、Debate、生成-评审同时在场](/images/composite-arch-supervisor.png)
 
 <p class="diagram-caption"><strong>图 2</strong> · 一个 Supervisor 内部同时跑着 Worker、Arena、Debate、Evaluator，以及 RAG 与工具网关</p>
 

@@ -85,95 +85,11 @@
 </blockquote>
 <p>这一句话同时包含：政策判断（能不能退）、身份权限（是否本人）、证据核对（订单与商品状态）、方案生成（退/换/补偿）、合规风险（赔偿是否越权）、情绪风险（威胁投诉）。<strong>任何一种单一模式都接不住它。</strong></p>
 <h2 id="一图看懂整体分层">一图看懂：整体分层</h2>
-<div class="mermaid">flowchart TB
-  subgraph ACCESS[&quot;L6 接入层&quot;]
-    U[&quot;用户 / 客服工单 / App&quot;]
-    GW[&quot;API 网关&lt;br/&gt;身份 · 租户 · 限流 · WAF&quot;]
-  end
-
-  subgraph ORCH[&quot;L5 编排层&quot;]
-    RT[&quot;意图路由&lt;br/&gt;（Routing 模式）&quot;]
-    WF[&quot;固定工作流&lt;br/&gt;查单 / 改址&quot;]
-    SUP[&quot;售后主管&lt;br/&gt;（Supervisor 拓扑）&quot;]
-    EVAL[&quot;终稿评审&lt;br/&gt;（Evaluator-Optimizer）&quot;]
-  end
-
-  subgraph CAP[&quot;L4 能力层&quot;]
-    MG[&quot;模型网关&lt;br/&gt;路由 · 回退 · 配额&quot;]
-    TG[&quot;工具网关&lt;br/&gt;能力令牌 · 幂等 · 审计&quot;]
-    RAG[&quot;RAG 检索&lt;br/&gt;ACL 前置过滤&quot;]
-    MEM[&quot;记忆&lt;br/&gt;偏好 · 历史&quot;]
-  end
-
-  subgraph EXEC[&quot;L3 执行层&quot;]
-    SB[&quot;沙箱&lt;br/&gt;代码 / 浏览器&quot;]
-  end
-
-  subgraph DATA[&quot;L2 / L1 数据与治理&quot;]
-    ST[(&quot;运行状态&lt;br/&gt;检查点&quot;)]
-    LED[(&quot;计量账本&quot;)]
-    AUD[(&quot;审计日志&quot;)]
-    VEC[(&quot;向量库&quot;)]
-  end
-
-  U --&gt; GW --&gt; RT
-  RT --&gt;|&quot;简单·FAQ&quot;| WF
-  RT --&gt;|&quot;复杂售后&quot;| SUP
-  RT --&gt;|&quot;高风险投诉&quot;| HUMAN[&quot;人工坐席&quot;]
-  WF --&gt; MG
-  SUP --&gt; MG
-  SUP --&gt; TG
-  SUP --&gt; RAG
-  SUP --&gt; MEM
-  TG --&gt; SB
-  SUP --&gt; EVAL
-  EVAL --&gt;|&quot;不通过·退回&quot;| SUP
-  EVAL --&gt; MG
-  RAG --&gt; VEC
-  MG --&gt;|&quot;用量&quot;| LED
-  TG --&gt;|&quot;调用记录&quot;| AUD
-  SUP --&gt;|&quot;检查点&quot;| ST
-  WF --&gt; LED
-  SUP -.-&gt;|&quot;trace&quot;| AUD
-  LED -.-&gt;|&quot;配额&quot;| MG
-  AUD -.-&gt;|&quot;策略&quot;| TG
-  RT -.-&gt;|&quot;低置信转人工&quot;| HUMAN
-</div>
+<p><img src="../assets/images/composite-arch-layers.png" alt="" loading="lazy"></p>
 <p class="diagram-caption"><strong>图 1</strong> · 一个请求自上而下穿过六层；治理面（右下方虚线）横向约束每一层，而不是某一层</p>
 <h2 id="图-2主管内部四种模式同时在场">图 2：主管内部，四种模式同时在场</h2>
 <p>真正的复杂度在图 1 的「售后主管」这个盒子里。展开它：</p>
-<div class="mermaid">flowchart TB
-  REQ[&quot;售后请求：&lt;br/&gt;『我买的耳机拆了用了两周，左耳没声，&lt;br/&gt;订单 A1024，要退款+赔偿，不然投诉』&quot;]
-
-  REQ --&gt; SUP[&quot;售后主管 Supervisor&lt;br/&gt;拆解 + 合并 + 裁决&quot;]
-
-  SUP --&gt;|&quot;子任务1&quot;| W1[&quot;政策与权限&lt;br/&gt;（Worker）&quot;]
-  SUP --&gt;|&quot;子任务2&quot;| W2[&quot;订单与证据&lt;br/&gt;（Worker）&quot;]
-  SUP --&gt;|&quot;子任务3&quot;| W3[&quot;方案生成&lt;br/&gt;（Arena 多候选）&quot;]
-  SUP --&gt;|&quot;子任务4&quot;| W4[&quot;风险与合规&lt;br/&gt;（Reviewer）&quot;]
-
-  W1 --&gt; RAG1[&quot;RAG：退款政策&lt;br/&gt;ACL：当前用户可见&quot;]
-  W1 --&gt; MEM1[&quot;记忆：会员等级&quot;]
-
-  W2 --&gt; TG2[&quot;工具网关&lt;br/&gt;order.lookup&quot;]
-  TG2 --&gt; CAP2[&quot;能力令牌&lt;br/&gt;user:88 → order:A1024&quot;]
-
-  W3 --&gt; A[&quot;候选A：退货退款&quot;]
-  W3 --&gt; B[&quot;候选B：换新&quot;]
-  W3 --&gt; C[&quot;候选C：部分补偿&quot;]
-  A --&gt; JUDGE[&quot;成对裁决&lt;br/&gt;正反各判一次&quot;]
-  B --&gt; JUDGE
-  C --&gt; JUDGE
-
-  W4 --&gt; D1[&quot;Debate：&lt;br/&gt;正方的补偿方案 vs 反方的合规风险&quot;]
-  W4 --&gt; D2[&quot;裁判：是否触达审批线&quot;]
-
-  SUP --&gt; MERGE[&quot;主管合并&lt;br/&gt;结论 + 证据 + 置信度&quot;]
-  MERGE --&gt; EVAL[&quot;生成-评审&lt;br/&gt;终稿是否可发&quot;]
-  EVAL --&gt;|&quot;通过&quot;| OUT[&quot;回复用户 + 引用 + 工单&quot;]
-  EVAL --&gt;|&quot;不通过·带回理由&quot;| MERGE
-  MERGE --&gt;|&quot;置信度低 / 高风险&quot;| HUMAN2[&quot;转人工&lt;br/&gt;带上下文包&quot;]
-</div>
+<p><img src="../assets/images/composite-arch-supervisor.png" alt="" loading="lazy"></p>
 <p class="diagram-caption"><strong>图 2</strong> · 一个 Supervisor 内部同时跑着 Worker、Arena、Debate、Evaluator，以及 RAG 与工具网关</p>
 <h2 id="一次请求的完整时序">一次请求的完整时序</h2>
 <div class="code-block"><div class="code-lang">text</div><pre><code>1. 接入层      API 网关：校验身份、租户额度、限流；未开通租户直接 403
