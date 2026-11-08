@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多意图路由：一句话里有两件事怎么办 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item active" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>多意图路由</strong></div>
+        <article class="doc"><h1 id="多意图路由一句话里有两件事怎么办">多意图路由：一句话里有两件事怎么办</h1>
+<h2 id="先看一个事故">先看一个事故</h2>
+<p>用户在客服里说：</p>
+<blockquote>
+<p><strong>「我要退款，另外订单 A1024 也帮我查一下到哪了」</strong></p>
+</blockquote>
+<p><strong>单意图路由</strong>的做法是：给这句话打一个意图分，取最高的那个。结果是——</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>单意图路由 → workflow（只处理这一个，其余丢失）
+</code></pre></div>
+<p><strong>退款请求被丢掉了。</strong> 用户以为说了两件事，系统只办了一件，另一件连提示都没有。这是客服类产品最典型的严重体验事故，而且<strong>不报错、不告警</strong>——日志里一切正常。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  Q[&quot;我要退款，另外订单 A1024 到哪了&quot;]
+  Q --&gt; S[&quot;单意图路由&quot;]
+  S --&gt; S1[&quot;取最高分：workflow&quot;]
+  S1 --&gt; S2[&quot;只办查单&lt;br/&gt;退款被丢弃&quot;]
+
+  Q --&gt; M[&quot;多意图路由&quot;]
+  M --&gt; D[&quot;按并列词拆句&quot;]
+  D --&gt; C1[&quot;子句1：我要退款&quot;]
+  D --&gt; C2[&quot;子句2：订单 A1024 到哪了&quot;]
+  C1 --&gt; R1[&quot;refund.request&quot;]
+  C2 --&gt; R2[&quot;query.order_status&quot;]
+  R1 --&gt; MERGE[&quot;合并输出&lt;br/&gt;两件事都办&quot;]
+  R2 --&gt; MERGE
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 同样是路由，单意图丢弃、多意图拆句后全部执行</p>
+<h2 id="跑起来看">跑起来看</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v3.cli --multi
+</code></pre></div>
+<p>输出会并列展示「单意图会怎样」和「多意图会怎样」：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>请求: 我要退款，另外订单 A1024 也帮我查一下到哪了
+  单意图路由 → workflow（只处理这一个，其余丢失）
+  多意图路由 → primary=workflow / 共 2 个意图
+      · [workflow] refund.request       我要退款
+      · [workflow] query.order_status   订单 A1024 也帮我查一下到哪了
+  实际输出:
+      【业务办理】订单 A1024 当前状态：已发货…退款申请已受理，需人工审批后执行…
+      【业务办理】订单 A1024：已发货，运输中（查询人 user:88）
+</code></pre></div>
+<h2 id="lab-1怎么拆按并列词宁可多拆">Lab 1：怎么拆——按并列词，宁可多拆</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>_CLAUSE_SPLIT = re.compile(r&quot;[，,；;。\n]|另外|以及|还有|顺便|同时|而且|并且|然后&quot;)
+</code></pre></div>
+<p>拆分的策略是<strong>宁可过拆，不可漏拆</strong>。因为过拆是安全的：拆出一条没有诉求的碎片，它路由不到任何东西就被丢掉；而漏拆会把真实诉求埋掉。</p>
+<p><strong>练习</strong>：为什么用「合并所有子句的 route」而不是「取子句里分数最高的那个」？</p>
+<h2 id="lab-2两条保底规则">Lab 2：两条保底规则</h2>
+<h3 id="规则一高风险永不丢弃">规则一：高风险永不丢弃</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def rank(scenario):
+    route = scenario.route
+    return (1 if route.is_high_risk else 0, route.confidence)
+
+ordered = sorted(unique, key=rank, reverse=True)
+primary = ordered[0].route
+</code></pre></div>
+<p><strong>排序时先把高风险（投诉/转人工）排到最前</strong>，不管它的置信度是多少：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>请求: 这个功能报错了，而且我要投诉你们服务太差
+  多意图路由 → primary=human / 共 2 个意图    ← 投诉提到主位
+      · [rag  ] tech.issue       这个功能报错了   ← 技术问题也没丢
+      · [human] risk.complaint   我要投诉你们服务太差
+</code></pre></div>
+<p>如果按&quot;取最高分&quot;排，技术问题分高，投诉就被降级到 secondary——甚至在某些实现里直接丢。<strong>一条被埋掉的投诉仍然是投诉。</strong></p>
+<h3 id="规则二同一路由不同意图要分开">规则二：同一路由、不同意图要分开</h3>
+<p>&quot;退款&quot; 和 &quot;查单&quot; 都走 <code>workflow</code> 路由，但它们是<strong>两个不同的意图</strong>。所以去重按 <code>intent</code> 而不是 <code>route</code>：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>key = scenario.route.intent or scenario.route.route   # 不是 route.route
+</code></pre></div>
+<p>如果按 route 去重，这两件事会被合并成一件。</p>
+<h2 id="lab-3共享实体订单号在另一个子句里">Lab 3：共享实体——订单号在另一个子句里</h2>
+<p>拆句带来一个新问题：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>「我要退款，订单 A1024」
+  → 子句1「我要退款」（没有订单号！）
+  → 子句2「订单 A1024」
+</code></pre></div>
+<p>退款子句单独执行时，找不到订单号，会返回「请问订单号是多少？」——<strong>明明是同一句话里说过的</strong>。</p>
+<p>修复：每个子句执行时，把<strong>原句</strong>作为上下文一起带过去：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def _clone_request(request, text, context=&quot;&quot;):
+    clone = GatedRequest(text=text, ...)
+    clone.context_text = context or request.text   # 原句
+    return clone
+
+# handler 里做实体解析时，同时看子句和原句
+haystack = request.text + &quot; &quot; + request.context_text
+</code></pre></div>
+<p>这是多意图里最容易被漏掉的一环：<strong>拆分是逻辑上的，实体是物理上共享的。</strong></p>
+<h2 id="lab-4合并状态取最差">Lab 4：合并——状态取最差</h2>
+<p>多个子句各有状态（success / partial / permission_denied / quota_exceeded），合并时：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>for bad in (&quot;permission_denied&quot;, &quot;quota_exceeded&quot;, &quot;blocked&quot;):
+    if bad in statuses:
+        return bad            # 任何一块失败，整体不能报&quot;全部完成&quot;
+</code></pre></div>
+<p><strong>只要有任意一个子句没办成，就不能告诉用户&quot;都办好了&quot;。</strong> 这和多 Agent 里&quot;合并置信度取最小值&quot;是同一条原则：整体只和最弱的一环一样可靠。</p>
+<h2 id="lab-5一个反例不该硬答的别硬答">Lab 5：一个反例——不该硬答的别硬答</h2>
+<p>多意图暴露了另一个问题。技术问题「这个功能报错了」走 RAG，但知识库里<strong>没有技术文档</strong>，检索分数只有 0.016（真实匹配约 0.03+）。原来的实现仍然返回了检索到的第一条无关条款（居然是合同争议条款）。</p>
+<p>修复：加相关度门槛，低于阈值就明确说&quot;没找到&quot;：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>RAG_MIN_SCORE = 0.025
+hits = [h for h in raw_hits if h.score &gt;= RAG_MIN_SCORE]
+if not hits:
+    return &quot;知识库中没有与该问题相关的内容（可能属于技术问题，需转技术支持）。&quot;
+</code></pre></div>
+<p><strong>说&quot;不知道&quot;比给一个看起来像答案的错答案好得多</strong>——尤其当这个错答案会被当成本次请求的一部分交给用户时。</p>
+<h2 id="四种多意图策略什么时候用哪种">四种多意图策略（什么时候用哪种）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>做法</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>多标签</strong></td>
+<td>一次输出多个意图 + 各自置信度</td>
+<td>意图相互独立</td>
+</tr>
+<tr>
+<td><strong>拆句路由</strong>（本章）</td>
+<td>按并列词拆成子句，各自路由</td>
+<td>有明确并列词、可分开执行</td>
+</tr>
+<tr>
+<td><strong>先主后次</strong></td>
+<td>只立即办主意图，其余追问</td>
+<td>交互式、有会话</td>
+</tr>
+<tr>
+<td><strong>串行编排</strong></td>
+<td>A 的出产作为 B 的输入</td>
+<td>子意图有依赖顺序</td>
+</tr>
+</tbody>
+</table></div>
+<p>本章实现的是<strong>拆句路由 + 高风险保底</strong>，因为客服场景里并列诉求最常见。如果有依赖（&quot;先查单，如果超时再退款&quot;），就要串行编排，不能并行。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出单意图路由为什么会&quot;不报错地&quot;丢诉求。</li>
+<li>[ ] 能解释为什么拆句宁可过拆不可漏拆。</li>
+<li>[ ] 能说出高风险为什么必须优先，而不是按分数排。</li>
+<li>[ ] 能解释为什么去重按 intent 而不是 route。</li>
+<li>[ ] 能说出拆句后为什么订单号会丢，怎么修。</li>
+<li>[ ] 能解释合并状态为什么取最差，而不是取最好。</li>
+<li>[ ] 能说出 RAG 找不到内容时说&quot;没找到&quot;比硬答好在哪。</li>
+</ul>
+<p>相关：<a href="../evolution/intent.html">意图识别</a> 讲路由的理论、<a href="composite-architecture.html">组合架构</a> 讲它在真实系统里的位置。</p>
+</article>
+        <nav class="pager"><a class="prev" href="composite-architecture.html"><span>上一篇</span><strong>组合架构：真实售后平台</strong></a><a class="next" href="deployment.html"><span>下一篇</span><strong>部署形态：从能跑到能上线</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

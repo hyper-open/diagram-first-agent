@@ -45,6 +45,9 @@ class GatedRequest(PipelineRequest):
     tenant_id: str = "acme"
     user_id: str = "user:88"
     granted_actions: set = field(default_factory=set)  # what this user is allowed to do
+    # Full original request, used to resolve entities shared across clauses of a
+    # multi-intent message (e.g. an order id in a different clause).
+    context_text: str = ""
 
 
 class GatedPipeline:
@@ -108,8 +111,11 @@ class GatedPipeline:
                 "latency_ms": int((time.monotonic() - started) * 1000),
             }
 
-        # 2. route (v2)
-        route = self.router.route(request.text)
+        # 2. route — multi-intent aware.  A single-label router silently drops
+        #    "我要退款，另外帮我查下 A1024" into one of the two asks; route_multi
+        #    splits clauses so both are handled.
+        multi = self.router.route_multi(request.text)
+        route = multi.primary
         self.audit.record(
             "route",
             actor="service:pipeline",
@@ -119,16 +125,17 @@ class GatedPipeline:
             reason=route.reason,
             request_id=request.request_id,
             trace_id=trace_id,
-            detail={"confidence": round(route.confidence, 3)},
+            detail={
+                "confidence": round(route.confidence, 3),
+                "is_multi": multi.is_multi,
+                "intents": [r.intent or r.route for r in multi.all_routes()],
+            },
         )
 
-        # 3. dispatch
-        if route.route == WORKFLOW:
-            result = self._workflow(request, route, trace_id)
-        elif route.route == RAG:
-            result = self._rag(request, route, trace_id)
-        else:
-            result = self._generic(request, route)
+        # 3. dispatch.  Each distinct scenario runs on its own clause; results
+        #    are merged with the primary first.  High-risk is always primary,
+        #    so a complaint can never be buried by a refund request.
+        result = self._dispatch_multi(request, multi, trace_id)
 
         result["trace_id"] = trace_id
         result["latency_ms"] = int((time.monotonic() - started) * 1000)
@@ -148,6 +155,64 @@ class GatedPipeline:
         return result
 
     # ------------------------------------------------------------------
+    # Dispatch
+    # ------------------------------------------------------------------
+
+    def _dispatch_multi(self, request: GatedRequest, multi, trace_id: str) -> Dict[str, Any]:
+        """Run every scenario and merge.  Single-intent requests fast-path."""
+        if not multi.is_multi:
+            return self._dispatch_one(request, multi.primary, request.text, trace_id)
+
+        parts = []
+        routes_used = []
+        for scenario in multi.scenarios:
+            # Run each clause against its own text so handlers see the ask,
+            # not the whole compound sentence.
+            sub_request = _clone_request(request, scenario.text, context=request.text)
+            part = self._dispatch_one(sub_request, scenario.route, scenario.text, trace_id)
+            parts.append((scenario, part))
+            routes_used.append(scenario.route.route)
+
+        # Primary first, then the rest in priority order.
+        order = {id(s): i for i, s in enumerate(multi.scenarios)}
+
+        def priority(item):
+            scenario, _ = item
+            return (0 if scenario.route is multi.primary else 1, order[id(scenario)])
+
+        parts.sort(key=priority)
+        merged = "\n\n".join(
+            "【%s】%s" % (_label(scenario.route), part.get("output", ""))
+            for scenario, part in parts
+        )
+        # Status: reduce — any permission/quota problem dominates.
+        statuses = [p.get("status") for _, p in parts]
+        status = _reduce_status(statuses)
+        return {
+            "request_id": request.request_id,
+            "route": multi.primary.route,
+            "status": status,
+            "output": merged,
+            "is_multi": True,
+            "scenarios": [
+                {"text": sc.text, "route": sc.route.route,
+                 "intent": sc.route.intent, "status": part.get("status")}
+                for sc, part in parts
+            ],
+            "citations": [
+
+                c for _, part in parts for c in part.get("citations", [])
+            ],
+        }
+
+    def _dispatch_one(self, request: GatedRequest, route, text: str, trace_id: str) -> Dict[str, Any]:
+        if route.route == WORKFLOW:
+            return self._workflow(request, route, trace_id)
+        if route.route == RAG:
+            return self._rag(request, route, trace_id)
+        return self._generic(request, route)
+
+    # ------------------------------------------------------------------
     # Handlers
     # ------------------------------------------------------------------
 
@@ -155,7 +220,10 @@ class GatedPipeline:
         """The workflow path needs a *real* capability, not a prompt."""
         import re
 
-        match = re.search(r"\b([A-Z]\d{3,})\b", request.text)
+        # Entity resolution: an order id may live in the *original* compound
+        # sentence, not in the clause we are handling.
+        haystack = request.text + " " + getattr(request, "context_text", "")
+        match = re.search(r"\b([A-Z]\d{3,})\b", haystack)
         if match is None:
             return self._response(request, WORKFLOW, "clarify", "请问订单号是多少？")
 
@@ -195,17 +263,38 @@ class GatedPipeline:
             return self._response(
                 request, WORKFLOW, "error", "查询订单失败：%s" % (outcome.error or {}).get("message", "")
             )
+
+        status = outcome.data.get("status")
+        # Same route, different intent: a refund is not a lookup.  We resolve the
+        # order the same way, but the *action* differs — and a refund is a
+        # destructive action that requires approval, so we do not perform it here.
+        if route.intent == "refund.request":
+            return self._response(
+                request, WORKFLOW, "success",
+                "订单 %s 当前状态：%s。退款申请已受理，需人工审批后执行"
+                "（金额类动作走审批，不会自动退款）。" % (order_id, status),
+            )
         return self._response(
             request,
             WORKFLOW,
             "success",
-            "订单 %s：%s（查询人 %s）" % (order_id, outcome.data.get("status"), request.user_id),
+            "订单 %s：%s（查询人 %s）" % (order_id, status, request.user_id),
         )
 
+    # Minimum RRF score to treat a retrieval hit as relevant.  Tuned on the seed
+    # corpus: genuine matches score ~0.03+, unrelated text ~0.016.  Without a
+    # floor, a technical question ("这个功能报错了") gets answered with the first
+    # arbitrary paragraph in the KB — worse than admitting we don't know.
+    RAG_MIN_SCORE = 0.025
+
     def _rag(self, request: GatedRequest, route: Route, trace_id: str) -> Dict[str, Any]:
-        hits = self.retriever.search(request.text, request.principals, k=3)
+        raw_hits = self.retriever.search(request.text, request.principals, k=3)
+        hits = [h for h in raw_hits if h.score >= self.RAG_MIN_SCORE]
         if not hits:
-            return self._response(request, RAG, "success", "知识库里没有找到相关条款。")
+            return self._response(
+                request, RAG, "success",
+                "知识库中没有与该问题相关的内容（可能属于技术问题，需转技术支持）。",
+            )
         citations = [
             {"ref": "c%d" % (i + 1), "chunk_id": h.chunk.chunk_id, "doc_id": h.chunk.doc_id,
              "section": h.chunk.section}
@@ -319,3 +408,56 @@ class GatedPipeline:
             "output": output,
             "citations": citations or [],
         }
+
+
+# ---------------------------------------------------------------------------
+# Multi-intent helpers
+# ---------------------------------------------------------------------------
+
+
+def _clone_request(request: GatedRequest, text: str, context: str = "") -> GatedRequest:
+    """Same identity, different text.
+
+    ``text`` is the clause to act on; ``context`` is the whole original request.
+    Multi-intent requests often put shared entities (an order id) in a different
+    clause than the ask that needs them — "我要退款，订单 A1024" splits into a
+    refund ask and an id.  Handlers must still be able to see the id, so we keep
+    the full sentence available as context.
+    """
+    clone = GatedRequest(
+        text=text,
+        tenant_id=request.tenant_id,
+        user_id=request.user_id,
+        principals=set(request.principals),
+        granted_actions=set(request.granted_actions),
+        request_id=request.request_id,
+    )
+    # Attach the full request for entity resolution (order id, dates, etc.).
+    clone.context_text = context or request.text
+    return clone
+
+
+def _label(route) -> str:
+    names = {
+        "workflow": "业务办理",
+        "rag": "问题排查",
+        "faq": "咨询",
+        "agent": "复杂任务",
+        "human": "转人工",
+        "clarify": "需澄清",
+    }
+    return names.get(route.route, route.route)
+
+
+def _reduce_status(statuses) -> str:
+    """Merge multiple scenario statuses into one.
+
+    A blocked/permission_denied anywhere outranks success: if any part of the
+    request could not be fulfilled, the user must not be told "全部完成".
+    """
+    for bad in ("permission_denied", "quota_exceeded", "blocked"):
+        if bad in statuses:
+            return bad
+    if all(s == "success" for s in statuses):
+        return "success"
+    return "partial"

@@ -49,6 +49,11 @@ class Intent:
         self.vectors = [embed(example) for example in self.examples]
 
 
+# Routes that must never be dropped when a request contains several intents.
+# A complaint buried under a refund request is still a complaint.
+HIGH_RISK_ROUTES = frozenset({HUMAN})
+
+
 @dataclass
 class Route:
     route: str
@@ -60,13 +65,64 @@ class Route:
     def needs_clarification(self) -> bool:
         return self.route == CLARIFY
 
+    @property
+    def is_high_risk(self) -> bool:
+        return self.route in HIGH_RISK_ROUTES
+
     def to_dict(self) -> Dict[str, object]:
         return {
             "route": self.route,
             "confidence": round(self.confidence, 3),
             "intent": self.intent,
             "reason": self.reason,
+            "high_risk": self.is_high_risk,
         }
+
+
+@dataclass
+class MultiRoute:
+    """The result of routing one request that may contain several intents.
+
+    ``primary`` is the intent to act on first.  ``secondary`` are the rest, in
+    priority order.  ``scenarios`` are clause-level routes derived by splitting
+    the request, which is what actually recovers the intents a single-label
+    classifier would silently drop.
+    """
+
+    primary: Route
+    secondary: List[Route] = field(default_factory=list)
+    scenarios: List["Scenario"] = field(default_factory=list)
+
+    @property
+    def is_multi(self) -> bool:
+        return len(self.scenarios) > 1
+
+    def all_routes(self) -> List[Route]:
+        seen, ordered = set(), []
+        for route in [self.primary] + self.secondary:
+            if route.route not in seen:
+                seen.add(route.route)
+                ordered.append(route)
+        return ordered
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "primary": self.primary.to_dict(),
+            "secondary": [r.to_dict() for r in self.secondary],
+            "is_multi": self.is_multi,
+            "scenarios": [s.to_dict() for s in self.scenarios],
+        }
+
+
+@dataclass
+class Scenario:
+    """One clause of a multi-intent request and how it routes."""
+
+    text: str
+    route: Route
+
+    def to_dict(self) -> Dict[str, object]:
+        return {"text": self.text, "route": self.route.to_dict()}
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +216,54 @@ class IntentRouter:
             "置信度低于兜底阈值 %.2f" % self.low,
         )
 
+    # -- multi-intent -----------------------------------------------------
+
+    def route_multi(self, request: str) -> MultiRoute:
+        """Route a request that may contain several intents.
+
+        A single-label router silently drops all but the top intent.  This
+        splits the request into clauses, routes each, then applies two rules
+        that a naive "pick the highest score" would get wrong:
+
+        1. **High-risk never drops.**  If any clause routes to a high-risk
+           route (complaint/human), it is promoted to primary regardless of
+           its score.  A buried complaint is still a complaint.
+        2. **Dependent intents are ordered, independent ones kept.**  We keep
+           every distinct route so the dispatcher can run them all.
+        """
+        text = request.strip()
+        if not text:
+            return MultiRoute(primary=Route(CLARIFY, 0.0, reason="空请求"))
+
+        scenarios = [Scenario(clause, self.route(clause)) for clause in _split_clauses(text)]
+        # De-duplicate identical route+intent clauses (e.g. repeated mentions).
+        # De-duplicate by *intent*, not by route: "退款" and "查单" both land on
+        # the workflow route but are different asks, and both must be kept.
+        unique: List[Scenario] = []
+        seen = set()
+        for scenario in scenarios:
+            key = scenario.route.intent or scenario.route.route
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(scenario)
+        if not unique:
+            return MultiRoute(primary=self.route(text))
+
+        # Choose primary: highest-risk first, then highest confidence.
+        def rank(scenario: Scenario):
+            route = scenario.route
+            return (1 if route.is_high_risk else 0, route.confidence)
+
+        ordered = sorted(unique, key=rank, reverse=True)
+        primary = ordered[0].route
+        primary_key = primary.intent or primary.route
+        secondary = [
+            s.route for s in ordered[1:]
+            if (s.route.intent or s.route.route) != primary_key
+        ]
+        return MultiRoute(primary=primary, secondary=secondary, scenarios=unique)
+
     # -- internals -------------------------------------------------------
 
     def _match_rules(self, text: str) -> Optional[Route]:
@@ -199,6 +303,7 @@ def default_intents() -> List[Intent]:
                 "多少钱包邮",
                 "运费怎么算",
                 "发票怎么开",
+                "能不能开发票",
                 "支持哪些付款方式",
                 "偏远地区多久能送到",
             ],
@@ -215,6 +320,33 @@ def default_intents() -> List[Intent]:
                 "我想改收货地址",
             ],
             patterns=[r"[A-Z]\d{3,}|订单号|物流|快递|查.*单"],
+        ),
+        Intent(
+            name="refund.request",
+            route=WORKFLOW,
+            description="发起退款、申请退货：走固定退款流程",
+            examples=[
+                "我要退款",
+                "我要申请退款",
+                "怎么退款",
+                "帮我退一下款",
+                "这个我要退",
+            ],
+            patterns=[r"我要退款|申请退款|怎么退款|帮我退|退款吧|要退货"],
+        ),
+        Intent(
+            name="tech.issue",
+            route=RAG,
+            description="技术问题：报错、打不开、功能异常，需要排查与文档依据",
+            examples=[
+                "这个功能报错了",
+                "网站打不开",
+                "页面报 404",
+                "App 一直闪退",
+                "接口返回 500",
+                "登录不上去了",
+            ],
+            patterns=[r"报错|打不开|闪退|登录不上|接口.*500|页面.*404|功能异常|用不了"],
         ),
         Intent(
             name="doc.explain",
@@ -255,3 +387,34 @@ def default_intents() -> List[Intent]:
             patterns=[r"投诉|起诉|律师|监管|媒体|欺诈|退款都退不了"],
         ),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Clause splitting for multi-intent requests
+# ---------------------------------------------------------------------------
+
+# Conjunctions that usually separate two asks in Chinese.  This is intentionally
+# simple and inspectable: a wrong split is visible in the trace, unlike a wrong
+# embedding.
+_CLAUSE_SPLIT = re.compile(
+    r"[，,；;。\n]|另外|以及|还有|顺便|同时|而且|并且|然后|再加|也想|也要"
+)
+
+
+def _split_clauses(text: str) -> List[str]:
+    """Split a request into clause candidates and drop fragments without an ask.
+
+    We do NOT try to be clever: splitting on conjunctions over-splits some
+    sentences ("退款政策是什么，顺便问一下能不能开发票" → 2 good clauses) and
+    under-splits others.  Routing each clause and keeping the *union* of routes
+    is what makes over-splitting safe: a fragment that routes to nothing is
+    dropped, and a real second ask is kept.
+    """
+    raw = _CLAUSE_SPLIT.split(text)
+    clauses: List[str] = []
+    for piece in raw:
+        piece = piece.strip(" ，,；;。\n")
+        if len(piece) < 2:
+            continue
+        clauses.append(piece)
+    return clauses or [text.strip()]

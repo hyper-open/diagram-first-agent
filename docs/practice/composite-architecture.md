@@ -163,4 +163,6 @@ L5 编排层
 - [ ] 能列出至少三个“去掉某个组件就会出事故”的例子。
 - [ ] 能判断一个请求该走这张图，还是走更简单的固定工作流。
 
+路由遇上一句话多个诉求怎么处理，见[多意图路由](/practice/multi-intent)。
+
 相关实现：[Mini Agent v4](/practice/mini-agent-v4)（拓扑）、[v5](/practice/mini-agent-v5)（模式）、[v6](/practice/mini-agent-v6)（Arena/Swarm）、[部署形态](/practice/deployment)（如何上线）。

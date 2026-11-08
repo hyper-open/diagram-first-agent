@@ -54,6 +54,9 @@ jobs:
           python3 -m examples.mini_agent_v6.cli --swarm
           python3 -m examples.mini_agent_v6.cli --cycles
 
+      - name: Multi-intent routing
+        run: python3 -m examples.mini_agent_v3.cli --multi
+
       - name: Fail fast on bad config
         run: |
           set +e

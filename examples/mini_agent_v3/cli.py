@@ -197,11 +197,49 @@ def run_resume_demo() -> int:
     return 0
 
 
+def run_multi() -> int:
+    """Show why a single-label router is dangerous for compound requests."""
+    from .gated import GatedRequest
+
+    pipeline, _, _, _ = build()
+    cases = [
+        "我要退款，另外订单 A1024 也帮我查一下到哪了",
+        "这个功能报错了，而且我要投诉你们服务太差",
+        "退款政策是什么，顺便问一下能不能开发票",
+    ]
+    print("=" * 74)
+    print("多意图：同一句话里的多个诉求，不能被单意图路由吞掉")
+    print("=" * 74)
+    for text in cases:
+        # 对比：单意图 vs 多意图
+        single = pipeline.router.route(text)
+        multi = pipeline.router.route_multi(text)
+        print()
+        print("请求:", text)
+        print("  单意图路由 → %s（只处理这一个，其余丢失）" % single.route)
+        print("  多意图路由 → primary=%s / 共 %d 个意图"
+              % (multi.primary.route, len(multi.scenarios)))
+        for sc in multi.scenarios:
+            print("      · [%-9s] %-20s %s" % (sc.route.route, sc.route.intent or "-", sc.text))
+        result = pipeline.handle(GatedRequest(text=text, user_id="user:88"))
+        print("  实际输出:")
+        for line in result["output"].split("\n\n"):
+            print("      " + line.replace("\n", " "))
+        print("  合并状态:", result["status"])
+    print()
+    print("关键点：")
+    print("  1. 单意图路由取最高分，多意图请求必然丢掉其余诉求——客服事故。")
+    print("  2. 高风险（投诉/转人工）永远提为主意图，不会被金额诉求埋掉。")
+    print("  3. 订单号这类共享实体要从原句读，不能只看拆出来的子句。")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Mini Agent v3")
     parser.add_argument("--demo", action="store_true")
     parser.add_argument("--eval", action="store_true")
     parser.add_argument("--resume-demo", action="store_true")
+    parser.add_argument("--multi", action="store_true", help="多意图路由演示")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -209,6 +247,8 @@ def main(argv=None) -> int:
         return run_eval()
     if args.resume_demo:
         return run_resume_demo()
+    if args.multi:
+        return run_multi()
     return run_demo(as_json=args.json)
 
 

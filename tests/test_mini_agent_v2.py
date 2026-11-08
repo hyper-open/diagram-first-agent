@@ -311,3 +311,110 @@ class MemoryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# Multi-intent routing (route_multi)
+# ---------------------------------------------------------------------------
+
+
+class MultiIntentTests(unittest.TestCase):
+    """A single-label router drops all but one ask. These lock the contract
+    that every distinct intent survives."""
+
+    def setUp(self):
+        self.router = IntentRouter(default_intents())
+
+    def test_refund_and_lookup_both_kept(self):
+        m = self.router.route_multi("我要退款，另外订单 A1024 也帮我查一下到哪了")
+        self.assertTrue(m.is_multi)
+        intents = {s.route.intent for s in m.scenarios}
+        self.assertIn("refund.request", intents)
+        self.assertIn("query.order_status", intents)
+
+    def test_high_risk_is_promoted_to_primary(self):
+        # Complaint is buried after a tech question but must still be primary.
+        m = self.router.route_multi("这个功能报错了，而且我要投诉你们服务太差")
+        self.assertEqual(m.primary.route, HUMAN)
+        # ...and the tech question is not dropped.
+        self.assertIn("tech.issue", {s.route.intent for s in m.scenarios})
+
+    def test_single_intent_is_not_multi(self):
+        m = self.router.route_multi("我要投诉你们")
+        self.assertFalse(m.is_multi)
+        self.assertEqual(m.primary.route, HUMAN)
+
+    def test_same_route_different_intent_not_merged(self):
+        # refund and lookup share the workflow route but are different asks.
+        m = self.router.route_multi("我要退款，订单 A1024")
+        intents = {s.route.intent for s in m.scenarios}
+        self.assertEqual(len(intents), 2)
+
+    def test_empty_request(self):
+        m = self.router.route_multi("   ")
+        self.assertEqual(m.primary.route, CLARIFY)
+
+    def test_multi_route_serialises(self):
+        import json
+
+        m = self.router.route_multi("我要退款，订单 A1024 到哪了")
+        json.dumps(m.to_dict(), ensure_ascii=False)
+
+
+class MultiIntentPipelineTests(unittest.TestCase):
+    """End-to-end: the dispatcher must run every clause and merge results."""
+
+    def setUp(self):
+        from examples.mini_agent_v2.corpus import InMemoryCorpus
+        from examples.mini_agent_v2.fixtures import seed_documents
+        from examples.mini_agent_v2.retrieval import HybridRetriever
+
+        from examples.mini_agent_v3.audit import AuditLog
+        from examples.mini_agent_v3.billing import Ledger
+        from examples.mini_agent_v3.capability import CapabilityIssuer
+        from examples.mini_agent_v3.gated import GatedPipeline
+
+        retriever = HybridRetriever(InMemoryCorpus(seed_documents()))
+        retriever.build()
+        self.pipeline = GatedPipeline(
+            router=IntentRouter(default_intents()),
+            retriever=retriever,
+            memory=MemoryStore(),
+            issuer=CapabilityIssuer(),
+            audit=AuditLog(),
+            ledger=Ledger(),
+        )
+
+    def _run(self, text):
+        from examples.mini_agent_v3.gated import GatedRequest
+
+        return self.pipeline.handle(GatedRequest(text=text, user_id="user:88"))
+
+    def test_two_asks_both_in_output(self):
+        out = self._run("我要退款，另外订单 A1024 也帮我查一下到哪了")
+        self.assertTrue(out["is_multi"])
+        self.assertEqual(len(out["scenarios"]), 2)
+        # Both answers appear in the merged output.
+        self.assertIn("退款申请已受理", out["output"])
+        self.assertIn("已发货", out["output"])
+
+    def test_order_id_resolved_across_clauses(self):
+        # The order id lives in the *second* clause but the refund clause needs it.
+        out = self._run("我要退款，订单 A1024")
+        self.assertNotIn("请问订单号是多少", out["output"])
+
+    def test_complaint_not_buried(self):
+        out = self._run("这个功能报错了，而且我要投诉你们服务太差")
+        routes = [s["route"] for s in out["scenarios"]]
+        self.assertIn("human", routes)
+        self.assertEqual(routes[0], "human")  # high risk first
+
+    def test_status_reflects_worst_part(self):
+        # Any blocked/permission part must not be reported as clean success.
+        out = self._run("我要退款，订单 A1024 到哪了")
+        self.assertIn(out["status"], ("success", "partial"))
+
+    def test_single_intent_path_unaffected(self):
+        out = self._run("解释一下退款时效条款")
+        self.assertFalse(out.get("is_multi", False))
+        self.assertIn("退款", out["output"])
