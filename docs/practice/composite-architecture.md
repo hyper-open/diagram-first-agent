@@ -29,6 +29,11 @@ description: 把路由、主管、Arena、评审、工具网关、RAG、审计�
 
 <p class="diagram-caption"><strong>图 1</strong> · 一个请求自上而下穿过六层；治理面（右下方虚线）横向约束每一层，而不是某一层</p>
 
+::: tip 颜色 = 模式
+本图按模式上色，方便一眼识别：<span style="color:#4f46e5">■ 紫 = Routing 路由</span>、<span style="color:#2563eb">■ 蓝 = Supervisor 主管</span>、<span style="color:#16a34a">■ 绿 = Evaluator-Optimizer 生成-评审</span>；灰色是基础设施（网关、检索、存储、沙箱）。
+:::
+
+
 ## 图 2：主管内部，四种模式同时在场
 
 真正的复杂度在图 1 的「售后主管」这个盒子里。展开它：
@@ -36,6 +41,11 @@ description: 把路由、主管、Arena、评审、工具网关、RAG、审计�
 ![主管内部：Worker、Arena、Debate、生成-评审同时在场](/images/composite-arch-supervisor.png)
 
 <p class="diagram-caption"><strong>图 2</strong> · 一个 Supervisor 内部同时跑着 Worker、Arena、Debate、Evaluator，以及 RAG 与工具网关</p>
+
+::: tip 一张图里同时有六种模式
+<span style="color:#2563eb">■ 蓝 = Supervisor</span>（拆解与合并）、<span style="color:#d97706">■ 黄 = Arena</span>（多候选对战）、<span style="color:#dc2626">■ 红 = Debate</span>（正反方裁决）、<span style="color:#16a34a">■ 绿 = Evaluator-Optimizer</span>（终稿评审）、<span style="color:#7c3aed">■ 紫 = Chaining</span>（合并收口）；灰色是 Worker 与基础设施。
+:::
+
 
 ## 一次请求的完整时序
 
