@@ -61,6 +61,7 @@ export const sidebar = [
       { text: 'v4：四种多 Agent 拓扑', link: '/practice/mini-agent-v4' },
       { text: 'v5：五种编排模式', link: '/practice/mini-agent-v5' },
       { text: 'v6：Arena 与 Swarm/Handoff', link: '/practice/mini-agent-v6' },
+      { text: 'v7：用 Harness 写 Plan-Execute', link: '/practice/plan-execute-harness' },
       { text: '组合架构：真实售后平台', link: '/practice/composite-architecture' },
       { text: '多意图路由', link: '/practice/multi-intent' },
       { text: '范式选型指南', link: '/practice/paradigm-selection' },

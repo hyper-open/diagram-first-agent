@@ -48,6 +48,9 @@ jobs:
       - name: v5 patterns
         run: python3 -m examples.mini_agent_v5.cli --compare
 
+      - name: v7 plan-execute harness
+        run: python3 -m examples.mini_agent_v7.cli --scenarios
+
       - name: v6 arena and swarm
         run: |
           python3 -m examples.mini_agent_v6.cli --arena

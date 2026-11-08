@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>用 Harness 方式写一个 Plan-Execute · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item active" href="plan-execute-harness.html">v7：用 Harness 写 Plan-Execute</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="enterprise-domain-agent.html">企业级架构（领域 Agent 版）</a>
+<a class="nav-item" href="coding-platform.html">把 Coding 能力接进平台</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v7：用 Harness 写 Plan-Execute</strong></div>
+        <article class="doc"><h1 id="用-harness-方式写一个-plan-execute">用 Harness 方式写一个 Plan-Execute</h1>
+<h2 id="先明确-harness-方式-指什么">先明确 &quot;harness 方式&quot; 指什么</h2>
+<p>上一轮讨论过：<strong>ReAct 的循环和 harness 的循环是同一个</strong>。区别只在于——</p>
+<ul>
+<li><strong>ReAct</strong> 讲循环的逻辑：想 → 做 → 观察；</li>
+<li><strong>Harness</strong> 讲循环的工程：预算、超时、重试、终止、trace 谁来管。</li>
+</ul>
+<p>所以&quot;用 harness 方式写 Plan-Execute&quot;意思是：</p>
+<blockquote>
+<p><strong>循环骨架和预算/终止/重试/追踪都写成一套通用框架；只把&quot;规划&quot;&quot;执行一步&quot;&quot;验证&quot;三件事做成可注入的函数。</strong></p>
+</blockquote>
+<p>这样同一副 harness 既能跑&quot;编码写死的计划&quot;，也能跑&quot;模型生成的计划&quot;，还能跑不同领域——<strong>换内容不换框架</strong>。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  G[&quot;目标 goal&quot;] --&gt; P[&quot;PLANNER（注入）&lt;br/&gt;产出 Plan = [Step...]&quot;]
+  P --&gt; H
+
+  subgraph H[&quot;HARNESS（本文件，管一切外围）&quot;]
+    direction TB
+    B1[&quot;取一步 → 查预算&quot;] --&gt; E[&quot;EXECUTOR（注入）&lt;br/&gt;执行这一Step&quot;]
+    E --&gt; R{&quot;失败?&quot;}
+    R --&gt;|&quot;可重试·未超次数&quot;| E
+    R --&gt;|&quot;不可重试&quot;| F1[&quot;FAILED&quot;]
+    R --&gt;|&quot;成功&quot;| V{&quot;VERIFIER（注入）&lt;br/&gt;通过?&quot;}
+    V --&gt;|&quot;通过&quot;| OK[&quot;SUCCESS（可早停）&quot;]
+    V --&gt;|&quot;不通过·还有重规划额度&quot;| RP[&quot;re-plan（回到 PLANNER）&quot;]
+    V --&gt;|&quot;额度用完&quot;| F2[&quot;PARTIAL&quot;]
+    B1 -.-&gt;|&quot;预算耗尽&quot;| F2
+  end
+
+  RP --&gt; P
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · harness 拥有循环与所有外围控制；planner/executor/verifier 是三个注入点</p>
+<h2 id="三个注入点-一个内核">三个注入点 + 一个内核</h2>
+<div class="code-block"><div class="code-lang">python</div><pre><code>Planner  = Callable[[str, List[Step], int], Plan]      # (goal, done, round) -&gt; Plan
+Executor = Callable[[Step], ExecResult]                # (step) -&gt; ExecResult
+Verifier = Callable[[str, List[Step]], VerifyResult]   # (draft, done) -&gt; VerifyResult
+
+class PlanExecuteHarness:   # ← 内核
+    def run(self, goal): ...
+</code></pre></div>
+<p><strong>harness 从不决定&quot;内容&quot;</strong>，它只决定：</p>
+<ul>
+<li>还有没有预算再跑一步；</li>
+<li>失败的步骤能不能重试；</li>
+<li>该重规划还是该停；</li>
+<li>记录什么。</li>
+</ul>
+<h2 id="跑起来">跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v7.cli --demo        # 一次完整规划-执行-验证
+python3 -m examples.mini_agent_v7.cli --scenarios   # 四种终止路径
+python3 -m unittest tests.test_mini_agent_v7 -v     # 15 个测试
+</code></pre></div>
+<p><code>--demo</code> 输出（注意&quot;提前通过就早停&quot;）：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>[plan]   round=1  steps=['lookup_policy', 'lookup_order', 'draft']
+[exec]   ✓ lookup_policy  attempt=1 tokens=300
+[exec]   ✓ lookup_order   attempt=1 tokens=300
+[stop]   提前通过（lookup_order 后已满足验证），后续步骤不再执行
+状态: success | 轮次: 1 | 步数: 2 | tokens: 606
+</code></pre></div>
+<h2 id="内核长什么样">内核长什么样</h2>
+<p><code>PlanExecuteHarness.run()</code> 的结构（简化）：</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def run(self, goal):
+    while True:
+        # 1. 规划（计费）
+        plan = self.planner(goal, done, rounds)
+        if not plan.steps:
+            return self._verify_and_finish()
+
+        # 2. 逐步执行
+        for step in plan.steps:
+            result = self._execute_with_retry(step)     # 内部管重试
+            if not result.ok: return self._finish(failed/partial)
+            done.append(step); outputs.append(result.output)
+
+            # 3. 每步后试一试：通过就早停
+            if self._verify(...).passed:
+                return self._finish(&quot;success&quot;)
+
+        # 4. 走完一轮：验证。不通过 → 重规划（有上限）
+        if self._verify(...).passed:
+            return self._finish(&quot;success&quot;)
+        if rounds &gt; self.max_replans:
+            return self._finish(&quot;partial&quot;)
+        # 否则进入下一轮，把 verify 的理由交给 planner
+</code></pre></div>
+<p><strong>这四段里，只有 <code>planner/executor/verifier</code> 三个调用是&quot;注入&quot;的，其余全是 harness 的职责。</strong></p>
+<h2 id="五种终止状态一个不少">五种终止状态，一个不少</h2>
+<p><code>--scenarios</code> 会走一遍：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>status</th>
+<th>触发</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>正常跑完且验证通过</td>
+<td><code>success</code></td>
+<td>早停或走完</td>
+</tr>
+<tr>
+<td>可重试失败→重试成功</td>
+<td><code>success</code></td>
+<td>attempt&lt;上限</td>
+</tr>
+<tr>
+<td>不可重试失败</td>
+<td><code>failed</code></td>
+<td>立刻停，不重试</td>
+</tr>
+<tr>
+<td>预算耗尽</td>
+<td><code>partial</code></td>
+<td>step/tool/token 触顶</td>
+</tr>
+<tr>
+<td>每轮都验证不过</td>
+<td><code>partial</code></td>
+<td>重规划超上限</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="开发中修掉的三个真实问题">开发中修掉的三个真实问题</h2>
+<p>写这个 harness 时踩到三个坑，都记在代码注释里：</p>
+<h3 id="坑一预算耗尽时把没验证当成验证通过">坑一：预算耗尽时把&quot;没验证&quot;当成&quot;验证通过&quot;</h3>
+<p>最初 <code>_verify()</code> 在预算不足时返回 <code>VerifyResult(True, &quot;accept current&quot;)</code>。结果<strong>没跑完的任务被报成 success</strong>——这正是 harness 存在意义要防的&quot;静默失败&quot;。改为返回 <code>False</code>，让调用方落到 <code>partial</code>。</p>
+<h3 id="坑二max_steps-不管真实工作量">坑二：<code>max_steps</code> 不管真实工作量</h3>
+<p>最初只有 plan/verify 消耗 step，执行步骤只消耗 tool_call。于是 <code>max_steps=5</code> 却执行了 20 步。改为<strong>执行每步同时消耗 step 和 tool_call</strong>，<code>max_steps</code> 才真的能限住工作量。</p>
+<h3 id="坑三execresultfalse-err-把错误写进了-output">坑三：<code>ExecResult(False, &quot;err&quot;)</code> 把错误写进了 output</h3>
+<p>数据类签名是 <code>(ok, output, error, ...)</code>，位置参数极易误用。加了 <code>ExecResult.failure(&quot;err&quot;)</code> 类方法，让&quot;这是失败&quot;的意图显式化。</p>
+<h2 id="为什么这比直接写个循环好">为什么这比&quot;直接写个循环&quot;好</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>裸循环</th>
+<th>harness 化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>换 planner</td>
+<td>改主循环</td>
+<td>只换注入的函数</td>
+</tr>
+<tr>
+<td>测预算</td>
+<td>难（混在业务里）</td>
+<td>独立可测</td>
+</tr>
+<tr>
+<td>失败可复现</td>
+<td>靠日志猜</td>
+<td>trace 逐步可查</td>
+</tr>
+<tr>
+<td>复用</td>
+<td>一个场景一套</td>
+<td>一套跑所有场景</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>关键：<code>planner</code> 可以是写死的列表（测试用），也可以是模型调用（生产用），harness 完全不用改。</strong></p>
+<h2 id="和-react-的关系">和 ReAct 的关系</h2>
+<ul>
+<li><strong>同一副骨架</strong>：都是&quot;循环 + 预算 + 终止 + trace&quot;。</li>
+<li><strong>内层不同</strong>：ReAct 每轮想一步做一步；Plan-Execute 先产出一批步骤再执行。</li>
+<li><strong>所以</strong>：把 <code>MiniAgent.run()</code> 的&quot;想一步&quot;换成&quot;先规划再批量执行&quot;，就是本文这个 harness。</li>
+</ul>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出 harness 管什么、planner/executor/verifier 各管什么。</li>
+<li>[ ] 能说出五种终止状态各由什么触发。</li>
+<li>[ ] 能解释为什么&quot;预算耗尽不能算 success&quot;。</li>
+<li>[ ] 能解释为什么执行步骤也要计入 step 预算。</li>
+<li>[ ] 能说出换 planner 时为什么不用改主循环。</li>
+<li>[ ] 能说出这个 harness 和 ReAct 循环的相同点与不同点。</li>
+</ul>
+<p>相关：<a href="../layers/orchestration.html">编排层</a> 的规划一节、<a href="mini-agent-v5.html">Mini Agent v5</a> 的 Orchestrator 模式、<a href="paradigm-selection.html">范式选型指南</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="mini-agent-v6.html"><span>上一篇</span><strong>v6：Arena 与 Swarm/Handoff</strong></a><a class="next" href="composite-architecture.html"><span>下一篇</span><strong>组合架构：真实售后平台</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>
