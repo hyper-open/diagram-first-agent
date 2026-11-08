@@ -124,6 +124,10 @@ features:
 
 <div class="arch-grid">
   <div class="arch-card">
+    <h3>先看全景总图</h3>
+    <p><a href="practice/panorama">一张图看清主线</a>：认知路径 → 架构分层 → 范式选型 → 代码实战 → 上线治理。</p>
+  </div>
+  <div class="arch-card">
     <h3>想把代码跑起来</h3>
     <p><a href="practice/mini-agent">v1：一个循环</a> → <a href="practice/mini-agent-v2">v2：加 RAG、路由与记忆治理</a> → <a href="practice/mini-agent-v3">v3：网关、计费与持久化</a> → <a href="practice/mini-agent-v4">v4：四种多 Agent 拓扑</a> → <a href="practice/mini-agent-v5">v5：五种编排模式</a> → <a href="practice/mini-agent-v6">v6：Arena 与 Swarm</a>，并可[部署](/practice/deployment)；最后看<a href="practice/composite-architecture">组合架构</a>如何把它们装进一个真实系统。</p>
   </div>

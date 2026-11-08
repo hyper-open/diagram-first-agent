@@ -54,6 +54,7 @@ export const sidebar = [
   {
     text: '动手',
     items: [
+      { text: '全景总图', link: '/practice/panorama' },
       { text: '从零实现 Mini Agent', link: '/practice/mini-agent' },
       { text: 'v2：加 RAG、路由与记忆治理', link: '/practice/mini-agent-v2' },
       { text: 'v3：工具网关、计费与持久化', link: '/practice/mini-agent-v3' },

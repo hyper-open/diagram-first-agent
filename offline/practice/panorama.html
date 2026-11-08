@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全景总图 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item active" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>全景总图</strong></div>
+        <article class="doc"><h1 id="全景总图">全景总图</h1>
+<h2 id="一张图看完整个手册">一张图看完整个手册</h2>
+<p><img src="../assets/images/master-panorama.png" alt="" loading="lazy"></p>
+<p class="diagram-caption"><strong>全景总图</strong> · 五段式主线：先建立认知，再按层设计，按场景选范式，用代码验证，最后加治理上线</p>
+<h2 id="五段各自解决什么">五段各自解决什么</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>段</th>
+<th>解决什么问题</th>
+<th>对应章节</th>
+<th>产出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>① 认知路径</strong></td>
+<td>Agent 是什么、怎么长成这样</td>
+<td><a href="../start/roadmap.html">学习路线</a>、<a href="../evolution/overview.html">架构演进</a></td>
+<td>一张架构地图 + 判断力</td>
+</tr>
+<tr>
+<td><strong>② 架构分层</strong></td>
+<td>系统该怎么分层、每层管什么</td>
+<td><a href="enterprise-architecture.html">企业级架构</a>、<a href="../foundations/architecture.html">分层架构</a></td>
+<td>六层 + 两横切的参考架构</td>
+</tr>
+<tr>
+<td><strong>③ 范式选型</strong></td>
+<td>某个业务该用哪种范式</td>
+<td><a href="paradigm-selection.html">范式选型指南</a>、<a href="../layers/orchestration.html">编排层</a></td>
+<td>11 种范式 + 选型四问</td>
+</tr>
+<tr>
+<td><strong>④ 代码实战</strong></td>
+<td>这些范式怎么落地、怎么验证</td>
+<td><a href="mini-agent.html">Mini Agent v1</a>–<a href="mini-agent-v6.html">v6</a></td>
+<td>六级可运行代码 + 203 测试</td>
+</tr>
+<tr>
+<td><strong>⑤ 上线治理</strong></td>
+<td>能跑之后怎么敢上线</td>
+<td><a href="deployment.html">部署形态</a>、<a href="../advanced/frameworks.html">框架对照</a></td>
+<td>部署、CI、评测、安全</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="主线一句话">主线一句话</h2>
+<blockquote>
+<p><strong>先建立架构认知 → 按层设计系统 → 按场景选范式 → 用可运行代码验证 → 加治理后上线。</strong></p>
+</blockquote>
+<p>这五段不是并列的知识点，而是<strong>有先后依赖的一条链</strong>：</p>
+<ul>
+<li>不知道架构长什么样，选范式就是凭感觉；</li>
+<li>不选定范式，代码就不知道该实现什么；</li>
+<li>没有可运行代码，架构只是纸图；</li>
+<li>没有治理，跑起来的系统不敢给用户用。</li>
+</ul>
+<h2 id="怎么用这张图">怎么用这张图</h2>
+<ul>
+<li><strong>第一次接触</strong>：从 ① 开始，按<a href="../start/roadmap.html">学习路线</a>走。</li>
+<li><strong>要做技术选型</strong>：直接跳到 ③ <a href="paradigm-selection.html">范式选型指南</a>。</li>
+<li><strong>要落地实现</strong>：看 ④，从 <a href="mini-agent.html">Mini Agent v1</a> 开始跑。</li>
+<li><strong>要上线</strong>：看 ⑤ <a href="enterprise-architecture.html">企业级架构</a> 与 <a href="deployment.html">部署形态</a>。</li>
+<li><strong>要做架构评审</strong>：把 ② 的六层当成检查表，逐层问&quot;这层谁负责、契约是什么&quot;。</li>
+</ul>
+<h2 id="这套内容的边界诚实说明">这套内容的边界（诚实说明）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>已覆盖</th>
+<th>未深入</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>架构分层、演进、范式、可运行实现</td>
+<td>模型训练/微调原理、GPU 推理优化</td>
+</tr>
+<tr>
+<td>网关、RAG、路由、多 Agent、计费、审计</td>
+<td>具体业务行业的深度定制</td>
+</tr>
+<tr>
+<td>部署形态、CI、评测门禁</td>
+<td>大规模分布式（跨区多活）的完整实现</td>
+</tr>
+<tr>
+<td>纯标准库教学实现（零依赖）</td>
+<td>生产级框架的完整用法（只做概念映射）</td>
+</tr>
+</tbody>
+</table></div>
+<p>代码是<strong>教学实现</strong>，不是生产级产品：单进程、内存/文件存储、无 TLS。它证明了机制正确，但上生产要按<a href="enterprise-architecture.html">企业级架构</a>的差距清单逐项补齐。</p>
+<h2 id="继续深入">继续深入</h2>
+<ul>
+<li>想知道某个概念的准确定义 → <a href="../appendix/glossary.html">术语表</a></li>
+<li>想找原始论文和官方文档 → <a href="../appendix/sources.html">推荐来源</a></li>
+<li>想看理论细节 → <a href="../foundations/loop.html">核心循环</a>、<a href="../foundations/evolution.html">技术演进史</a></li>
+</ul>
+</article>
+        <nav class="pager"><a class="prev" href="../layers/compliance.html"><span>上一篇</span><strong>合规与法律</strong></a><a class="next" href="mini-agent.html"><span>下一篇</span><strong>从零实现 Mini Agent</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>
