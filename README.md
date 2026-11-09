@@ -106,6 +106,9 @@ python3 -m examples.mini_agent_v4.cli --budget     # 预算封顶
 python3 -m examples.mini_agent_v5.cli --compare
 python3 -m examples.mini_agent_v5.cli --terminals  # 五种终止状态
 
+# v8：Harness 与 Graph 结合（图管阶段/检查点/中断，harness 管每阶段内部）
+python3 -m examples.mini_agent_v8.cli --demo
+
 # v7：Harness 方式实现 Plan-Execute（循环/预算/重试/trace 都在 harness）
 python3 -m examples.mini_agent_v7.cli --demo
 python3 -m examples.mini_agent_v7.cli --scenarios   # 四种终止路径
@@ -177,11 +180,12 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 │   ├── mini_agent_v5/          # v5：五种编排模式（链式/路由/并行/编排者/评审）
 │   ├── mini_agent_v6/          # v6：Arena（对战排名）+ Swarm/Handoff（移交）
 │   ├── mini_agent_v7/          # v7：Plan-Execute harness（注入 planner/executor/verifier）
+│   ├── mini_agent_v8/          # v8：harness 装进迷你图引擎（检查点/中断/恢复）
 │   │   ├── config.py           # 环境变量 → 启动即校验
 │   │   ├── server.py           # 标准库 HTTP（/health /v1/answer /metrics）
 │   │   └── app.py              # 进程入口（SIGTERM 优雅退出）
 │   └── templates/              # 10 个可复制 JSON 模板（清单的结构化版本）
-├── tests/                      # 229 个测试（v1 26 + v2 32 + v3 43 + v4 26 + v5 28 + v6 20 + v7 15 + 部署 28）
+├── tests/                      # 256 个测试（v1 26 + v2 32 + v3 43 + v4 26 + v5 28 + v6 20 + v7 15 + 部署 28）
 └── package.json                # VitePress 站点脚本
 ```
 
@@ -218,7 +222,7 @@ python3 -m examples.mini_agent.cli --live "用计算器算 123 * 456" --trace
 - 出处：38 章各有「来源」小节（每章 3–5 条），逐章完整清单汇总在[推荐来源](docs/appendix/sources.md)。
 - 练习：26 处「练习」均配「参考答案与自检」（可折叠），给出要点与判定标准而非标准答案。
 - 模板：`examples/templates/` 提供 10 个可复制 JSON（trace、usage event、评测用例、工具定义、能力令牌、任务包、发布记录、四张表、上线门禁、Mini Agent 配置），31 章的清单与之互引。
-- 代码：Mini Agent **v1（单循环）→ v2（RAG / 路由 / 记忆治理）→ v3（网关 / 账本 / 审计 / 持久化）→ v4（四拓扑）→ v5（五模式）→ v6（Arena / Swarm）→ 可部署服务**，**229 个测试**，Python 3.8+，零第三方运行时依赖；CI 在 3.8/3.11/3.12 上跑测试与评测，并构建镜像、冒烟探测 HTTP 端点。
+- 代码：Mini Agent **v1（单循环）→ v2（RAG / 路由 / 记忆治理）→ v3（网关 / 账本 / 审计 / 持久化）→ v4（四拓扑）→ v5（五模式）→ v6（Arena / Swarm）→ 可部署服务**，**256 个测试**，Python 3.8+，零第三方运行时依赖；CI 在 3.8/3.11/3.12 上跑测试与评测，并构建镜像、冒烟探测 HTTP 端点。
 - 站点：VitePress 1.x + Mermaid 图表；另提供 `offline/` 纯静态离线版。
 - 文档侧已补：每章来源、练习参考答案、可复制模板、主线与分层章的对照表、术语写法约定。
 

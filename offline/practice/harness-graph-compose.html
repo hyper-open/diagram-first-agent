@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harness 与 Graph 结合：一个可中断的 Plan-Execute 工作流 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="plan-execute-harness.html">v7：用 Harness 写 Plan-Execute</a>
+<a class="nav-item active" href="harness-graph-compose.html">v8：Harness 与 Graph 结合</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="enterprise-domain-agent.html">企业级架构（领域 Agent 版）</a>
+<a class="nav-item" href="coding-platform.html">把 Coding 能力接进平台</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v8：Harness 与 Graph 结合</strong></div>
+        <article class="doc"><h1 id="harness-与-graph-结合">Harness 与 Graph 结合</h1>
+<h2 id="为什么要结合以及谁管什么">为什么要结合，以及谁管什么</h2>
+<p>前面的讨论澄清过：<strong>harness 和 LangGraph 在&quot;单 Agent 循环&quot;上是重叠的</strong>。所以结合不是&quot;两层都写业务逻辑&quot;，而是<strong>分层</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>层</th>
+<th>管什么</th>
+<th>对应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Graph</strong></td>
+<td>阶段之间的<strong>控制流</strong>：先做什么、后做什么、条件分支、<strong>检查点</strong>、<strong>审批中断与恢复</strong></td>
+<td>类比 LangGraph</td>
+</tr>
+<tr>
+<td><strong>Harness</strong></td>
+<td>一个阶段<strong>内部</strong>怎么跑：规划 → 执行 → 验证 → 重试 → 重规划</td>
+<td>v7 的 <code>PlanExecuteHarness</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>一个图节点 = 一次 harness run。</strong> 图不重新实现循环，harness 也不知道&quot;阶段&quot;和&quot;审批&quot;。</p>
+<p>本项目受&quot;零第三方依赖&quot;约束，所以没有真的 <code>import langgraph</code>——而是<strong>用标准库复刻它的核心概念</strong>（State / Node / Edge / 条件边 / Checkpointer / interrupt），让结合是真实的，不是贴标签。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>   ┌──────────────── Graph（控制流 + 检查点 + 中断/恢复）────────────────┐
+   │                                                                    │
+   │  gather ──▶ draft ──▶ approve ┄┄(需人工)┄┄▶ summarize              │
+   │    │          │          │                    │                     │
+   │    ▼          ▼          ▼                    ▼                     │
+   │  [harness] [harness]  [harness]            [harness]               │
+   │  规划→执行  规划→执行   审批门          规划→执行                    │
+   │  →验证      →验证      (可能 interrupt)    →验证                     │
+   │                                                                    │
+   │  每个节点返回 state 更新，图负责合并 + 每节点存 checkpoint          │
+   └────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 图负责阶段与中断，节点内部是 harness；节点只返回更新，图合并并存档</p>
+<h2 id="跑起来">跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v8.cli --demo     # 中断 → 批准 → 完成
+python3 -m examples.mini_agent_v8.cli --trace    # 打印完整 state 与 checkpoint 历史
+python3 -m unittest tests.test_mini_agent_v8 -v  # 15 个测试
+</code></pre></div>
+<p>输出（第一趟在审批闸门中断）：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>【第一趟】跑到审批闸门 → 中断
+  status=interrupted  path=gather → draft → approve
+  中断于: approve  提示: 退款金额 58 元，是否批准？
+  checkpoint 数: 3（每节点一份，可恢复）
+</code></pre></div>
+<p>第二趟批准后跑完全部四阶段。</p>
+<h2 id="分层怎么实现的">分层怎么实现的</h2>
+<h3 id="1-图引擎graphpy对齐-langgraph-的核心">1. 图引擎（<code>graph.py</code>）——对齐 LangGraph 的核心</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>class Graph:
+    def add_node(name, fn)          # 节点：(state) -&gt; partial_update
+    def add_edge(src, to)           # 静态边
+    def add_conditional_edge(src, router)  # 条件边
+    def run(state, max_steps)       # 执行
+</code></pre></div>
+<p>三个关键约束，都是 LangGraph 也有的：</p>
+<ul>
+<li><strong>节点只返回部分更新，由执行器合并</strong>——不直接改共享 state。这是检查点和时间旅行能成立的前提。</li>
+<li><strong>每执行一个节点就存一份 checkpoint</strong>。</li>
+<li><strong>节点可抛 <code>GraphInterrupt</code></strong>——图在该节点停下，state 已存档，可从此恢复。</li>
+</ul>
+<h3 id="2-把-harness-包成节点composepy">2. 把 harness 包成节点（<code>compose.py</code>）</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>def run_stage_as_node(spec, state_key):
+    def node(state):
+        harness = PlanExecuteHarness(...)     # ← 每个节点内部一个 harness
+        result = harness.run(goal)
+        if spec.requires_approval and not state[&quot;approved&quot;]:
+            raise GraphInterrupt(spec.name, spec.approval_prompt)  # 审批闸门
+        return {state_key: {...}, &quot;tokens_total&quot;: ...}  # 只返回更新
+    return node
+</code></pre></div>
+<p><strong>注意节点做三件事</strong>：跑 harness、必要时中断、返回更新。它不管顺序（图管）、不管恢复（图管）。</p>
+<h3 id="3-阶段之间用-state-传值">3. 阶段之间用 state 传值</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>gather  → state[&quot;gather_result&quot;]
+draft   → 读前面的结果，产出 state[&quot;draft_result&quot;]
+approve → 若未批准，中断
+summarize → 汇总
+</code></pre></div>
+<p>这就是&quot;图&quot;作为编排层的价值：<strong>阶段之间怎么串、失败怎么停、人工怎么插</strong>，全是显式控制流。</p>
+<h2 id="开发中踩的两个真实问题">开发中踩的两个真实问题</h2>
+<h3 id="问题一空-checkpointer-被悄悄换掉">问题一：空 Checkpointer 被悄悄换掉</h3>
+<div class="code-block"><div class="code-lang">python</div><pre><code>self.checkpointer = checkpointer or Checkpointer()   # ❌ 有 bug
+</code></pre></div>
+<p><code>Checkpointer</code> 实现了 <code>__len__</code>，<strong>空对象是 falsy</strong>，于是 <code>or</code> 把调用方传入的 checkpointer 换成了新的——测试里 <code>len(cp)</code> 一直是 0。改为 <code>if ... is not None</code>。</p>
+<p><strong>教训</strong>：实现了 <code>__len__</code> / <code>__bool__</code> 的对象，别用 <code>x or default</code>。</p>
+<h3 id="问题二中断必须在跑完-harness-之后">问题二：中断必须在&quot;跑完 harness 之后&quot;</h3>
+<p>最初想先判审批再跑。但正确顺序是<strong>先跑完这一阶段、记录结果，再中断</strong>——否则恢复时会丢掉这一阶段已经做完的工作。所以 <code>GraphInterrupt</code> 抛在 <code>return</code> 之前、<code>harness.run()</code> 之后。</p>
+<h2 id="什么时候用这套什么时候不用">什么时候用这套，什么时候不用</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>用什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单阶段、线性循环（v7 原样）</td>
+<td>只用 harness，<strong>别套图</strong></td>
+</tr>
+<tr>
+<td>多阶段、需要检查点/审批中断/恢复</td>
+<td><strong>harness + graph</strong>（本文）</td>
+</tr>
+<tr>
+<td>阶段之间有并行分支、汇合</td>
+<td>graph（条件边/多出边）</td>
+</tr>
+<tr>
+<td>生产环境、要持久化到库</td>
+<td>换成真 LangGraph（checkpointer 写 Postgres）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>判断标准还是复杂度</strong>：控制流简单就只写 harness；一旦需要&quot;阶段、检查点、人工中断、恢复&quot;，图的收益就出现了。</p>
+<h2 id="关于零依赖的取舍">关于&quot;零依赖&quot;的取舍</h2>
+<p>本 demo 手写了迷你图引擎，好处是<strong>能跑、能测、CI 不破、能看清机制</strong>；代价是它不是 LangGraph——<strong>没有真 LangGraph 的持久化后端、流式事件、可视化</strong>。</p>
+<p>生产建议在<a href="../advanced/frameworks.html">框架对照</a>里说得很清楚：概念（节点契约、幂等、可控性）仍然要自己补，图引擎这种基础设施才交给 LangGraph。</p>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出 Graph 和 Harness 各管什么，以及为什么不是&quot;两层都写业务&quot;。</li>
+<li>[ ] 能解释为什么节点必须返回更新而不是直接改 state。</li>
+<li>[ ] 能说出检查点在哪里存、为什么中断前要存。</li>
+<li>[ ] 能解释中断为什么要在&quot;跑完 harness 之后&quot;。</li>
+<li>[ ] 能判断一个流程该只写 harness，还是该加图。</li>
+<li>[ ] 能说出这个迷你图引擎和真 LangGraph 的差距。</li>
+</ul>
+<p>相关：<a href="plan-execute-harness.html">用 Harness 写 Plan-Execute</a>、<a href="../advanced/durability.html">长任务与可靠执行</a>、<a href="../advanced/frameworks.html">框架对照</a>。</p>
+</article>
+        <nav class="pager"><a class="prev" href="plan-execute-harness.html"><span>上一篇</span><strong>v7：用 Harness 写 Plan-Execute</strong></a><a class="next" href="composite-architecture.html"><span>下一篇</span><strong>组合架构：真实售后平台</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>
