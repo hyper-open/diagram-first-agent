@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>路由之后：选哪种拓扑执行 · Agent 学习手册（离线版）</title>
+  <meta name="description" content="Agent 架构演进教程离线版：从 ReAct 到 Agent 平台。">
+  <link rel="icon" href="../assets/logo.svg">
+  <link rel="stylesheet" href="../assets/offline.css">
+</head>
+<body class="">
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开菜单">☰</button>
+    <a class="brand" href="../index.html"><img src="../assets/logo.svg" alt=""><span>Agent 学习手册</span><em>离线版</em></a>
+    <nav class="topnav"><a href="../index.html">首页</a><a href="../evolution/overview.html">架构主线</a><a href="../layers/model.html">分层深入</a><a href="mini-agent.html">实战</a><a href="../advanced/optimization.html">优化</a></nav>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="nav-filter" id="navFilter" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+      <div class="nav-group"><div class="nav-title">开始</div><a class="nav-item" href="../start/roadmap.html">学习路线</a>
+<a class="nav-item" href="../start/what-is-agent.html">什么是 Agent</a></div>
+<div class="nav-group"><div class="nav-title">架构演进主线</div><a class="nav-item" href="../evolution/overview.html">00 架构总览</a>
+<a class="nav-item" href="../evolution/react.html">01 ReAct，最小可用 Agent</a>
+<a class="nav-item" href="../evolution/tool-calling.html">02 工具调用与注册</a>
+<a class="nav-item" href="../evolution/model-gateway.html">03 模型网关与路由</a>
+<a class="nav-item" href="../evolution/tool-gateway.html">04 工具网关</a>
+<a class="nav-item" href="../evolution/rag.html">05 RAG 与知识层</a>
+<a class="nav-item" href="../evolution/intent.html">06 意图识别与路由</a>
+<a class="nav-item" href="../evolution/multi-agent.html">07 多 Agent 协作</a>
+<a class="nav-item" href="../evolution/platform.html">08 平台化与治理</a></div>
+<div class="nav-group"><div class="nav-title">基础参考</div><a class="nav-item" href="../foundations/loop.html">核心循环</a>
+<a class="nav-item" href="../foundations/architecture.html">七层职责模型</a>
+<a class="nav-item" href="../foundations/evolution.html">技术演进史</a></div>
+<div class="nav-group"><div class="nav-title">分层深入</div><a class="nav-item" href="../layers/model.html">模型层</a>
+<a class="nav-item" href="../layers/model-adaptation.html">模型适配</a>
+<a class="nav-item" href="../layers/multimodal.html">多模态与实时交互</a>
+<a class="nav-item" href="../layers/context.html">上下文层</a>
+<a class="nav-item" href="../layers/retrieval.html">检索层</a>
+<a class="nav-item" href="../layers/tools.html">工具层</a>
+<a class="nav-item" href="../layers/memory.html">记忆层</a>
+<a class="nav-item" href="../layers/orchestration.html">编排层</a>
+<a class="nav-item" href="../layers/runtime.html">运行时与沙箱</a>
+<a class="nav-item" href="../layers/testing.html">测试与验证</a>
+<a class="nav-item" href="../layers/evaluation.html">评测与可观测性</a>
+<a class="nav-item" href="../layers/release.html">版本与发布</a>
+<a class="nav-item" href="../layers/security.html">安全与权限</a>
+<a class="nav-item" href="../layers/content-safety.html">内容安全与审核</a>
+<a class="nav-item" href="../layers/privacy.html">隐私与数据治理</a>
+<a class="nav-item" href="../layers/compliance.html">合规与法律</a></div>
+<div class="nav-group"><div class="nav-title">动手</div><a class="nav-item" href="panorama.html">全景总图</a>
+<a class="nav-item" href="mini-agent.html">从零实现 Mini Agent</a>
+<a class="nav-item" href="mini-agent-v2.html">v2：加 RAG、路由与记忆治理</a>
+<a class="nav-item" href="mini-agent-v3.html">v3：工具网关、计费与持久化</a>
+<a class="nav-item" href="mini-agent-v4.html">v4：四种多 Agent 拓扑</a>
+<a class="nav-item" href="mini-agent-v5.html">v5：五种编排模式</a>
+<a class="nav-item" href="mini-agent-v6.html">v6：Arena 与 Swarm/Handoff</a>
+<a class="nav-item" href="plan-execute-harness.html">v7：用 Harness 写 Plan-Execute</a>
+<a class="nav-item" href="harness-graph-compose.html">v8：Harness 与 Graph 结合</a>
+<a class="nav-item active" href="topology-selection.html">v9：路由后选哪种拓扑</a>
+<a class="nav-item" href="composite-architecture.html">组合架构：真实售后平台</a>
+<a class="nav-item" href="multi-intent.html">多意图路由</a>
+<a class="nav-item" href="paradigm-selection.html">范式选型指南</a>
+<a class="nav-item" href="enterprise-architecture.html">企业级参考架构</a>
+<a class="nav-item" href="enterprise-domain-agent.html">企业级架构（领域 Agent 版）</a>
+<a class="nav-item" href="coding-platform.html">把 Coding 能力接进平台</a>
+<a class="nav-item" href="deployment.html">部署形态：从能跑到能上线</a>
+<a class="nav-item" href="cases.html">真实案例拆解</a>
+<a class="nav-item" href="ux.html">交互与信任设计</a></div>
+<div class="nav-group"><div class="nav-title">进阶</div><a class="nav-item" href="../advanced/optimization.html">优化手册</a>
+<a class="nav-item" href="../advanced/durability.html">长任务与可靠执行</a>
+<a class="nav-item" href="../advanced/frameworks.html">框架对照与迁移</a>
+<a class="nav-item" href="../advanced/frontier.html">前沿与趋势</a></div>
+<div class="nav-group"><div class="nav-title">附录</div><a class="nav-item" href="../appendix/glossary.html">术语表</a>
+<a class="nav-item" href="../appendix/sources.html">推荐来源</a>
+<a class="nav-item" href="../appendix/reading.html">延伸阅读</a></div>
+      <p class="sidebar-note">本地离线版 · 双击 HTML 即可阅读<br>无需启动服务器</p>
+    </aside>
+    <main class="content">
+      <div class="content-inner">
+        <div class="breadcrumb"><a href="../index.html">首页</a><span>/</span><span>动手</span><span>/</span><strong>v9：路由后选哪种拓扑</strong></div>
+        <article class="doc"><h1 id="路由之后选哪种拓扑执行">路由之后：选哪种拓扑执行</h1>
+<h2 id="这章解决什么问题">这章解决什么问题</h2>
+<p>前面讨论过：意图路由和拓扑是两件事。本章把它们接起来——<strong>用户输入（可能多意图）→ 意图路由 → 判断该用哪种拓扑执行 → 执行</strong>。</p>
+<p>关键点是中间那步：<strong>路由不该直接写死&quot;进 Agent&quot;或&quot;并行&quot;，而是根据意图的数量和关系来选拓扑</strong>。</p>
+<h2 id="一图看懂">一图看懂</h2>
+<div class="mermaid">flowchart TB
+  IN[&quot;用户输入（可能多意图）&quot;] --&gt; R[&quot;① 意图路由&lt;br/&gt;拆句 + 打分&quot;]
+  R --&gt; Q0{&quot;置信度过低&lt;br/&gt;/无法归类?&quot;}
+  Q0 --&gt;|&quot;是&quot;| CL[&quot;clarify 先追问&quot;]
+  Q0 --&gt;|&quot;否&quot;| Q1{&quot;含投诉/合规?&quot;}
+  Q1 --&gt;|&quot;是&quot;| ES[&quot;escalate 转人工&quot;]
+  Q1 --&gt;|&quot;否&quot;| Q2{&quot;几个意图?&quot;}
+  Q2 --&gt;|&quot;1 个·简单&quot;| S[&quot;single / rag&quot;]
+  Q2 --&gt;|&quot;1 个·复杂&quot;| PE[&quot;plan_execute&quot;]
+  Q2 --&gt;|&quot;多个&quot;| Q3{&quot;意图之间关系?&quot;}
+  Q3 --&gt;|&quot;独立&quot;| PA[&quot;parallel 并行扇出&quot;]
+  Q3 --&gt;|&quot;有依赖&quot;| CH[&quot;chaining / supervisor&quot;]
+  Q3 --&gt;|&quot;可能冲突&quot;| SU[&quot;supervisor 合并裁决&quot;]
+</div>
+<p class="diagram-caption"><strong>一图看懂</strong> · 路由产出意图，拓扑由「数量 + 关系 + 风险」共同决定</p>
+<h2 id="决策规则按优先级">决策规则（按优先级）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>条件</th>
+<th>选中拓扑</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>置信度过低 / 无法归类 / route=clarify</td>
+<td><strong>clarify</strong></td>
+<td>先追问，不硬路由</td>
+</tr>
+<tr>
+<td>2</td>
+<td>含投诉、合规（高风险）</td>
+<td><strong>escalate</strong></td>
+<td>转人工，不被业务埋没</td>
+</tr>
+<tr>
+<td>3</td>
+<td>单意图·简单</td>
+<td><strong>single / rag</strong></td>
+<td>一个处理器直接完成</td>
+</tr>
+<tr>
+<td>4</td>
+<td>单意图·复杂多步</td>
+<td><strong>plan_execute</strong></td>
+<td>先规划再执行</td>
+</tr>
+<tr>
+<td>5</td>
+<td>多意图·有依赖（2 个）</td>
+<td><strong>chaining</strong></td>
+<td>按顺序，下游用上游结果</td>
+</tr>
+<tr>
+<td>6</td>
+<td>多意图·有依赖（&gt;2）/ 可能冲突</td>
+<td><strong>supervisor</strong></td>
+<td>合并时裁决</td>
+</tr>
+<tr>
+<td>7</td>
+<td>多意图·相互独立</td>
+<td><strong>parallel</strong></td>
+<td>并行扇出后拼接，最快</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>注意顺序</strong>：clarify 在 escalate 之前（低置信时不能因为&quot;最像投诉&quot;就转人工）；escalate 在所有业务判断之前（投诉永远优先）。</p>
+<h2 id="跑起来">跑起来</h2>
+<div class="code-block"><div class="code-lang">bash</div><pre><code>python3 -m examples.mini_agent_v9.cli --demo        # 五个典型输入
+python3 -m examples.mini_agent_v9.cli --matrix      # 决策矩阵
+python3 -m examples.mini_agent_v9.cli --ask &quot;我要退款，另外查下订单A1024&quot;
+python3 -m unittest tests.test_mini_agent_v9 -v     # 20 个测试
+</code></pre></div>
+<p><code>--demo</code> 输出：</p>
+<div class="code-block"><div class="code-lang">text</div><pre><code>输入: 我要退款，另外订单 A1024 也帮我查一下到哪了
+  意图: [refund.request/workflow/simple]  [query.order_status/workflow/simple]
+  ▶ 选中拓扑: PARALLEL（多意图且相互独立：并行扇出后拼接，最快）
+
+输入: 这个功能报错了，而且我要投诉你们服务太差
+  意图: [tech.issue/rag]  [risk.complaint/human]
+  ▶ 选中拓扑: ESCALATE（命中高风险意图，必须转人工）
+
+输入: 帮我把这个月的退款整理成表格并汇总金额
+  意图: [task.multi_step/agent/complex]
+  ▶ 选中拓扑: PLAN_EXECUTE（单意图但需要多步）
+
+输入: 你好
+  意图: [risk.complaint/clarify]（低置信）
+  ▶ 选中拓扑: CLARIFY（先追问）
+</code></pre></div>
+<h2 id="三种多意图关系的区分最容易混">三种多意图关系的区分（最容易混）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>关系</th>
+<th>判据</th>
+<th>拓扑</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>独立</strong></td>
+<td>结果可直接拼，互不依赖</td>
+<td>parallel</td>
+<td>退款 + 查订单</td>
+</tr>
+<tr>
+<td><strong>依赖</strong></td>
+<td>B 需要 A 的结果</td>
+<td>chaining</td>
+<td>先查订单，再按订单退款</td>
+</tr>
+<tr>
+<td><strong>冲突</strong></td>
+<td>结论可能矛盾，需要取舍</td>
+<td>supervisor</td>
+<td>退款申请 + 政策解释（可能说不该退）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>判错了会怎样：</strong></p>
+<ul>
+<li>独立当依赖 → 白等，串行变慢</li>
+<li>依赖当独立 → 并行跑，下游拿不到上游结果</li>
+<li>冲突当独立 → 把矛盾原样拼给用户</li>
+</ul>
+<h2 id="代码结构">代码结构</h2>
+<div class="code-block"><div class="code-lang">text</div><pre><code>examples/mini_agent_v9/
+├── select_topology.py   选择规则 + 七种拓扑的占位执行器
+├── pipeline.py          串起 v2 路由 → 选择 → 执行
+└── cli.py               demo / ask / matrix
+</code></pre></div>
+<p>核心是 <code>select_topology(items)</code>：输入 <code>IntentItem[]</code>，输出 <code>TopologyChoice{topology, reason}</code>。<strong>它只做决策，不执行业务</strong>——执行交给 <code>execute()</code>。</p>
+<div class="code-block"><div class="code-lang">python</div><pre><code>choice = select_topology(items)
+# choice.topology ∈ {single, rag, parallel, chaining, supervisor, plan_execute, escalate, clarify}
+# choice.reason   ← 为什么选它（可审计、可解释）
+</code></pre></div>
+<h2 id="开发中修的两个-bug都关于顺序">开发中修的两个 bug（都关于&quot;顺序&quot;）</h2>
+<h3 id="bug-一clarify-被-escalate-抢先">bug 一：clarify 被 escalate 抢先</h3>
+<p>最初先判高风险、再判低置信。结果「你好」的<strong>最近意图</strong>是 <code>risk.complaint</code>（虽然置信度只有 0.38），被误转人工。</p>
+<p><strong>修复</strong>：clarify 判断提到最前——低置信时<strong>任何标签都不可信</strong>，包括风险标签。</p>
+<h3 id="bug-二只看置信度没看-route">bug 二：只看置信度，没看 route</h3>
+<p>「你好」置信度 0.38 刚好高于阈值 0.34，但它的 <code>route</code> 是 <code>clarify</code>。只按置信度判断会漏掉。<strong>修复</strong>：<code>route == &quot;clarify&quot;</code> 也直接走 clarify。</p>
+<h2 id="和前面章节的关系">和前面章节的关系</h2>
+<ul>
+<li><strong>意图路由</strong>怎么拆多意图 → <a href="multi-intent.html">多意图路由</a></li>
+<li><strong>每种拓扑是什么</strong> → <a href="mini-agent-v4.html">Mini Agent v4</a>（拓扑）、<a href="mini-agent-v5.html">v5</a>（模式）</li>
+<li><strong>按业务选范式</strong> → <a href="paradigm-selection.html">范式选型指南</a></li>
+<li><strong>本章</strong>：路由<strong>之后</strong>，按意图关系自动选拓扑</li>
+</ul>
+<h2 id="自检清单">自检清单</h2>
+<ul>
+<li>[ ] 能说出七种拓扑各由什么条件触发。</li>
+<li>[ ] 能解释为什么 clarify 要排在 escalate 前面。</li>
+<li>[ ] 能区分多意图的&quot;独立 / 依赖 / 冲突&quot;三种关系及对应拓扑。</li>
+<li>[ ] 能说出判错关系会导致什么后果。</li>
+<li>[ ] 能解释 <code>select_topology</code> 为什么只做决策不执行。</li>
+<li>[ ] 能说出&quot;低置信时最近意图是高危&quot;为什么不能直接转人工。</li>
+</ul>
+</article>
+        <nav class="pager"><a class="prev" href="harness-graph-compose.html"><span>上一篇</span><strong>v8：Harness 与 Graph 结合</strong></a><a class="next" href="composite-architecture.html"><span>下一篇</span><strong>组合架构：真实售后平台</strong></a></nav>
+        <footer class="page-footer">Agent 学习手册 · 离线版 · 以架构图为主线的 Agent 教程</footer>
+      </div>
+    </main>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <a class="to-top" id="toTop" href="#" hidden>↑</a>
+  <noscript><div class="custom-block warning"><p class="custom-block-title">需要启用 JavaScript</p><p>Mermaid 架构图依赖本地 JavaScript 渲染，请在浏览器中允许此文件运行脚本。</p></div></noscript>
+  <script src="../assets/mermaid.min.js"></script>
+  <script src="../assets/offline.js"></script>
+</body>
+</html>

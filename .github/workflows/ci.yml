@@ -48,6 +48,9 @@ jobs:
       - name: v5 patterns
         run: python3 -m examples.mini_agent_v5.cli --compare
 
+      - name: v9 topology selection
+        run: python3 -m examples.mini_agent_v9.cli --demo
+
       - name: v8 harness + graph
         run: python3 -m examples.mini_agent_v8.cli --demo
 

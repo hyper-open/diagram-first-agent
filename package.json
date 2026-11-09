@@ -20,6 +20,7 @@
     "demo:v6": "python3 -m examples.mini_agent_v6.cli --arena",
     "demo:v7": "python3 -m examples.mini_agent_v7.cli --demo",
     "demo:v8": "python3 -m examples.mini_agent_v8.cli --demo",
+    "demo:v9": "python3 -m examples.mini_agent_v9.cli --demo",
     "eval": "python3 -m examples.mini_agent.eval",
     "build:offline": "node tools/build-offline.mjs"
   },
